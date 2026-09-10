@@ -1,8 +1,8 @@
 {
-  "name": "bmt-water-supply",
+  "name": "triangletech-website",
   "version": "0.1.0",
   "private": true,
-  "description": "BMT (Basma Al Madina Transport LLC) water supply and tanker delivery website, built with Next.js.",
+  "description": "TriangleTech — business software and digital solutions website, built with Next.js.",
   "license": "ISC",
   "author": "",
   "type": "module",

@@ -4,12 +4,12 @@ import { useId, useState, type FormEvent } from "react";
 import { business, services } from "@/lib/site";
 import { Icon } from "./icons";
 
-type Fields = { name: string; phone: string; location: string; service: string; message: string };
-const initial: Fields = { name: "", phone: "", location: "", service: "", message: "" };
+type Fields = { name: string; email: string; company: string; interest: string; message: string };
+const initial: Fields = { name: "", email: "", company: "", interest: "", message: "" };
 
-export function RequestForm({ initialService = "" }: { initialService?: string }) {
+export function RequestForm({ initialInterest = "" }: { initialInterest?: string }) {
   const id = useId();
-  const [values, setValues] = useState<Fields>({ ...initial, service: services.some(s => s.title === initialService) ? initialService : "" });
+  const [values, setValues] = useState<Fields>({ ...initial, interest: initialInterest });
   const [errors, setErrors] = useState<Partial<Fields>>({});
   const [draft, setDraft] = useState<{ channel: string; url: string } | null>(null);
 
@@ -17,22 +17,20 @@ export function RequestForm({ initialService = "" }: { initialService?: string }
     event.preventDefault();
     const nextErrors: Partial<Fields> = {};
     if (values.name.trim().length < 2) nextErrors.name = "Enter your name (at least 2 characters).";
-    const phone = values.phone.trim();
-    const digits = phone.replace(/\D/g, "");
-    if (!/^\+?[\d\s().-]+$/.test(phone) || digits.length < 7 || digits.length > 15) nextErrors.phone = "Enter a phone number with 7–15 digits, including your country code where needed.";
-    if (!services.some(s => s.title === values.service)) nextErrors.service = "Choose the service you need.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) nextErrors.email = "Enter a valid email address.";
+    if (!values.interest) nextErrors.interest = "Choose what you're interested in.";
     setErrors(nextErrors);
     setDraft(null);
     const first = Object.keys(nextErrors)[0];
     if (first) { document.getElementById(`${id}-${first}`)?.focus(); return; }
-    const channel = ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value ?? "whatsapp";
-    const message = ["New Service Request", "", `Name: ${values.name.trim()}`, `Phone: ${phone}`, `Location: ${values.location.trim() || "Not specified"}`, `Service: ${values.service}`, `Requirement: ${values.message.trim() || "Not specified"}`].join("\n");
-    const url = channel === "email"
-      ? `mailto:${business.email}?subject=${encodeURIComponent("New Service Request — BMT")}&body=${encodeURIComponent(message)}`
-      : `${business.whatsapp}?text=${encodeURIComponent(message)}`;
+    const channel = ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value ?? "email";
+    const message = ["New Project Inquiry", "", `Name: ${values.name.trim()}`, `Email: ${values.email.trim()}`, `Company: ${values.company.trim() || "Not specified"}`, `Interested in: ${values.interest}`, `Details: ${values.message.trim() || "Not specified"}`].join("\n");
+    const url = channel === "whatsapp"
+      ? `${business.whatsapp}?text=${encodeURIComponent(message)}`
+      : `mailto:${business.email}?subject=${encodeURIComponent("New Project Inquiry — TriangleTech")}&body=${encodeURIComponent(message)}`;
     setDraft({ channel, url });
-    if (channel === "email") window.location.href = url;
-    else window.open(url, "_blank", "noopener,noreferrer");
+    if (channel === "whatsapp") window.open(url, "_blank", "noopener,noreferrer");
+    else window.location.href = url;
   }
 
   const field = (key: keyof Fields) => ({
@@ -48,19 +46,19 @@ export function RequestForm({ initialService = "" }: { initialService?: string }
 
   return <section className="request-panel" aria-labelledby={`${id}-title`}>
     <div className="form-heading"><span className="eyebrow">LET&apos;S GET STARTED</span><span className="form-mark"><Icon name="arrow" /></span></div>
-    <h2 id={`${id}-title`}>Request water delivery.</h2>
-    <p className="form-intro">Tell us what you need. Connect directly with BMT.</p>
-    <form onSubmit={submit} noValidate aria-label="Water delivery service request">
+    <h2 id={`${id}-title`}>Start your project.</h2>
+    <p className="form-intro">Tell us what you need. Connect directly with TriangleTech.</p>
+    <form onSubmit={submit} noValidate aria-label="Project inquiry">
       <div className="form-grid">
         <div className="field"><label htmlFor={`${id}-name`}>Your name <span>*</span></label><input {...field("name")} autoComplete="name" placeholder="Full name" required maxLength={100} />{error("name")}</div>
-        <div className="field"><label htmlFor={`${id}-phone`}>Phone / WhatsApp <span>*</span></label><input {...field("phone")} type="tel" autoComplete="tel" placeholder="+971 …" required maxLength={30} />{error("phone")}</div>
-        <div className="field field-wide"><label htmlFor={`${id}-service`}>Service required <span>*</span></label><select {...field("service")} required><option value="">Select a service</option>{services.map(service => <option key={service.id} value={service.title}>{service.title}</option>)}</select>{error("service")}</div>
-        <div className="field field-wide"><label htmlFor={`${id}-location`}>Location / area <span className="optional">optional</span></label><input {...field("location")} autoComplete="address-level2" placeholder="Your area or delivery location" maxLength={160} /></div>
-        <div className="field field-wide"><label htmlFor={`${id}-message`}>Your requirement <span className="optional">optional</span></label><textarea {...field("message")} rows={2} placeholder="Water needed, preferred timing or access details" maxLength={700} /></div>
+        <div className="field"><label htmlFor={`${id}-email`}>Email <span>*</span></label><input {...field("email")} type="email" autoComplete="email" placeholder="you@company.com" required maxLength={100} />{error("email")}</div>
+        <div className="field field-wide"><label htmlFor={`${id}-interest`}>I&apos;m interested in <span>*</span></label><select {...field("interest")} required><option value="">Select an option</option>{services.map(service => <option key={service.id} value={service.title}>{service.title}</option>)}<option value="Something else">Something else</option></select>{error("interest")}</div>
+        <div className="field field-wide"><label htmlFor={`${id}-company`}>Company <span className="optional">optional</span></label><input {...field("company")} autoComplete="organization" placeholder="Your company name" maxLength={160} /></div>
+        <div className="field field-wide"><label htmlFor={`${id}-message`}>Project details <span className="optional">optional</span></label><textarea {...field("message")} rows={2} placeholder="Tell us about your project or the problem you're solving" maxLength={700} /></div>
       </div>
-      <div className="form-actions"><button className="button button-whatsapp" type="submit" value="whatsapp"><Icon name="chat" />Continue in WhatsApp</button><button className="button button-email" type="submit" value="email"><Icon name="mail" />Email</button></div>
+      <div className="form-actions"><button className="button button-accent" type="submit" value="email"><Icon name="mail" />Send by Email</button><button className="button button-email" type="submit" value="whatsapp"><Icon name="chat" />WhatsApp</button></div>
       <p className="form-note">Opens a draft in your app. Review it and press Send to complete your request. Email requires a configured email app.</p>
-      <div role="status" aria-live="polite">{draft && <p className="draft-status">Your {draft.channel === "email" ? "email" : "WhatsApp"} draft is ready. Your request has not been sent. <a href={draft.url} target={draft.channel === "email" ? undefined : "_blank"} rel="noopener noreferrer">Open the draft again</a>.</p>}</div>
+      <div role="status" aria-live="polite">{draft && <p className="draft-status">Your {draft.channel === "whatsapp" ? "WhatsApp" : "email"} draft is ready. Your request has not been sent. <a href={draft.url} target={draft.channel === "whatsapp" ? "_blank" : undefined} rel="noopener noreferrer">Open the draft again</a>.</p>}</div>
     </form>
   </section>;
 }

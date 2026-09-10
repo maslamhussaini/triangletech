@@ -1,16 +1,25 @@
 import { ImageResponse } from "next/og";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-export const alt = "Basma Al Madina Transport LLC — Water Supply & Tanker Delivery";
+
+export const alt = "TriangleTech — Business Software and Digital Solutions";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const dynamic = "force-static";
-export default async function Image() {
-  const logo = await readFile(path.join(process.cwd(), "public/bmt-logo.png"));
-  return new ImageResponse(<div style={{ width: "100%", height: "100%", background: "#0a2638", color: "#ffffff", display: "flex", padding: 70, alignItems: "center", gap: 60 }}>
-    <div style={{ display: "flex", background: "#ffffff", borderRadius: 24, padding: 20 }}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- ImageResponse renders embedded image bytes. */}
-      <img src={`data:image/png;base64,${logo.toString("base64")}`} width={243} height={260} alt="BMT" />
-    </div><div style={{ display: "flex", flexDirection: "column", flex: 1 }}><div style={{ fontSize: 21, color: "#8cddd7", marginBottom: 28 }}>BASMA AL MADINA TRANSPORT LLC</div><div style={{ fontSize: 66, lineHeight: 1.1, marginBottom: 30 }}>Water where you need it.</div><div style={{ fontSize: 27, color: "#c9dce4" }}>Water supply & tanker delivery</div><div style={{ fontSize: 22, color: "#8cddd7", marginTop: 22 }}>Dubai & UAE</div></div>
-  </div>, size);
+
+export default function Image() {
+  return new ImageResponse(
+    <div style={{ width: "100%", height: "100%", background: "#081226", color: "#ffffff", display: "flex", padding: 70, alignItems: "center", gap: 56 }}>
+      <div style={{ display: "flex", background: "#0e1c38", borderRadius: 24, padding: 28, border: "1px solid #1c2f52" }}>
+        <svg width="150" height="150" viewBox="0 0 40 40">
+          <path d="M20 4 36 33H4Z" fill="none" stroke="#3fd7ff" strokeWidth="2.6" strokeLinejoin="round" />
+          <path d="M20 15 27.5 28H12.5Z" fill="#3fd7ff" />
+        </svg>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ fontSize: 21, color: "#3fd7ff", marginBottom: 24, letterSpacing: 2 }}>TRIANGLETECH</div>
+        <div style={{ fontSize: 60, lineHeight: 1.1, marginBottom: 26 }}>Technology That Moves Your Business Forward</div>
+        <div style={{ fontSize: 24, color: "#a9b8d4" }}>Business software · Web · Mobile · Ecommerce</div>
+      </div>
+    </div>,
+    size
+  );
 }

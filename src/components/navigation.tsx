@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react";
 import { Brand } from "./brand";
 import { Icon } from "./icons";
-import { business, navigation } from "@/lib/site";
+import { navigation } from "@/lib/site";
 
 const NavigationContext = createContext<(href: string) => void>(() => {});
 
@@ -53,11 +53,11 @@ export function Header() {
 
   return <header className="site-header">
     <div className="container header-inner">
-      <RouteLink href="/" aria-label="Basma Al Madina Transport — Home" onNavigate={() => setOpen(false)}><Brand /></RouteLink>
+      <RouteLink href="/" aria-label="TriangleTech — Home" onNavigate={() => setOpen(false)}><Brand /></RouteLink>
       <nav aria-label="Main navigation" className="desktop-nav">
         {navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <a className="button button-dark header-call" href={business.phoneHref}><Icon name="phone" />Call BMT</a>
+      <RouteLink className="button button-accent header-cta" href="/contact">Start Your Project</RouteLink>
       <button ref={toggle} className="menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d={open ? "m6 6 12 12M6 18 18 6" : "M4 7h16M4 12h16M4 17h16"} /></svg>
       </button>
@@ -66,7 +66,7 @@ export function Header() {
       if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node) && event.relatedTarget !== toggle.current) setOpen(false);
     }}>
       <nav aria-label="Mobile navigation">{navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} onNavigate={() => setOpen(false)}>{item.label}<Icon name="arrow" /></RouteLink>)}</nav>
-      <a href={business.phoneHref}>{business.phone}</a>
+      <RouteLink className="button button-accent" href="/contact" onNavigate={() => setOpen(false)}>Start Your Project</RouteLink>
     </div>
   </header>;
 }

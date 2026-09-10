@@ -1,7 +1,10 @@
 import type { MetadataRoute } from "next";
-import { business, navigation, services } from "@/lib/site";
+import { business, products, services } from "@/lib/site";
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const pages = navigation.map(page => ({ url: `${business.url}${page.href === "/" ? "/" : page.href}` }));
+  const staticPages = ["/", "/services", "/products", "/case-studies", "/about", "/faq", "/contact", "/privacy", "/terms"];
+  const pages = staticPages.map(path => ({ url: `${business.url}${path}` }));
   const serviceDetails = services.map(service => ({ url: `${business.url}/services/${service.id}` }));
-  return [...pages, ...serviceDetails];
+  const productDetails = products.map(product => ({ url: `${business.url}/products/${product.id}` }));
+  return [...pages, ...serviceDetails, ...productDetails];
 }
