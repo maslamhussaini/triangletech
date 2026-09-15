@@ -324,7 +324,7 @@ address { font-style:normal; }
 .case-detail-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:44px; align-items:start; padding-bottom:20px; }
 .case-detail-visual { position:sticky; top:110px; }
 .case-detail-grid .case-article { max-width:none; }
-@media(max-width:899px) {
+@media(max-width:900px) {
   .case-detail-grid { grid-template-columns:minmax(0,1fr); gap:26px; }
   .case-detail-visual { position:static; }
 }

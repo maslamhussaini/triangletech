@@ -1,0 +1,735 @@
+/* ============================================================================
+   Indigo Intelligence — design system foundation (Phase 0)
+   ----------------------------------------------------------------------------
+   ADDITIVE ONLY. Imported AFTER globals.css so it wins on equal specificity.
+
+   Nothing in this file is applied to an existing component automatically.
+   Every primitive below is OPT-IN via an explicit class name. The existing
+   cyan/blue/emerald/violet product accent system, `.accent-*` -> `--dot`,
+   `.button-accent`, nav, footer, mockups and product pages are untouched.
+   ========================================================================== */
+
+:root {
+  /* --- Brand ------------------------------------------------------------
+     Electric indigo primary, deep indigo for dark grounds, restrained violet
+     as a secondary accent only (never as a large surface). --brand hits
+     6.29:1 on white, so it is safe for body-size text, not just decoration. */
+  --brand: #4F46E5;
+  --brand-strong: #312E81;
+  --brand-soft: #EEF0FF;
+  --brand-secondary: #7C5CFF;
+  --brand-contrast: #FFFFFF;
+
+  /* Deep ground used by dark indigo surfaces. Distinct from --navy so the
+     existing navy sections are not affected or visually competed with. */
+  --brand-ink: #1B1B4B;
+
+  /* --- Gradients ---------------------------------------------------------
+     Sized at 200% so `background-position` can animate slowly (see
+     .gradient-drift) without any repaint-heavy tricks. */
+  --gradient-brand: linear-gradient(120deg, #4F46E5 0%, #5B4FE9 45%, #7C5CFF 100%);
+  --gradient-hero: radial-gradient(circle at 78% -12%, #3E37C9 0%, transparent 58%),
+                   linear-gradient(160deg, #1B1B4B 0%, #0E0E2B 100%);
+  --gradient-soft: linear-gradient(135deg, #F5F6FF 0%, #EEF0FF 55%, #F7F4FF 100%);
+
+  /* --- Surfaces ----------------------------------------------------------
+     Reuse the existing neutral surfaces where they are already correct:
+     --surface / --surface-elevated map onto the site's card + paper tokens so
+     new primitives sit natively inside existing sections. */
+  --surface: var(--card);
+  --surface-soft: var(--paper);
+  --surface-elevated: #FFFFFF;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-glass-dark: rgba(20, 20, 56, 0.55);
+
+  /* --- Text --------------------------------------------------------------
+     --text-primary reuses the existing --text (#1a2338, 14.5:1 on white).
+     --text-secondary and --text-muted are NEW, deliberately darker than the
+     existing --muted (#8592ad ~ 3.4:1, which fails WCAG AA for body copy).
+     --text-muted is #6B7690 ~ 4.9:1, so new copy meets AA. */
+  --text-primary: var(--text);
+  --text-secondary: #4A5573;
+  --text-muted: #6B7690;
+  --text-on-brand: #FFFFFF;
+  --text-inverse-soft: #C9CCF5;
+
+  /* --- Borders -----------------------------------------------------------
+     --border-soft reuses the existing --border so premium cards line up with
+     the surrounding service/feature cards; --border-brand is the indigo state. */
+  --border-soft: var(--border);
+  --border-brand: rgba(79, 70, 229, 0.42);
+  --border-strong: #C9CFE4;
+
+  /* --- Effects ----------------------------------------------------------- */
+  --shadow-card: 0 1px 2px rgba(16, 22, 48, 0.04), 0 8px 24px rgba(16, 22, 48, 0.06);
+  --shadow-elevated: 0 2px 4px rgba(16, 22, 48, 0.05), 0 18px 44px rgba(16, 22, 48, 0.12);
+  --shadow-brand: 0 10px 30px rgba(79, 70, 229, 0.28);
+  --focus-ring: 0 0 0 3px rgba(79, 70, 229, 0.35);
+  --focus-ring-inverse: 0 0 0 3px rgba(160, 152, 255, 0.55);
+
+  /* --- Feedback (new primitives only) ------------------------------------ */
+  --danger: #B42318;
+  --danger-soft: #FEF3F2;
+  --success: #12704E;
+
+  /* --- Motion ------------------------------------------------------------ */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 140ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+
+  /* Shared geometry */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --control-height: 48px; /* >= 44px touch target on every interactive primitive */
+}
+
+/* ============================================================================
+   1. Typographic / text helpers
+   ========================================================================== */
+
+.gradient-text {
+  background: var(--gradient-brand);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  /* Fallback first: engines without background-clip:text keep solid indigo. */
+  color: var(--brand);
+}
+
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .gradient-text {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.text-secondary-indigo { color: var(--text-secondary); }
+.text-muted-indigo { color: var(--text-muted); }
+
+/* ============================================================================
+   2. Surfaces — .card-premium / .glass-panel / .result-card / .metric-card
+   ========================================================================== */
+
+.card-premium {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  padding: 26px 24px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft);
+}
+
+/* Hairline indigo illumination along the top edge — decorative, not load-bearing. */
+.card-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--gradient-brand);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-out-soft);
+  pointer-events: none;
+}
+
+.card-premium:hover,
+.card-premium:focus-within {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--border-brand);
+}
+
+.card-premium:hover::before,
+.card-premium:focus-within::before { opacity: 1; }
+
+/* Interactive variant (a card that is itself a link/button). */
+a.card-premium,
+button.card-premium { text-align: left; cursor: pointer; }
+
+a.card-premium:focus-visible,
+button.card-premium:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  box-shadow: var(--shadow-elevated), var(--focus-ring);
+}
+
+.card-premium.is-brand {
+  background: var(--gradient-soft);
+  border-color: var(--border-brand);
+}
+
+.glass-panel {
+  position: relative;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  background: var(--surface-glass);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+  /* Progressive enhancement: opaque fallback first, blur only if supported,
+     so text never loses contrast on engines without backdrop-filter. */
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-panel {
+    background: var(--surface-glass);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    backdrop-filter: blur(14px) saturate(140%);
+  }
+}
+
+/* Glass on a dark/indigo ground. Text is forced light for AA. */
+.glass-panel.on-dark {
+  background: var(--surface-glass-dark);
+  border-color: rgba(160, 152, 255, 0.28);
+  color: #FFFFFF;
+}
+.glass-panel.on-dark .text-muted-indigo,
+.glass-panel.on-dark .glass-panel-note { color: var(--text-inverse-soft); }
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-brand);
+  box-shadow: var(--shadow-card);
+  color: var(--text-primary);
+}
+.result-card > .result-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand-strong);
+}
+.result-card > .result-card-value {
+  font-family: var(--font-sora), Arial, sans-serif;
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--brand-strong);
+}
+.result-card > .result-card-note {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft);
+}
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--border-brand);
+}
+.metric-card > .metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.metric-card > .metric-value {
+  font-family: var(--font-sora), Arial, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+.metric-card > .metric-delta { font-size: 12px; color: var(--text-secondary); }
+.metric-card.is-brand > .metric-value { color: var(--brand-strong); }
+
+/* ============================================================================
+   3. Buttons — .button-indigo / .button-indigo-secondary
+   Standalone: they do NOT depend on, extend, or alter `.button`/.button-accent.
+   ========================================================================== */
+
+.button-indigo,
+.button-indigo-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: var(--control-height); /* 48px — exceeds the 44px touch minimum */
+  padding: 13px 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft),
+    color var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    transform var(--dur-fast) var(--ease-out-soft);
+}
+
+.button-indigo {
+  background-color: var(--brand);
+  background-image: var(--gradient-brand);
+  background-size: 160% 160%;
+  background-position: 0% 50%;
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+.button-indigo:hover {
+  background-position: 100% 50%;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 34px rgba(79, 70, 229, 0.34);
+}
+.button-indigo:active {
+  transform: translateY(0);
+  background-image: none;
+  background-color: var(--brand-strong);
+  box-shadow: 0 4px 12px rgba(49, 46, 129, 0.3);
+}
+.button-indigo:focus-visible {
+  outline: 2px solid var(--brand-strong);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+.button-indigo:disabled,
+.button-indigo[aria-disabled="true"] {
+  background-image: none;
+  background-color: #A9A6DE;
+  color: #F4F4FF;
+  box-shadow: none;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.button-indigo-secondary {
+  background: transparent;
+  border-color: var(--border-brand);
+  color: var(--brand-strong);
+}
+.button-indigo-secondary:hover {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  transform: translateY(-1px);
+}
+.button-indigo-secondary:active {
+  transform: translateY(0);
+  background: #E2E5FF;
+}
+.button-indigo-secondary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+.button-indigo-secondary:disabled,
+.button-indigo-secondary[aria-disabled="true"] {
+  border-color: var(--border-soft);
+  color: #9AA1B8;
+  background: transparent;
+  transform: none;
+  cursor: not-allowed;
+}
+
+/* On dark indigo grounds the secondary button flips to a light outline. */
+.on-dark .button-indigo-secondary,
+.button-indigo-secondary.on-dark {
+  border-color: rgba(201, 204, 245, 0.45);
+  color: #FFFFFF;
+}
+.on-dark .button-indigo-secondary:hover,
+.button-indigo-secondary.on-dark:hover { background: rgba(255, 255, 255, 0.1); }
+.on-dark .button-indigo-secondary:focus-visible,
+.button-indigo-secondary.on-dark:focus-visible {
+  outline-color: #C9CCF5;
+  box-shadow: var(--focus-ring-inverse);
+}
+
+/* ============================================================================
+   4. Form primitives — .field-premium / .input-premium / .select-premium
+   Mobile-safe: font-size is 16px so iOS Safari does not zoom on focus.
+   ========================================================================== */
+
+.field-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-premium > label,
+.label-premium {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+.field-premium > label .required-mark { color: var(--danger); margin-left: 3px; }
+.field-premium > label .optional-mark {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 5px;
+}
+
+.helper-premium {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* Error text carries an icon glyph as well as colour, so error state is never
+   communicated by colour alone. */
+.error-premium {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--danger);
+}
+.error-premium::before {
+  content: "!";
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 15px;
+  text-align: center;
+}
+
+/* Wrapper providing prefix/suffix slots (currency symbol, %, unit, etc.). */
+.input-affix {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.input-affix > .affix-prefix,
+.input-affix > .affix-suffix {
+  position: absolute;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-muted);
+  pointer-events: none; /* clicks fall through to the control */
+  user-select: none;
+}
+.input-affix > .affix-prefix { left: 14px; }
+.input-affix > .affix-suffix { right: 14px; }
+
+/* Reserve room for the slot(s) that are actually present.
+   Override --affix-prefix-w / --affix-suffix-w on .input-affix when the slot
+   content is wider than a single glyph (e.g. a "PKR" currency prefix). */
+.input-affix {
+  --affix-prefix-w: 42px;
+  --affix-suffix-w: 40px;
+}
+.input-affix.affix-wide { --affix-prefix-w: 58px; --affix-suffix-w: 56px; }
+
+.input-affix:has(> .affix-prefix) > .input-premium,
+.input-affix:has(> .affix-prefix) > .select-premium,
+.input-affix.has-prefix > .input-premium,
+.input-affix.has-prefix > .select-premium { padding-left: var(--affix-prefix-w); }
+
+.input-affix:has(> .affix-suffix) > .input-premium,
+.input-affix.has-suffix > .input-premium { padding-right: var(--affix-suffix-w); }
+
+/* The select keeps room for its chevron on top of the suffix slot. */
+.input-affix:has(> .affix-suffix) > .select-premium,
+.input-affix.has-suffix > .select-premium {
+  padding-right: calc(var(--affix-suffix-w) + 22px);
+}
+.input-affix:has(> .select-premium) > .affix-suffix,
+.input-affix.has-select > .affix-suffix { right: 38px; }
+
+.input-premium,
+.select-premium,
+.textarea-premium {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height); /* 48px touch target */
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px; /* >= 16px: prevents iOS zoom-on-focus */
+  line-height: 1.4;
+  outline: none;
+  transition:
+    border-color var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    background-color var(--dur-base) var(--ease-out-soft);
+}
+
+.textarea-premium { resize: vertical; min-height: 96px; }
+
+.input-premium::placeholder,
+.textarea-premium::placeholder { color: #8892AB; opacity: 1; }
+
+.input-premium:hover:not(:disabled),
+.select-premium:hover:not(:disabled),
+.textarea-premium:hover:not(:disabled) { border-color: var(--border-brand); }
+
+/* Focus glow — visible on both light cards and white panels. */
+.input-premium:focus-visible,
+.select-premium:focus-visible,
+.textarea-premium:focus-visible,
+.input-premium:focus,
+.select-premium:focus,
+.textarea-premium:focus {
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
+}
+
+.input-premium:disabled,
+.select-premium:disabled,
+.textarea-premium:disabled {
+  background: #F1F3F8;
+  color: #7A8299;
+  border-color: var(--border-soft);
+  cursor: not-allowed;
+}
+
+/* Validation: colour AND a thicker, dashed-free but doubled border weight plus
+   a tinted ground, so the state survives greyscale / colour-blind viewing. */
+.input-premium[aria-invalid="true"],
+.select-premium[aria-invalid="true"],
+.textarea-premium[aria-invalid="true"],
+.input-premium.is-invalid,
+.select-premium.is-invalid,
+.textarea-premium.is-invalid {
+  border-color: var(--danger);
+  /* Doubled border weight + tinted ground: the invalid state is legible in
+     greyscale, so it is never signalled by colour alone. box-sizing:border-box
+     is global, so the extra 1px causes no layout shift and no padding reset
+     (which would otherwise clobber the affix slot padding above). */
+  border-width: 2px;
+  background: var(--danger-soft);
+}
+.input-premium[aria-invalid="true"]:focus,
+.select-premium[aria-invalid="true"]:focus,
+.textarea-premium[aria-invalid="true"]:focus,
+.input-premium.is-invalid:focus,
+.select-premium.is-invalid:focus,
+.textarea-premium.is-invalid:focus {
+  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.24);
+}
+
+/* --- Custom select chevron (no native arrow anywhere in the codebase) ---- */
+.select-premium {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 42px;
+  cursor: pointer;
+  /* CSS-drawn chevron: two stacked 1.5px bars rotated into a V, encoded as a
+     gradient pair so no SVG/image request is made. */
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% - 2px),
+    calc(100% - 17px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.select-premium:hover:not(:disabled),
+.select-premium:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--brand) 50%),
+    linear-gradient(135deg, var(--brand) 50%, transparent 50%);
+}
+.select-premium:disabled {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #9AA1B8 50%),
+    linear-gradient(135deg, #9AA1B8 50%, transparent 50%);
+}
+.select-premium::-ms-expand { display: none; }
+
+/* ============================================================================
+   5. Animation system
+   Restrained, opt-in, no looping motion except one very slow gradient drift.
+   ========================================================================== */
+
+/* 5a. Card entrance — complements, never overrides, the existing
+   [data-reveal] opacity/translateY pattern from globals.css. Adding
+   `.reveal-lift` to a [data-reveal] element deepens the same transition and
+   adds a staggerable delay; the base rule still does the actual reveal. */
+[data-reveal].reveal-lift {
+  transform: translateY(22px) scale(0.985);
+  transition:
+    opacity var(--dur-slow) var(--ease-out-soft),
+    transform var(--dur-slow) var(--ease-out-soft);
+}
+[data-reveal].reveal-lift.is-revealed { transform: none; }
+
+[data-reveal].reveal-delay-1 { transition-delay: 70ms; }
+[data-reveal].reveal-delay-2 { transition-delay: 140ms; }
+[data-reveal].reveal-delay-3 { transition-delay: 210ms; }
+
+/* 5b. Hover elevation — reusable on any container. */
+.hover-lift {
+  transition:
+    transform var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* 5c. Focus glow — for custom focusable widgets. */
+.focus-glow:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+}
+.focus-glow.on-dark:focus-visible {
+  outline-color: #C9CCF5;
+  box-shadow: var(--focus-ring-inverse);
+}
+
+/* 5d. Result reveal — one-shot subtle scale/fade for a computed result
+   appearing later (Phase 1 calculators). Not yet used by anything. */
+@keyframes indigo-result-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.result-reveal { animation: indigo-result-in var(--dur-slow) var(--ease-out-soft) both; }
+
+/* 5e. Slow gradient drift — 26s, tiny travel, hero-type surfaces only.
+   Opt-in via .gradient-drift; disabled entirely under reduced motion. */
+@keyframes indigo-gradient-drift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.gradient-drift {
+  background-image: var(--gradient-brand);
+  background-size: 200% 200%;
+  animation: indigo-gradient-drift 26s ease-in-out infinite;
+}
+
+/* Hero-type indigo surface (build-only, not applied to any existing hero). */
+.hero-indigo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #FFFFFF;
+  background: var(--gradient-hero);
+}
+.hero-indigo .eyebrow-indigo {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+  color: #A79BFF;
+}
+
+/* Thin brand rule / divider. */
+.rule-brand {
+  height: 1px;
+  border: 0;
+  background: var(--gradient-brand);
+  opacity: 0.6;
+}
+
+/* ============================================================================
+   6. Responsive
+   ========================================================================== */
+
+@media (max-width: 799px) {
+  .card-premium { padding: 22px 18px; }
+  .glass-panel,
+  .result-card { padding: 20px 18px; }
+  .button-indigo,
+  .button-indigo-secondary { min-height: 48px; width: 100%; }
+  /* Never shrink form text below 16px — the iOS zoom guarantee holds at
+     every breakpoint. */
+  .input-premium,
+  .select-premium,
+  .textarea-premium { font-size: 16px; }
+}
+
+/* ============================================================================
+   7. Reduced motion — belt-and-suspenders alongside the global block in
+   globals.css. Neutralises everything introduced above.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-drift {
+    animation: none !important;
+    background-position: 0% 50% !important;
+  }
+  .result-reveal { animation: none !important; opacity: 1; transform: none; }
+  [data-reveal].reveal-lift,
+  [data-reveal].reveal-lift.is-revealed {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    transition-delay: 0ms !important;
+  }
+  [data-reveal].reveal-delay-1,
+  [data-reveal].reveal-delay-2,
+  [data-reveal].reveal-delay-3 { transition-delay: 0ms !important; }
+  .card-premium,
+  .metric-card,
+  .hover-lift,
+  .button-indigo,
+  .button-indigo-secondary { transition: none !important; }
+  .card-premium:hover,
+  .metric-card:hover,
+  .hover-lift:hover,
+  .button-indigo:hover,
+  .button-indigo-secondary:hover { transform: none !important; }
+}
+
+/* ============================================================================
+   8. Forced colours / high contrast
+   ========================================================================== */
+
+@media (forced-colors: active) {
+  .card-premium,
+  .glass-panel,
+  .result-card,
+  .metric-card,
+  .input-premium,
+  .select-premium,
+  .textarea-premium { border: 1px solid CanvasText; }
+  .gradient-text { color: CanvasText; -webkit-text-fill-color: CanvasText; }
+}

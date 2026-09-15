@@ -6,6 +6,7 @@ import { ChatProvider } from "@/components/chat-widget";
 import { business } from "@/lib/site";
 import "./globals.css";
 import "./portfolio.css";
+import "./theme-indigo.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"], weight: ["400", "500", "600"], display: "swap" });
 const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["500", "600", "700", "800"], display: "swap" });
