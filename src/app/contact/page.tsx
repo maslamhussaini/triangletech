@@ -1,14 +1,14 @@
 import { ContactDetails } from "@/components/page-parts";
-import { RequestForm } from "@/components/request-form";
-import { pageMetadata, services } from "@/lib/site";
+import { DemoRequestForm } from "@/components/demo-form";
+import { pageMetadata, demoOptions } from "@/lib/site";
 
-export const metadata = pageMetadata("Contact & Start Your Project", "Contact TriangleTech to start your project. Call, WhatsApp or send an email with your requirements and we'll get back to you.", "/contact");
+export const metadata = pageMetadata("Book a Free Demo", "Book a free TriangleTech product demo. Call, WhatsApp or send an email with your business details and we'll walk you through OrderMate, FBR Digital, WaterFlow or Shopify Solutions.", "/contact");
 
 export default async function Contact({ searchParams }: { searchParams: Promise<{ interest?: string }> }) {
   const params = await searchParams;
-  const interest = services.find(s => s.title === params.interest)?.title ?? params.interest ?? "";
+  const interest = demoOptions.find(o => o === params.interest) ?? params.interest ?? "";
   return <section className="contact-page"><div className="container contact-grid">
-    <div className="contact-copy"><span className="eyebrow light">CONTACT TRIANGLETECH</span><h1>Have a business idea<br /><em>or a process to improve?</em></h1><p>Let&apos;s turn your business requirements into a reliable digital solution. Choose the way you prefer to get in touch.</p><ContactDetails /></div>
-    <RequestForm key={interest || "general"} initialInterest={interest} />
+    <div className="contact-copy"><span className="eyebrow light">BOOK A FREE DEMO</span><h1>See TriangleTech<br /><em>in action.</em></h1><p>Book a personalized walkthrough and discover which solution fits your business. Choose the way you prefer to get in touch.</p><ContactDetails /></div>
+    <DemoRequestForm key={interest || "general"} initialInterest={interest} />
   </div></section>;
 }

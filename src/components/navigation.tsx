@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react";
 import { Brand } from "./brand";
 import { Icon } from "./icons";
-import { navigation } from "@/lib/site";
+import { business, navigation } from "@/lib/site";
 
 const NavigationContext = createContext<(href: string) => void>(() => {});
 
@@ -57,7 +57,7 @@ export function Header() {
       <nav aria-label="Main navigation" className="desktop-nav">
         {navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <RouteLink className="button button-accent header-cta" href="/contact">Start Your Project</RouteLink>
+      <RouteLink className="button button-accent header-cta" href="/contact">Book a Free Demo</RouteLink>
       <button ref={toggle} className="menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d={open ? "m6 6 12 12M6 18 18 6" : "M4 7h16M4 12h16M4 17h16"} /></svg>
       </button>
@@ -66,7 +66,8 @@ export function Header() {
       if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node) && event.relatedTarget !== toggle.current) setOpen(false);
     }}>
       <nav aria-label="Mobile navigation">{navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} onNavigate={() => setOpen(false)}>{item.label}<Icon name="arrow" /></RouteLink>)}</nav>
-      <RouteLink className="button button-accent" href="/contact" onNavigate={() => setOpen(false)}>Start Your Project</RouteLink>
+      <RouteLink className="button button-accent" href="/contact" onNavigate={() => setOpen(false)}>Book a Free Demo</RouteLink>
+      <a className="mobile-nav-whatsapp" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Support"><Icon name="chat" />WhatsApp Support</a>
     </div>
   </header>;
 }

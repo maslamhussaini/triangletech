@@ -35,8 +35,8 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
         <h1>{service.title}</h1>
         <p>{service.description}</p>
         <div className="hero-actions">
-          <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(service.title)}`}>Start a project<Icon name="arrow" /></RouteLink>
-          <a className="button button-email" href={business.whatsapp} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp us</a>
+          <RouteLink className="button button-accent" href="/contact?interest=Custom%20Software">Book a Demo<Icon name="arrow" /></RouteLink>
+          <a className="button button-email" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Support</a>
         </div>
       </div>
     </div></section>

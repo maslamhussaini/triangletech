@@ -1,0 +1,14 @@
+/ -> 200
+/products/ordermate -> 200
+/products/fbr-digital -> 200
+/products/waterflow -> 200
+/products/shopify-solutions -> 200
+/case-studies/umar-juma-transport -> ERROR
+/case-studies/naymil -> ERROR
+/case-studies/basma-al-madina-transport -> 200
+/about -> ERROR
+/contact -> 200
+/services -> 200
+/case-studies -> 200
+/products -> 200
+/faq -> 200

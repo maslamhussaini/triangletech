@@ -1,0 +1,38 @@
+.portfolio-section .section-heading p { margin-top:10px; color:var(--muted); font-size:14px; line-height:1.7; max-width:560px; }
+
+.portfolio-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
+
+.portfolio-card { display:flex; flex-direction:column; background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 1px 2px #0207150a; transition:transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+.portfolio-card:hover { transform:translateY(-4px); box-shadow:0 24px 48px #02071518; border-color:#c7d1e8; }
+
+/* Three equal cards read cleaner than a spanning hero card, which left a
+   half-empty second row at desktop widths. */
+.portfolio-card-featured { border-color:#c7d1e8; }
+
+.portfolio-preview-frame { margin:14px; border-radius:10px; }
+.portfolio-preview-body { padding:0; line-height:0; }
+.portfolio-mockup { display:block; width:100%; height:auto; transition:transform .35s ease; }
+.portfolio-card:hover .portfolio-mockup { transform:scale(1.03); }
+
+.portfolio-card-body { padding:6px 24px 26px; display:flex; flex-direction:column; flex:1; }
+.portfolio-card-heading { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.portfolio-card-heading .eyebrow { margin:0; }
+.portfolio-badge { display:inline-flex; align-items:center; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); background:#eef1f9; border:1px solid var(--border); border-radius:99px; padding:4px 10px; }
+
+.portfolio-card-body h3 { font-size:20px; margin-top:10px; }
+.portfolio-card-body p { margin-top:8px; color:var(--slate,var(--muted)); font-size:14px; line-height:1.7; }
+
+.portfolio-card-actions { margin-top:auto; padding-top:22px; display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+.portfolio-card-actions .button { min-height:44px; }
+.portfolio-card-actions .text-link { display:inline-flex; align-items:center; gap:8px; }
+
+@media(max-width:1100px) {
+  .portfolio-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+
+@media(max-width:799px) {
+  .portfolio-grid { grid-template-columns:1fr; gap:18px; }
+  .portfolio-preview-frame { margin:12px; }
+  .portfolio-card-body { padding:4px 18px 22px; }
+  .portfolio-card-actions .button,.portfolio-card-actions .text-link { width:100%; justify-content:center; }
+}

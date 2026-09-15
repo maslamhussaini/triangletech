@@ -19,24 +19,13 @@ export function Icon({ name, className = "" }: { name: string; className?: strin
     shield: <><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5Z" /><path d="m9 12 2 2 4-4" /></>,
     cloud: <path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17.2 8.6 4.5 4.5 0 0 1 16.5 18Z" />,
     building: <><rect x="4" y="10" width="7" height="11" /><rect x="13" y="4" width="7" height="17" /><path d="M6.5 13h2m-2 3h2m9-8h2m-2 3h2m-2 3h2m-2 3h2" /></>,
+    close: <path d="M6 6l12 12M6 18 18 6" />,
+    send: <path d="M4 12 20 4l-6 16-3-7-7-3Z" />,
+    external: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6M10 14 21 3" /></>,
   };
   return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] ?? paths.custom}</svg>;
 }
 
 export function ServiceVisual({ kind }: { kind: string }) {
   return <span className="service-visual" aria-hidden="true"><Icon name={kind} /></span>;
-}
-
-export function HeroEcosystem() {
-  return <div className="hero-ecosystem" aria-hidden="true">
-    <div className="eco-grid" />
-    <div className="eco-card eco-card-ordermate"><span className="eco-dot" /><strong>OrderMate</strong><span>Sales up 12% this week</span></div>
-    <div className="eco-card eco-card-fbr"><span className="eco-dot" /><strong>FBR Digital</strong><span>18 invoices submitted</span></div>
-    <div className="eco-card eco-card-waterflow"><span className="eco-dot" /><strong>WaterFlow</strong><span>6 deliveries scheduled</span></div>
-    <svg className="eco-core" viewBox="0 0 200 200" fill="none">
-      <path d="M100 20 176 160H24Z" stroke="currentColor" strokeWidth="1.4" opacity=".5" />
-      <path d="M100 60 144 140H56Z" fill="currentColor" opacity=".14" />
-      <circle cx="100" cy="100" r="92" stroke="currentColor" strokeOpacity=".18" />
-    </svg>
-  </div>;
 }
