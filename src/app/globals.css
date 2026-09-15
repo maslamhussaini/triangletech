@@ -20,7 +20,12 @@ a { text-decoration:none; color:inherit; }
 button,input,textarea,select { font:inherit; }
 button,a,input,select,textarea,summary { -webkit-tap-highlight-color:transparent; }
 button { cursor:pointer; }
-button:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid var(--blue); outline-offset:3px; }
+/* Brand focus ring. --brand-secondary (#7C5CFF, from theme-indigo.css) is the one
+   indigo value that clears the 3:1 non-text contrast minimum on BOTH the light
+   paper ground (4.37:1) and the dark navy sections (4.04:1 on --navy), so a
+   single site-wide rule stays visible everywhere without a per-section override.
+   The literal fallback keeps the ring working if theme-indigo.css fails to load. */
+button:focus-visible,a:focus-visible,summary:focus-visible { outline:3px solid var(--brand-secondary,#7C5CFF); outline-offset:3px; }
 address { font-style:normal; }
 ::selection { background:var(--cyan); color:var(--navy); }
 .container { width:min(1248px,calc(100% - 96px)); margin-inline:auto; }

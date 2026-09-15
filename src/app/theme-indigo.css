@@ -733,3 +733,269 @@ button.card-premium:focus-visible {
   .textarea-premium { border: 1px solid CanvasText; }
   .gradient-text { color: CanvasText; -webkit-text-fill-color: CanvasText; }
 }
+
+/* ============================================================================
+   9. /tools landing page (Phase 1A)
+   Scoped entirely to `.tools-*` class names — nothing here touches an existing
+   component. Built on the primitives above (.card-premium, .glass-panel,
+   .button-indigo, .metric-card, .hero-indigo, .gradient-drift).
+   ========================================================================== */
+
+.tools-hero { padding-block: 84px 92px; }
+.tools-hero-inner {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 56px;
+  align-items: center;
+}
+.tools-hero-copy { max-width: 620px; }
+.tools-hero-copy h1 {
+  font-size: clamp(40px, 4.4vw, 60px);
+  line-height: 1.08;
+  letter-spacing: -.03em;
+  margin: 20px 0;
+  color: #FFFFFF;
+}
+/* Light indigo tint rather than .gradient-text: on this dark ground a clipped
+   #4F46E5 gradient would drop below AA. */
+.tools-hero-accent { color: #A79BFF; }
+.tools-hero-copy > p {
+  max-width: 520px;
+  color: var(--text-inverse-soft);
+  font-size: 15px;
+  line-height: 1.85;
+}
+.tools-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 18px;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.tools-hero-visual { position: relative; display: grid; place-items: center; min-height: 240px; }
+.tools-orb {
+  position: absolute;
+  z-index: 0;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  filter: blur(46px);
+  opacity: .5;
+  pointer-events: none;
+}
+.tools-hero-panel {
+  position: relative;
+  z-index: 1;
+  width: min(360px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.tools-chip { display: flex; align-items: center; gap: 14px; }
+.tools-chip-label {
+  flex: 0 0 66px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-inverse-soft);
+}
+.tools-chip-bar {
+  flex: 1;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .12);
+  position: relative;
+  overflow: hidden;
+}
+.tools-chip-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: var(--gradient-brand);
+}
+.tools-chip-bar[data-fill="w1"]::after { width: 46%; }
+.tools-chip-bar[data-fill="w2"]::after { width: 68%; }
+.tools-chip-bar[data-fill="w3"]::after { width: 88%; }
+
+/* --- Directory ------------------------------------------------------------
+   One content column today. A later sidebar only needs this one declaration
+   overridden (e.g. `minmax(0,1fr) 300px`) — sections below already sit inside
+   the column, so no section markup would have to change. */
+.tools-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  padding-block: 64px 80px;
+  scroll-margin-top: 110px;
+}
+.tools-main > * { min-width: 0; }
+.tools-section-note {
+  max-width: 640px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.tools-group { margin-top: 44px; }
+.tools-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  color: var(--brand-strong);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* --- Tool card ------------------------------------------------------------
+   Non-interactive by design in Phase 1A: no href exists, so the card is an
+   <article> and is never tabbable. Hover elevation comes from .card-premium. */
+.tools-grid .tool-card { gap: 0; }
+.tool-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.tool-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.tool-card-icon .icon { width: 23px; height: 23px; }
+.tool-card-category {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.tool-card-title { font-size: 18px; font-weight: 700; line-height: 1.35; color: var(--text-primary); }
+.tool-card-description {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Status badge: text label first, colour second, plus a solid-vs-outline shape
+   difference so the two states are distinguishable in greyscale. */
+.tool-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 99px;
+  border: 1px solid var(--border-brand);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.tool-badge-first {
+  border-color: transparent;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+
+.tool-card-featured { grid-column: span 2; }
+.tool-card-featured .tool-card-icon {
+  background: var(--brand);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+.tool-card-featured .tool-card-title { font-size: 22px; }
+.tool-card-featured .tool-card-description { font-size: 15px; max-width: 58ch; }
+
+/* --- Value props ---------------------------------------------------------- */
+.tools-values { margin-top: 64px; }
+.tools-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  color: var(--brand-strong);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+.tools-values-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tools-value-title { font-size: 15px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
+.tools-value-note { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+/* --- Restrained product link-out ------------------------------------------ */
+.tools-next {
+  margin-top: 64px;
+  padding: 28px;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-brand);
+}
+.tools-next-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+.tools-next-title { font-size: 22px; font-weight: 700; color: var(--brand-strong); }
+.tools-next p {
+  margin-top: 8px;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.tools-next-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.tools-next-actions .button-indigo-secondary { background: var(--surface-elevated); }
+
+/* --- Responsive ----------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tools-values-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .tools-hero-inner { grid-template-columns: 1fr; gap: 40px; }
+  .tools-hero-visual { display: none; }
+}
+@media (max-width: 799px) {
+  .tools-hero { padding-block: 48px 56px; }
+  .tools-hero-copy h1 { font-size: 40px; margin: 16px 0; }
+  .tools-hero-actions { flex-direction: column; align-items: stretch; }
+  .tools-main { padding-block: 44px 56px; }
+  .tools-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .tool-card-featured { grid-column: auto; }
+  .tools-values-grid { grid-template-columns: minmax(0, 1fr); }
+  .tools-next { margin-top: 48px; padding: 22px 18px; }
+  .tools-next-actions { width: 100%; flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tools-orb { animation: none !important; background-position: 0% 50% !important; }
+}
