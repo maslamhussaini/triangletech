@@ -1072,7 +1072,7 @@ button.card-premium:focus-visible {
 
 @media (max-width: 799px) {
   .mobile-navigation {
-    background: rgba(250, 251, 255, 0.96);
+    background: #fafcff;
     border-bottom: 1px solid var(--border-brand);
     box-shadow: 0 20px 40px rgba(27, 27, 75, 0.14);
   }
@@ -1082,15 +1082,6 @@ button.card-premium:focus-visible {
   .mobile-navigation .button-indigo { margin-top: 20px; }
   .mobile-nav-whatsapp { border-color: var(--border-brand); color: var(--brand-strong); }
   .mobile-nav-whatsapp:hover { background: var(--brand-soft); }
-}
-@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  @media (max-width: 799px) {
-    .mobile-navigation {
-      background: rgba(250, 251, 255, 0.9);
-      -webkit-backdrop-filter: blur(18px) saturate(150%);
-      backdrop-filter: blur(18px) saturate(150%);
-    }
-  }
 }
 
 /* --- 10.3 Homepage hero: layered illuminated indigo glass ----------------
