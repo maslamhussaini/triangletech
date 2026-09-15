@@ -999,3 +999,1026 @@ button.card-premium:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .tools-orb { animation: none !important; background-position: 0% 50% !important; }
 }
+
+/* ============================================================================
+   10. Phase 0B â€” global Indigo activation
+   ----------------------------------------------------------------------------
+   Makes the Indigo identity dominant on shared/company chrome: header, hero,
+   homepage section rhythm, global CTAs, shared page intro, footer.
+
+   Deliberately NOT touched anywhere below:
+     .accent-cyan/-blue/-emerald/-violet and the --dot mechanism,
+     .button-accent / .button-outline-dark rule definitions,
+     .selector-card::before accent glow, .showcase-tab.is-active,
+     .product-features .icon, every .mock-* / .om-* / .fbr-* / .wf-* / .shop-*
+     rule, .product-detail-hero, and the portfolio section's own identity.
+   Products stay contextual accents INSIDE indigo-branded chrome.
+   ========================================================================== */
+
+/* --- 10.1 Header: premium glass ------------------------------------------ */
+
+.site-header {
+  background: rgba(247, 248, 255, 0.78);
+  border-bottom: 1px solid rgba(79, 70, 229, 0.14);
+  box-shadow: 0 1px 0 rgba(79, 70, 229, 0.05);
+  transition:
+    background-color var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft);
+}
+/* Opaque fallback stays above; blur only where supported, so the nav labels
+   never lose contrast on engines without backdrop-filter. */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header {
+    background: rgba(247, 248, 255, 0.62);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+  }
+}
+/* Light-catching inner highlight along the top edge of the glass bar. */
+.site-header::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -1px 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(79, 70, 229, 0.3) 50%, transparent);
+  pointer-events: none;
+}
+/* Scrolled state: slightly denser glass + a restrained indigo shadow. */
+.site-header.is-scrolled {
+  background: rgba(247, 248, 255, 0.92);
+  border-bottom-color: var(--border-brand);
+  box-shadow: 0 10px 30px rgba(27, 27, 75, 0.09);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header.is-scrolled { background: rgba(247, 248, 255, 0.84); }
+}
+
+/* Nav readability against the glass: #3A3A63 is ~9:1 on the header ground. */
+.desktop-nav a { color: #3A3A63; }
+.desktop-nav a:hover,
+.desktop-nav a[aria-current="page"] {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.brand-mark { color: var(--brand); }
+.menu-toggle { border-color: var(--border-brand); color: var(--brand-strong); }
+.menu-toggle:hover { background: var(--brand-soft); }
+
+/* Header CTA keeps its compact desktop footprint. */
+.header-cta { padding: 11px 20px; box-shadow: 0 6px 18px rgba(79, 70, 229, 0.26); }
+
+/* --- 10.2 Mobile menu panel: same glass/indigo system --------------------- */
+
+@media (max-width: 799px) {
+  .mobile-navigation {
+    background: rgba(250, 251, 255, 0.96);
+    border-bottom: 1px solid var(--border-brand);
+    box-shadow: 0 20px 40px rgba(27, 27, 75, 0.14);
+  }
+  .mobile-navigation nav a { border-bottom-color: rgba(79, 70, 229, 0.14); }
+  .mobile-navigation nav a[aria-current="page"] { color: var(--brand); }
+  /* Preserves the spacing the old `.mobile-navigation .button` rule gave. */
+  .mobile-navigation .button-indigo { margin-top: 20px; }
+  .mobile-nav-whatsapp { border-color: var(--border-brand); color: var(--brand-strong); }
+  .mobile-nav-whatsapp:hover { background: var(--brand-soft); }
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 799px) {
+    .mobile-navigation {
+      background: rgba(250, 251, 255, 0.9);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+      backdrop-filter: blur(18px) saturate(150%);
+    }
+  }
+}
+
+/* --- 10.3 Homepage hero: layered illuminated indigo glass ----------------
+   Depth model, back to front:
+     1. background   â€” near-black indigo ground (--gradient-hero)
+     2. ambient glow â€” ::before sheet + two blurred radial orbs
+     3. glass surfaceâ€” .hero-visual-frame (translucent + backdrop blur)
+     4. content      â€” copy and the existing HeroVisual, untouched
+     5. highlight    â€” inset top-edge light catch on the glass frame
+   ------------------------------------------------------------------------ */
+
+.home-hero-indigo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(1100px 620px at 72% 6%, rgba(79, 70, 229, 0.30) 0%, transparent 62%),
+    radial-gradient(760px 520px at 8% 96%, rgba(124, 92, 255, 0.16) 0%, transparent 66%),
+    linear-gradient(165deg, #15143C 0%, #0B0A22 58%, #08071A 100%);
+  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
+}
+/* Layer 2a: a very soft full-width illumination sheet sitting above the
+   ground but below every orb and all content. */
+.home-hero-indigo::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto -10%;
+  height: 90%;
+  z-index: -2;
+  background: radial-gradient(60% 70% at 62% 20%, rgba(124, 92, 255, 0.22) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* Layer 5 (hero scale): a hairline of caught light along the very top edge. */
+.home-hero-indigo::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  z-index: 2;
+  background: linear-gradient(90deg, transparent 0%, rgba(167, 155, 255, 0.5) 45%, transparent 100%);
+  pointer-events: none;
+}
+.home-hero-indigo .hero-grid { position: relative; z-index: 1; }
+
+/* Layer 2b: two ambient orbs. Decorative, pointer-inert, behind all content.
+   .hero-orb-a carries .gradient-drift, so the brand gradient inside it moves
+   across ~26s â€” the only looping motion in the hero. */
+.hero-orb {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(84px);
+}
+.hero-orb-a {
+  width: 520px;
+  height: 520px;
+  top: -190px;
+  right: -60px;
+  opacity: 0.42;
+}
+.hero-orb-b {
+  width: 420px;
+  height: 420px;
+  bottom: -230px;
+  left: -150px;
+  opacity: 0.26;
+  background: radial-gradient(circle, #7C5CFF 0%, transparent 68%);
+}
+
+.home-hero-indigo .eyebrow.light { color: #A79BFF; }
+.home-hero-indigo .status-dot { background: #A79BFF; }
+/* Light indigo tint, not clipped .gradient-text: a #4F46E5 gradient would fall
+   below AA on this dark ground (same call as the /tools hero). */
+.hero-accent-phrase { color: #A79BFF; }
+.home-hero-indigo .hero-copy > p { color: var(--text-inverse-soft); }
+.home-hero-indigo .hero-support {
+  border-top-color: rgba(124, 92, 255, 0.28);
+  color: #A7ADD9;
+}
+.home-hero-indigo .hero-support span + span { border-left-color: rgba(124, 92, 255, 0.28); }
+.home-hero-indigo .light-link { color: #D5D8FF; border-color: rgba(124, 92, 255, 0.45); }
+.home-hero-indigo .light-link:hover { color: #FFFFFF; }
+
+/* --- Hero software visual: illuminated deep-indigo glass frame ------------
+   The existing HeroVisual content (browser frame + FBR/WaterFlow cards +
+   floats) is NOT changed â€” only the frame and lighting around it. This is the
+   brightest object in the hero: it gets its own concentrated glow (::before),
+   a translucent blurred glass body, a light-catching 1px border, an inset top
+   highlight, and a three-layer outer shadow. */
+
+.hero-visual-frame {
+  position: relative;
+  padding: 20px;
+  border-radius: 20px;
+  overflow: visible; /* the layered FBR/WaterFlow cards still break the frame */
+  background: linear-gradient(150deg, rgba(124, 92, 255, 0.14) 0%, rgba(20, 19, 58, 0.5) 55%, rgba(12, 11, 38, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(124, 92, 255, 0.1),
+    0 2px 8px rgba(6, 5, 24, 0.5),
+    0 26px 60px rgba(6, 5, 24, 0.55),
+    0 0 90px rgba(79, 70, 229, 0.22);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-visual-frame {
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+  }
+}
+/* A second, tighter glow sitting directly behind the frame, so the software
+   preview reads as the lit focal point rather than the section as a whole. */
+.hero-visual-frame::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -16% -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 55% 45%, rgba(124, 92, 255, 0.5) 0%, rgba(79, 70, 229, 0.26) 38%, transparent 72%);
+  filter: blur(58px);
+  pointer-events: none;
+}
+/* Edge illumination: a brighter arc of light across the frame's top edge. */
+.hero-visual-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, transparent 4%, rgba(255, 255, 255, 0.5) 50%, transparent 96%);
+  pointer-events: none;
+}
+.hero-visual-frame .hero-visual { margin: 0; }
+.hero-visual-frame .browser-frame {
+  border-color: rgba(167, 155, 255, 0.3);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 10px 24px rgba(6, 5, 24, 0.5),
+    0 34px 74px rgba(6, 5, 24, 0.55);
+}
+/* The layered product cards become small glass chips in the same light. */
+.hero-visual-frame .hero-card,
+.hero-visual-frame .hero-float {
+  background: rgba(24, 22, 66, 0.78);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 16px 34px rgba(6, 5, 24, 0.5);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-visual-frame .hero-card,
+  .hero-visual-frame .hero-float {
+    background: rgba(24, 22, 66, 0.6);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+}
+
+/* --- 10.4 Stats strip: light indigo metric band -------------------------- */
+
+.stats-strip-indigo {
+  background: var(--gradient-soft);
+  color: var(--text-primary);
+  padding: 52px 0;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.12);
+}
+.stats-strip-indigo .stat-metric {
+  padding-left: 20px;
+  border-left: 1px solid rgba(79, 70, 229, 0.2);
+}
+.stats-strip-indigo .stats-grid strong {
+  font-size: 26px;
+  line-height: 1.25;
+  /* Deep half of the brand ramp only: both stops clear AA on this light band. */
+  background-image: linear-gradient(120deg, #312E81 0%, #4F46E5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: var(--brand-strong);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .stats-strip-indigo .stats-grid strong { color: transparent; -webkit-text-fill-color: transparent; }
+}
+.stats-strip-indigo .stats-grid span { color: var(--text-secondary); font-size: 12.5px; }
+
+/* --- 10.5 Light sections: generic card depth ----------------------------- */
+
+.trust-section { background: var(--surface-soft); }
+.trust-section .eyebrow,
+.services-section .eyebrow,
+.finder-section .eyebrow,
+.how-it-works-section .eyebrow,
+.technology-section .eyebrow,
+.faq-preview .eyebrow,
+.products-section .eyebrow,
+.video-section .eyebrow { color: var(--brand-strong); }
+
+.why-card,
+.feature-card,
+.service-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--dur-base) var(--ease-out-soft),
+    box-shadow var(--dur-base) var(--ease-out-soft),
+    border-color var(--dur-base) var(--ease-out-soft);
+}
+.why-card:hover,
+.feature-card:hover,
+.service-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-elevated);
+  border-color: var(--border-brand);
+}
+.why-card .icon { color: var(--brand); }
+.service-visual { background: var(--brand-soft); color: var(--brand); }
+.service-card-body .text-link,
+.trust-section .text-link,
+.services-section .text-link,
+.faq-preview .text-link { color: var(--brand); border-color: var(--border-brand); }
+
+/* --- 10.6 Soft indigo-tinted sections ------------------------------------ */
+
+.products-section,
+.finder-section,
+.how-it-works-section { background: var(--gradient-soft); }
+
+.finder-panel {
+  border-radius: var(--radius-md);
+  border-color: var(--border-soft);
+  box-shadow: var(--shadow-card);
+}
+.finder-progress span { background: var(--brand); }
+.finder-option:hover { border-color: var(--brand); background: var(--brand-soft); }
+.finder-option .icon { color: var(--brand); }
+
+.process-grid li { border-top-color: rgba(79, 70, 229, 0.28); }
+.process-grid li > span { color: var(--brand); }
+
+/* --- 10.7 Deep indigo product stages (chrome only, accents untouched) ---- */
+
+.showcase-section,
+.device-section {
+  background: linear-gradient(170deg, #17164A 0%, #0E0E2B 100%);
+  border-block: 1px solid rgba(124, 92, 255, 0.16);
+}
+.showcase-section .eyebrow,
+.device-section .eyebrow { color: #A79BFF; }
+.showcase-section .section-lead,
+.device-section .section-lead { color: var(--text-inverse-soft); }
+.showcase-tab { background: rgba(255, 255, 255, 0.05); border-color: rgba(124, 92, 255, 0.24); color: #C9CCF5; }
+.showcase-tab:hover { background: rgba(255, 255, 255, 0.1); }
+.device-tab { border-color: rgba(124, 92, 255, 0.28); color: #C9CCF5; }
+
+/* Restrained illuminated glass stage around the software preview: same layer
+   stack as the hero frame, dialled down (this section is secondary). */
+.device-section .device-stage {
+  position: relative;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(150deg, rgba(124, 92, 255, 0.1) 0%, rgba(18, 17, 52, 0.45) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 24px 56px rgba(8, 6, 32, 0.5),
+    0 0 70px rgba(79, 70, 229, 0.16);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .device-section .device-stage {
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    backdrop-filter: blur(16px) saturate(140%);
+  }
+}
+
+/* --- 10.8 Technology / FAQ indigo touches -------------------------------- */
+
+.technology-section .tech-pill-list li {
+  border-color: var(--border-soft);
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft);
+}
+.technology-section .tech-pill-list li:hover { border-color: var(--border-brand); color: var(--brand-strong); }
+.faq-preview .faq-number,
+.faq-preview .faq-plus { color: var(--brand); }
+.faq-preview .faq-list details { border-bottom-color: rgba(79, 70, 229, 0.16); }
+.faq-preview .faq-list details:first-child { border-top-color: rgba(79, 70, 229, 0.16); }
+
+/* --- 10.9 Global CTA band: deep indigo ----------------------------------- */
+
+.contact-cta-indigo {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 480px at 78% -20%, rgba(79, 70, 229, 0.32) 0%, transparent 62%),
+    linear-gradient(165deg, #15143C 0%, #0B0A22 100%);
+}
+/* Top edge light-catch, matching the hero's. */
+.contact-cta-indigo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167, 155, 255, 0.45) 50%, transparent);
+  pointer-events: none;
+}
+.cta-orb {
+  position: absolute;
+  z-index: -1;
+  width: 420px;
+  height: 420px;
+  top: -190px;
+  right: -80px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+.contact-cta-indigo .eyebrow.light { color: #A79BFF; }
+.contact-cta-indigo .cta-phone { color: var(--text-inverse-soft); }
+.contact-cta-indigo .cta-phone:hover { color: #FFFFFF; }
+
+/* --- 10.10 Footer: premium deep indigo ----------------------------------- */
+
+.site-footer-indigo {
+  background:
+    radial-gradient(circle at 12% -30%, rgba(79, 70, 229, 0.28) 0%, transparent 55%),
+    linear-gradient(170deg, #14133A 0%, #0B0B22 100%);
+  color: #DCDDF6;
+  border-top: 1px solid rgba(124, 92, 255, 0.2);
+}
+.site-footer-indigo .brand { color: #FFFFFF; }
+.site-footer-indigo .brand-mark { color: #A79BFF; }
+.site-footer-indigo .brand-name > span { color: #9CA1D0; }
+.site-footer-indigo .footer-grid h2 {
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
+}
+.site-footer-indigo .footer-grid p { color: #A9AEDA; }
+.site-footer-indigo .footer-contact address { color: #A9AEDA; }
+.site-footer-indigo .footer-grid nav > a,
+.site-footer-indigo .footer-contact > a {
+  color: #DCDDF6;
+  padding: 3px 0;
+  transition: color var(--dur-fast) var(--ease-out-soft);
+}
+.site-footer-indigo .footer-grid a:hover { color: #A79BFF; }
+.site-footer-indigo .footer-grid a:focus-visible { outline-color: #A79BFF; }
+.site-footer-indigo .footer-social-link { border-color: rgba(124, 92, 255, 0.3); color: #A9AEDA; }
+.site-footer-indigo .footer-bottom {
+  color: #8C91BF;
+  border-top-color: rgba(124, 92, 255, 0.2);
+}
+
+/* --- 10.11 Shared page intro (every non-home page) ----------------------- */
+
+.page-intro-indigo {
+  position: relative;
+  background: var(--gradient-soft);
+  border-bottom: 1px solid rgba(79, 70, 229, 0.16);
+}
+.page-intro-indigo .eyebrow { color: var(--brand-strong); }
+/* Subtle gradient underline â€” decorative, sits under the h1 block. */
+.page-intro-indigo h1::after {
+  content: "";
+  display: block;
+  width: 84px;
+  height: 3px;
+  margin-top: 20px;
+  border-radius: 99px;
+  background: var(--gradient-brand);
+}
+.page-intro-indigo p { color: var(--text-secondary); margin-top: 18px; }
+
+/* --- 10.12 Contact page hero + request panel ----------------------------- */
+
+.contact-page { background: var(--gradient-hero); }
+.contact-page .eyebrow { color: #A79BFF; }
+.contact-page .contact-copy > p { color: var(--text-inverse-soft); }
+.contact-page .contact-details .icon { color: #A79BFF; }
+.contact-page .contact-details h3 { color: #A79BFF; }
+.contact-page .contact-details address { color: var(--text-inverse-soft); }
+.contact-page .contact-details a:hover { color: #FFFFFF; }
+
+.request-panel {
+  border-radius: var(--radius-lg);
+  border-color: var(--border-soft);
+  box-shadow: var(--shadow-elevated);
+}
+.request-panel .eyebrow { color: var(--brand-strong); }
+.request-panel .form-mark { border-color: var(--border-brand); color: var(--brand); }
+.contact-grid .request-panel { box-shadow: 0 24px 70px rgba(8, 6, 32, 0.45); }
+.request-panel .form-grid { gap: 16px 14px; }
+.request-panel .form-note { color: var(--text-muted); }
+.request-panel .form-intro { color: var(--text-secondary); }
+
+/* --- 10.13 Chat + floating CTA harmonisation ----------------------------- */
+/* Behaviour untouched â€” contrast/stacking only. The launcher keeps its cyan
+   identity but gains a ring so it stays separated from the new indigo footer;
+   .floating-whatsapp keeps --blue. z-index order is unchanged:
+   mobile-cta 35 < site-header 40 < floating-whatsapp 45 < chat 46. */
+
+.chat-launcher { box-shadow: 0 10px 26px rgba(8, 6, 32, 0.45), 0 0 0 4px rgba(124, 92, 255, 0.18); }
+.floating-whatsapp { box-shadow: 0 10px 26px rgba(8, 6, 32, 0.45), 0 0 0 4px rgba(124, 92, 255, 0.16); }
+.chat-header { background: var(--brand-strong); }
+.chat-header-brand .brand-mark { color: #A79BFF; }
+.chat-user { background: var(--brand-strong); }
+.chat-lead-submit { width: 100%; margin-top: 4px; }
+.chat-suggestion { color: var(--brand-strong); }
+.chat-suggestion:hover { border-color: var(--brand); background: var(--brand-soft); }
+.chat-minibar { background: var(--brand-strong); }
+.chat-minibar .icon { color: #A79BFF; }
+
+@media (max-width: 799px) {
+  .mobile-cta { border-top-color: var(--border-brand); }
+  .mobile-cta a { background: var(--brand-strong); }
+  .mobile-cta a + a { background: var(--brand); }
+}
+
+/* --- 10.14 Responsive ---------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .hero-orb-a { width: 340px; height: 340px; right: -120px; }
+  .hero-orb-b { width: 280px; height: 280px; }
+}
+/* The inner .hero-visual is display:none from 900px down (globals.css), so the
+   glass frame must collapse with it rather than leave an empty lit box. */
+@media (max-width: 900px) {
+  .hero-visual-frame { display: none; }
+}
+@media (max-width: 799px) {
+  .stats-strip-indigo { padding: 38px 0; }
+  .stats-strip-indigo .stat-metric { padding-left: 14px; }
+  /* HeroVisual is display:none below 900px, so the frame collapses with it. */
+  .hero-visual-frame { padding: 0; background: none; border: 0; box-shadow: none; }
+  .hero-visual-frame::before,
+  .hero-visual-frame::after { display: none; }
+  .device-section .device-stage { padding: 14px; }
+  .page-intro-indigo h1::after { margin-top: 16px; }
+  .request-panel .form-actions .button-indigo { width: 100%; }
+}
+@media (max-width: 370px) {
+  .stats-strip-indigo .stat-metric { padding-left: 0; border-left: 0; }
+}
+
+/* --- 10.15 Reduced motion for everything added above --------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb,
+  .cta-orb { animation: none !important; background-position: 0% 50% !important; }
+  .site-header,
+  .why-card,
+  .feature-card,
+  .service-card,
+  .technology-section .tech-pill-list li { transition: none !important; }
+  .why-card:hover,
+  .feature-card:hover,
+  .service-card:hover { transform: none !important; }
+}
+
+/* ============================================================================
+   11. Phase 0B iteration 2 â€” LUMINOUS INDIGO GLASS
+   ----------------------------------------------------------------------------
+   Screenshot-driven corrections to section 10. Three things failed the bar on
+   the first pass and are fixed here:
+     a) the hero glass frame was dark-on-dark and read as nothing â€” the glass
+        body, border and edge highlight are all raised until the frame is
+        visibly a lit surface in front of the background;
+     b) the concentrated glow behind the software visual was too diffuse to
+        register as light â€” it is now tighter, brighter and double-layered;
+     c) the header was an opaque light band cutting across the hero â€” it is
+        now dark indigo glass that the hero reads through.
+   Section 10 is left intact; everything below overrides only what failed.
+   ========================================================================== */
+
+/* --- 11.1 Navigation: dark indigo glass, shared desktop/mobile DNA -------- */
+
+.site-header {
+  background: rgba(13, 12, 40, 0.72);
+  border-bottom: 1px solid rgba(167, 155, 255, 0.16);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 30px rgba(6, 5, 24, 0.18);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header {
+    background: rgba(13, 12, 40, 0.58);
+    -webkit-backdrop-filter: blur(26px) saturate(170%);
+    backdrop-filter: blur(26px) saturate(170%);
+  }
+}
+.site-header.is-scrolled {
+  background: rgba(11, 10, 34, 0.9);
+  border-bottom-color: rgba(167, 155, 255, 0.26);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 38px rgba(6, 5, 24, 0.4);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header.is-scrolled { background: rgba(11, 10, 34, 0.8); }
+}
+/* Light-catching hairline along the bar's bottom edge. */
+.site-header::after {
+  background: linear-gradient(90deg, transparent, rgba(167, 155, 255, 0.4) 50%, transparent);
+}
+
+.site-header .brand { color: #FFFFFF; }
+.site-header .brand-mark { color: #A79BFF; }
+.site-header .brand-name > span { color: #9CA1D0; }
+/* #C9CCF5 on the header glass is ~11:1 â€” comfortably AA for 13px nav labels. */
+.desktop-nav a { color: #C9CCF5; }
+.desktop-nav a:hover,
+.desktop-nav a[aria-current="page"] { color: #FFFFFF; border-bottom-color: #A79BFF; }
+.menu-toggle { border-color: rgba(167, 155, 255, 0.3); color: #E4E5FA; }
+.menu-toggle:hover { background: rgba(255, 255, 255, 0.08); }
+.site-header .button-indigo:focus-visible,
+.site-header a:focus-visible,
+.site-header button:focus-visible { outline-color: #C9CCF5; }
+
+@media (max-width: 799px) {
+  /* The mobile drawer is an intentional glass panel in the same DNA. */
+  .mobile-navigation {
+    background: rgba(13, 12, 40, 0.94);
+    border-bottom: 1px solid rgba(167, 155, 255, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 24px 50px rgba(6, 5, 24, 0.45);
+  }
+  .mobile-navigation nav a { color: #E4E5FA; border-bottom-color: rgba(167, 155, 255, 0.16); }
+  .mobile-navigation nav a[aria-current="page"] { color: #FFFFFF; }
+  .mobile-nav-whatsapp { border-color: rgba(167, 155, 255, 0.3); color: #E4E5FA; }
+  .mobile-nav-whatsapp:hover { background: rgba(255, 255, 255, 0.08); }
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  @media (max-width: 799px) {
+    .mobile-navigation {
+      background: rgba(13, 12, 40, 0.82);
+      -webkit-backdrop-filter: blur(26px) saturate(160%);
+      backdrop-filter: blur(26px) saturate(160%);
+    }
+  }
+}
+
+/* --- 11.2 Hero: stronger, more directional illumination ------------------ */
+
+.home-hero-indigo {
+  background:
+    radial-gradient(1200px 660px at 70% 2%, rgba(99, 88, 244, 0.40) 0%, transparent 60%),
+    radial-gradient(820px 560px at 4% 92%, rgba(124, 92, 255, 0.20) 0%, transparent 64%),
+    linear-gradient(165deg, #17163F 0%, #0C0B26 56%, #08071A 100%);
+}
+.home-hero-indigo::before {
+  background: radial-gradient(56% 64% at 66% 30%, rgba(124, 92, 255, 0.30) 0%, transparent 68%);
+}
+.hero-orb-a { opacity: 0.5; filter: blur(92px); }
+.hero-orb-b { opacity: 0.34; filter: blur(92px); }
+
+/* --- 11.3 Hero software visual: make the glass actually read as glass ----
+   The first pass was invisible because the frame body was darker than the
+   ground behind it. The body is now LIGHTER than its surroundings, the border
+   catches real light, and the glow behind it is tightened so it reads as a lit
+   object rather than a general wash. */
+
+.hero-visual-frame {
+  padding: 16px;
+  background: linear-gradient(150deg, rgba(150, 132, 255, 0.20) 0%, rgba(74, 66, 160, 0.14) 46%, rgba(30, 28, 78, 0.20) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 40px rgba(124, 92, 255, 0.12),
+    inset 0 -1px 0 rgba(124, 92, 255, 0.18),
+    0 2px 10px rgba(6, 5, 24, 0.45),
+    0 30px 70px rgba(6, 5, 24, 0.6),
+    0 0 120px rgba(99, 88, 244, 0.34);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-visual-frame {
+    -webkit-backdrop-filter: blur(26px) saturate(160%);
+    backdrop-filter: blur(26px) saturate(160%);
+  }
+}
+/* Concentrated glow directly behind the frame â€” tighter and brighter than the
+   hero's ambient wash, so the software preview is the lit focal point. */
+.hero-visual-frame::before {
+  inset: -10% -8%;
+  border-radius: 40%;
+  background:
+    radial-gradient(circle at 60% 40%, rgba(150, 132, 255, 0.72) 0%, rgba(79, 70, 229, 0.42) 34%, transparent 70%);
+  filter: blur(64px);
+}
+.hero-visual-frame::after {
+  height: 1px;
+  background: linear-gradient(90deg, transparent 2%, rgba(255, 255, 255, 0.75) 50%, transparent 98%);
+}
+/* The browser chrome inside the frame joins the indigo environment (chrome
+   only â€” the OrderMate dashboard content and its cyan accent are untouched). */
+.hero-visual-frame .browser-frame {
+  border-color: rgba(167, 155, 255, 0.34);
+  background: #0C0B26;
+}
+.hero-visual-frame .browser-chrome { background: #15143C; }
+.hero-visual-frame .chrome-url { background: rgba(10, 9, 32, 0.8); color: #A9AEDA; }
+.hero-visual-frame .chrome-dot { background: #3A3878; }
+.hero-visual-frame .hero-card,
+.hero-visual-frame .hero-float {
+  background: rgba(32, 30, 84, 0.82);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 18px 38px rgba(6, 5, 24, 0.55),
+    0 0 40px rgba(99, 88, 244, 0.18);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .hero-visual-frame .hero-card,
+  .hero-visual-frame .hero-float {
+    background: rgba(32, 30, 84, 0.66);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    backdrop-filter: blur(16px) saturate(150%);
+  }
+}
+.hero-visual-frame .hero-card-head { border-bottom-color: rgba(167, 155, 255, 0.2); }
+.hero-visual-frame .hero-card-foot { border-top-color: rgba(167, 155, 255, 0.2); }
+.hero-visual-frame .eco-dot { background: #A79BFF; }
+.hero-visual-frame .hero-float span:not(.eco-dot) { color: #B9BDE6; }
+.hero-visual-frame .hero-card-row { color: #C4C8EA; }
+.hero-visual-frame .hero-card-foot { color: #9096C4; }
+
+/* --- 11.4 Hero CTAs: enterprise controls, not novelty glow --------------- */
+
+.home-hero-indigo .hero-actions .button-indigo {
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 10px 28px rgba(79, 70, 229, 0.42);
+}
+.home-hero-indigo .hero-actions .button-indigo:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 14px 36px rgba(99, 88, 244, 0.55);
+}
+/* Secondary CTA becomes a true glass control rather than a bare outline. */
+.home-hero-indigo .hero-actions .button-indigo-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #FFFFFF;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .home-hero-indigo .hero-actions .button-indigo-secondary {
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+}
+.home-hero-indigo .hero-actions .button-indigo-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(167, 155, 255, 0.55);
+}
+
+/* --- 11.5 Second dark moment: the software showcase / device sections ----
+   Required rhythm has a selective dark indigo software section between the
+   light sections. Both already run dark; they now get the ambient-light layer
+   so they read as lit software stages rather than flat dark bands. */
+
+.showcase-section,
+.device-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(900px 520px at 80% -10%, rgba(99, 88, 244, 0.26) 0%, transparent 62%),
+    radial-gradient(700px 460px at 6% 104%, rgba(124, 92, 255, 0.14) 0%, transparent 66%),
+    linear-gradient(170deg, #17163F 0%, #0C0B26 100%);
+}
+.showcase-section::before,
+.device-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(167, 155, 255, 0.4) 50%, transparent);
+  pointer-events: none;
+}
+.showcase-section .container,
+.device-section .container { position: relative; z-index: 1; }
+
+.device-section .device-stage {
+  background: linear-gradient(150deg, rgba(150, 132, 255, 0.16) 0%, rgba(40, 37, 100, 0.16) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 26px 60px rgba(6, 5, 24, 0.55),
+    0 0 90px rgba(99, 88, 244, 0.22);
+}
+.device-tab.is-active { box-shadow: 0 6px 18px rgba(6, 5, 24, 0.4); }
+
+/* --- 11.6 Premium light cards: multi-layer shadow + indigo icon surface -- */
+
+.why-card,
+.feature-card,
+.service-card,
+.finder-panel,
+.guide-card,
+.case-card {
+  box-shadow:
+    0 1px 2px rgba(27, 27, 75, 0.05),
+    0 10px 28px rgba(27, 27, 75, 0.06);
+  border-color: rgba(79, 70, 229, 0.14);
+}
+.why-card:hover,
+.feature-card:hover,
+.service-card:hover {
+  box-shadow:
+    0 1px 2px rgba(27, 27, 75, 0.05),
+    0 18px 42px rgba(27, 27, 75, 0.12),
+    0 0 0 1px rgba(79, 70, 229, 0.16);
+}
+.why-card .icon,
+.feature-card .icon {
+  padding: 9px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+/* --- 11.7 Stats: soft illumination under the light metric band ----------- */
+
+.stats-strip-indigo {
+  position: relative;
+  background:
+    radial-gradient(70% 140% at 50% 0%, rgba(124, 92, 255, 0.1) 0%, transparent 70%),
+    var(--gradient-soft);
+}
+
+/* --- 11.8 Footer: restrained illumination, unchanged content ------------- */
+
+.site-footer-indigo {
+  position: relative;
+  background:
+    radial-gradient(900px 420px at 18% -40%, rgba(99, 88, 244, 0.22) 0%, transparent 58%),
+    linear-gradient(170deg, #14133A 0%, #09091E 100%);
+}
+.site-footer-indigo::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(167, 155, 255, 0.32) 50%, transparent);
+  pointer-events: none;
+}
+
+/* --- 11.9 Chat launcher + WhatsApp: one clear indigo hierarchy ----------
+   Behaviour untouched. The launcher is the TriangleTech-brand control and
+   becomes indigo; WhatsApp stays its own blue but drops to a quieter weight,
+   so cyan/blue/indigo no longer compete at the same volume. */
+
+.chat-launcher {
+  background: var(--brand);
+  background-image: var(--gradient-brand);
+  color: #FFFFFF;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 12px 30px rgba(6, 5, 24, 0.45),
+    0 0 36px rgba(99, 88, 244, 0.35);
+}
+.chat-launcher:hover { background: var(--brand-strong); background-image: var(--gradient-brand); }
+.floating-whatsapp {
+  background: rgba(20, 19, 58, 0.86);
+  color: #C9CCF5;
+  border: 1px solid rgba(167, 155, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 26px rgba(6, 5, 24, 0.4);
+}
+.floating-whatsapp:hover { background: rgba(30, 28, 80, 0.94); color: #FFFFFF; }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .floating-whatsapp {
+    background: rgba(20, 19, 58, 0.66);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+}
+
+/* --- 11.10 /tools alignment (styling only; registry and SEO untouched) --- */
+/* The /tools hero predates the site-wide ambient layer. One safe addition so
+   it sits in the same lit environment as the new homepage hero. */
+.tools-hero.hero-indigo {
+  background:
+    radial-gradient(1000px 560px at 74% 0%, rgba(99, 88, 244, 0.32) 0%, transparent 62%),
+    linear-gradient(165deg, #17163F 0%, #0C0B26 58%, #08071A 100%);
+}
+.tools-hero-panel.glass-panel.on-dark,
+.glass-panel.on-dark {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 22px 50px rgba(6, 5, 24, 0.5);
+}
+
+/* --- 11.11 Responsive guards for iteration 2 ---------------------------- */
+
+@media (max-width: 799px) {
+  .why-card .icon,
+  .feature-card .icon { width: 36px; height: 36px; }
+}
+
+/* --- 11.12 Reduced motion ---------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-visual-frame,
+  .device-section .device-stage,
+  .chat-launcher,
+  .floating-whatsapp { transition: none !important; animation: none !important; }
+  .home-hero-indigo .hero-actions .button-indigo:hover,
+  .home-hero-indigo .hero-actions .button-indigo-secondary:hover { transform: none !important; }
+}
+
+/* ============================================================================
+   12. Phase 0B iteration 3 — nav/hero merge + hero texture
+   ----------------------------------------------------------------------------
+   Screenshot pass 2 showed two remaining failures:
+     a) the glass header sat ON the light page ground directly above the hero,
+        so it rendered as a flat grey band instead of floating over the hero;
+     b) the hero ground was clean gradient with no software texture.
+   ========================================================================== */
+
+/* --- 12.1 Let the hero pass under the sticky glass header ----------------
+   The header keeps its place in the document flow; the hero is pulled up by
+   exactly the header's height and given that height back as padding, so no
+   content moves and no scroll anchor shifts — the hero ground simply now sits
+   BEHIND the translucent bar and the blur has something to blur. */
+
+.home-hero-indigo {
+  margin-top: -84px;
+  padding-top: 84px;
+}
+.home-hero-indigo .hero-grid { padding-block: 34px 100px; }
+
+@media (max-width: 799px) {
+  /* .header-inner drops to 72px at this breakpoint. */
+  .home-hero-indigo { margin-top: -72px; padding-top: 72px; }
+  .home-hero-indigo .hero-grid { padding-block: 26px 44px; }
+}
+
+/* On every other page the bar sits over light content, so it needs a little
+   more density to keep nav labels at AA. */
+.site-header { background: rgba(13, 12, 40, 0.86); }
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .site-header { background: rgba(13, 12, 40, 0.74); }
+}
+
+/* --- 12.2 Subtle software grid texture in the hero ----------------------
+   Two 1px rgba lines on a 64px rhythm at ~2% opacity, faded out toward the
+   edges with a mask so it never reads as a visible "graphic" — only as faint
+   structure under the light. Applied to the existing glow pseudo-element, so
+   no extra element and no extra paint layer. */
+
+.home-hero-indigo::before {
+  background-image:
+    radial-gradient(56% 64% at 66% 30%, rgba(124, 92, 255, 0.30) 0%, transparent 68%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 64px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 64px);
+  -webkit-mask-image: radial-gradient(75% 70% at 55% 35%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(75% 70% at 55% 35%, #000 0%, transparent 78%);
+}
+
+/* --- 12.3 Header CTA sits a touch tighter against the dark bar ---------- */
+.site-header .header-cta {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.24), 0 8px 22px rgba(79, 70, 229, 0.38);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-indigo::before { animation: none !important; }
+}
+
+/* --- 12.4 Hero vertical balance ----------------------------------------
+   The under-header overlap freed ~66px at the top; trimming the bottom keeps
+   the hero from ending in a large empty band above the stats. */
+.home-hero-indigo .hero-grid { padding-block: 34px 72px; }
+@media (max-width: 799px) {
+  .home-hero-indigo .hero-grid { padding-block: 26px 44px; }
+}
+
+/* ============================================================================
+   13. Phase 0B iteration 4 — regression fix + product-card chrome
+   ========================================================================== */
+
+/* --- 13.1 Mobile header CTA must stay hidden ----------------------------
+   globals.css hides .header-cta below 800px, but .button-indigo declares
+   `display:inline-flex` at equal specificity from a later stylesheet, so
+   swapping the header CTA to .button-indigo un-hid it and wrapped the brand
+   onto three lines. Restore the intended mobile header. */
+@media (max-width: 799px) {
+  .site-header .header-cta { display: none; }
+}
+
+/* --- 13.2 Homepage product/video cards join the indigo environment ------
+   Only the card GROUND changes (chrome). The per-product accent glow
+   (.selector-card::before driven by --dot), .product-features .icon,
+   .selector-core .icon and every mockup rule are untouched, so OrderMate
+   cyan / FBR blue / WaterFlow emerald / Shopify violet still read as
+   themselves — now against a TriangleTech-indigo ground. */
+.selector-card { background: #14133A; }
+.video-card { background: #14133A; }
+.selector-card { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 44px rgba(6, 5, 24, 0.3); }
+.selector-card .button-outline-dark { border-color: rgba(167, 155, 255, 0.34); }
+
+/* ============================================================================
+   14. Phase 0B iteration 5 — the other two dark page-tops
+   Same under-header merge as the homepage hero, so the glass bar has an
+   illuminated ground behind it on every dark-topped page instead of a flat
+   grey band. Both sections are the first element inside <main>. Styling only —
+   no markup, routing, registry or SEO change.
+   ========================================================================== */
+
+.tools-hero.hero-indigo,
+.contact-page {
+  margin-top: -84px;
+  padding-top: calc(84px + 64px);
+}
+@media (max-width: 799px) {
+  .tools-hero.hero-indigo,
+  .contact-page { margin-top: -72px; padding-top: calc(72px + 32px); }
+}
+
+/* `em` is globally cyan; on company-level indigo grounds it becomes the same
+   light indigo used for the hero's emphasised phrase. Product pages keep the
+   global cyan `em` untouched. */
+.contact-page em,
+.home-hero-indigo em { color: #A79BFF; }

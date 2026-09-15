@@ -37,15 +37,15 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
       setErrors({ ...errors, [key]: undefined }); setSubmitted(false);
     },
   });
-  const error = (key: keyof Fields) => errors[key] && <span className="field-error" id={`${id}-${key}-error`}>{errors[key]}</span>;
+  const error = (key: keyof Fields) => errors[key] && <span className="error-premium" id={`${id}-${key}-error`}>{errors[key]}</span>;
 
   if (submitted) return <section className="request-panel demo-success" aria-live="polite">
     <span className="eyebrow">REQUEST READY</span>
     <h2>Your demo request is drafted.</h2>
     <p className="form-intro">We&apos;ve opened an email draft with your details. Review it and press Send to complete your request — nothing has been sent yet.</p>
     <div className="hero-actions">
-      <a className="button button-accent" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Us Instead</a>
-      <button className="button button-outline-dark" onClick={() => setSubmitted(false)}>Edit Request</button>
+      <a className="button-indigo" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Us Instead</a>
+      <button className="button-indigo-secondary" onClick={() => setSubmitted(false)}>Edit Request</button>
     </div>
   </section>;
 
@@ -55,16 +55,16 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
     <p className="form-intro">Tell us about your business. We&apos;ll walk you through the right product live.</p>
     <form onSubmit={submit} noValidate aria-label="Book a free product demo">
       <div className="form-grid">
-        <div className="field"><label htmlFor={`${id}-name`}>Full name <span>*</span></label><input {...field("name")} autoComplete="name" placeholder="Full name" required maxLength={100} />{error("name")}</div>
-        <div className="field"><label htmlFor={`${id}-company`}>Business name <span className="optional">optional</span></label><input {...field("company")} autoComplete="organization" placeholder="Your business name" maxLength={160} /></div>
-        <div className="field"><label htmlFor={`${id}-email`}>Email <span>*</span></label><input {...field("email")} type="email" autoComplete="email" placeholder="you@company.com" required maxLength={100} />{error("email")}</div>
-        <div className="field"><label htmlFor={`${id}-whatsapp`}>WhatsApp number <span className="optional">optional</span></label><input {...field("whatsapp")} type="tel" autoComplete="tel" placeholder="+92 3XX XXXXXXX" maxLength={30} /></div>
-        <div className="field"><label htmlFor={`${id}-businessType`}>Business type <span className="optional">optional</span></label><input {...field("businessType")} placeholder="e.g. Retail, distribution, services" maxLength={100} /></div>
-        <div className="field"><label htmlFor={`${id}-interest`}>Product interested in <span>*</span></label><select {...field("interest")} required><option value="">Select a product</option>{demoOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>{error("interest")}</div>
-        <div className="field field-wide"><label htmlFor={`${id}-contactTime`}>Preferred contact time <span className="optional">optional</span></label><input {...field("contactTime")} placeholder="e.g. Weekday afternoons" maxLength={100} /></div>
-        <div className="field field-wide"><label htmlFor={`${id}-message`}>Message <span className="optional">optional</span></label><textarea {...field("message")} rows={2} placeholder="Tell us about your business or what you'd like to see in the demo" maxLength={700} /></div>
+        <div className="field-premium"><label htmlFor={`${id}-name`}>Full name <span className="required-mark">*</span></label><input className="input-premium" {...field("name")} autoComplete="name" placeholder="Full name" required maxLength={100} />{error("name")}</div>
+        <div className="field-premium"><label htmlFor={`${id}-company`}>Business name <span className="optional-mark">optional</span></label><input className="input-premium" {...field("company")} autoComplete="organization" placeholder="Your business name" maxLength={160} /></div>
+        <div className="field-premium"><label htmlFor={`${id}-email`}>Email <span className="required-mark">*</span></label><input className="input-premium" {...field("email")} type="email" autoComplete="email" placeholder="you@company.com" required maxLength={100} />{error("email")}</div>
+        <div className="field-premium"><label htmlFor={`${id}-whatsapp`}>WhatsApp number <span className="optional-mark">optional</span></label><input className="input-premium" {...field("whatsapp")} type="tel" autoComplete="tel" placeholder="+92 3XX XXXXXXX" maxLength={30} /></div>
+        <div className="field-premium"><label htmlFor={`${id}-businessType`}>Business type <span className="optional-mark">optional</span></label><input className="input-premium" {...field("businessType")} placeholder="e.g. Retail, distribution, services" maxLength={100} /></div>
+        <div className="field-premium"><label htmlFor={`${id}-interest`}>Product interested in <span className="required-mark">*</span></label><select className="select-premium" {...field("interest")} required><option value="">Select a product</option>{demoOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>{error("interest")}</div>
+        <div className="field-premium field-wide"><label htmlFor={`${id}-contactTime`}>Preferred contact time <span className="optional-mark">optional</span></label><input className="input-premium" {...field("contactTime")} placeholder="e.g. Weekday afternoons" maxLength={100} /></div>
+        <div className="field-premium field-wide"><label htmlFor={`${id}-message`}>Message <span className="optional-mark">optional</span></label><textarea className="textarea-premium" {...field("message")} rows={2} placeholder="Tell us about your business or what you'd like to see in the demo" maxLength={700} /></div>
       </div>
-      <div className="form-actions form-actions-single"><button className="button button-accent" type="submit"><Icon name="mail" />Book a Free Demo</button></div>
+      <div className="form-actions form-actions-single"><button className="button-indigo" type="submit"><Icon name="mail" />Book a Free Demo</button></div>
       <p className="form-note">Opens an email draft in your app. Review it and press Send — access is provided after a short demo/review, not automatically.</p>
     </form>
   </section>;

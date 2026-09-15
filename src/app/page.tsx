@@ -13,28 +13,39 @@ import { faqs, hero, howItWorks, products, services, stats, technologies, trustP
 
 export const metadata = pageMetadata("Business Software and Digital Solutions", "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce. Explore our products and book a free demo.", "/");
 
+/* Purely visual emphasis: the headline STRING in site.ts is unchanged, it is
+   only split so the closing phrase can carry the indigo tint. If the copy ever
+   changes, the fallback renders the headline exactly as before. */
+const HERO_EMPHASIS = "the Way You Work";
+const heroLead = hero.headline.endsWith(HERO_EMPHASIS) ? hero.headline.slice(0, -HERO_EMPHASIS.length) : hero.headline;
+const heroTail = hero.headline.endsWith(HERO_EMPHASIS) ? HERO_EMPHASIS : "";
+
 export default function Home() {
   return <>
     <ScrollReveal />
 
-    <section className="home-hero">
+    <section className="home-hero home-hero-indigo">
+      <span className="hero-orb hero-orb-a gradient-drift" aria-hidden="true" />
+      <span className="hero-orb hero-orb-b" aria-hidden="true" />
       <div className="hero-grid">
         <div className="hero-copy">
           <span className="eyebrow light"><span className="status-dot" />{hero.eyebrow}</span>
-          <h1>{hero.headline}</h1>
+          <h1>{heroLead}{heroTail && <span className="hero-accent-phrase">{heroTail}</span>}</h1>
           <p>{hero.supporting}</p>
           <div className="hero-actions">
-            <RouteLink className="button button-accent" href="/contact">{hero.primaryCta}<Icon name="arrow" /></RouteLink>
-            <RouteLink className="button button-outline-light" href="/#products">{hero.secondaryCta}</RouteLink>
+            <RouteLink className="button-indigo" href="/contact">{hero.primaryCta}<Icon name="arrow" /></RouteLink>
+            <RouteLink className="button-indigo-secondary on-dark" href="/#products">{hero.secondaryCta}</RouteLink>
           </div>
           <RouteLink className="text-link light-link hero-tertiary" href="/#how-it-works">{hero.tertiaryCta}<Icon name="arrow" /></RouteLink>
         </div>
-        <HeroVisual />
+        <div className="hero-visual-frame" aria-hidden="true"><HeroVisual /></div>
       </div>
     </section>
 
-    <section className="stats-strip"><div className="container stats-grid">
-      {stats.map(stat => <div key={stat.label}><strong>{stat.value}</strong><span>{stat.label}</span></div>)}
+    {/* No data-reveal: this band sits directly under the hero and is visible on
+        load at every viewport, so it must never depend on an observer firing. */}
+    <section className="stats-strip stats-strip-indigo"><div className="container stats-grid">
+      {stats.map(stat => <div key={stat.label} className="stat-metric"><strong>{stat.value}</strong><span>{stat.label}</span></div>)}
     </div></section>
 
     <section className="section trust-section" data-reveal><div className="container">
