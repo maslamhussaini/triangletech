@@ -1,4 +1,4 @@
-export type Currency = "USD" | "AED" | "PKR" | "GBP" | "EUR";
+export type Currency = "USD" | "AED" | "PKR" | "SAR" | "GBP" | "EUR";
 
 export type CostMode = "profit" | "price";
 

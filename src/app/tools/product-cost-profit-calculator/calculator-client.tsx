@@ -1,18 +1,20 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import Link from "next/link";
 import { calculateProfit, calculatePrice, type ProfitModeInputs, type PriceModeInputs, type Currency, type ProfitModeResult, type PriceModeResult, DEFAULT_PROFIT_INPUTS, DEFAULT_PRICE_INPUTS } from "@/lib/tools/cost-profit";
+import { convertAmount, formatConvertedCurrency, parseRateInput, fetchLatestRate, type ExchangeRateStatus } from "@/lib/tools/exchange-rate";
 
 type Mode = "profit" | "price";
 
-const CURRENCIES: Currency[] = ["USD", "AED", "PKR", "GBP", "EUR"];
+const CURRENCIES: Currency[] = ["USD", "AED", "PKR", "SAR", "GBP", "EUR"];
 
 const CURRENCY_SYMBOLS: Record<Currency, string> = {
   USD: "$",
   AED: "د.إ",
   PKR: "₨",
+  SAR: "SR",
   GBP: "£",
   EUR: "€",
 };
@@ -113,6 +115,20 @@ export default function CalculatorClient() {
   const [quantity, setQuantity] = useState<number>(1);
   const [whatIfPrice, setWhatIfPrice] = useState<string>("");
 
+  const [fxTarget, setFxTarget] = useState<Currency>(currency === "USD" ? "PKR" : "USD");
+  const [fxStatus, setFxStatus] = useState<ExchangeRateStatus>({ state: "idle" });
+  const [manualRate, setManualRate] = useState<string>("");
+  const [useManual, setUseManual] = useState(false);
+  const [fxAbortController, setFxAbortController] = useState<AbortController | null>(null);
+  const fxRequestRef = useRef<number>(0);
+
+  if (fxTarget === currency) {
+    const fallback = currency === "USD" ? "PKR" : "USD";
+    if (fallback !== fxTarget) {
+      setFxTarget(fallback);
+    }
+  }
+
   const profitResult = useMemo<ProfitModeResult>(() => calculateProfit(profitInputs), [profitInputs]);
   const priceResult = useMemo<PriceModeResult>(() => calculatePrice(priceInputs), [priceInputs]);
 
@@ -162,9 +178,14 @@ export default function CalculatorClient() {
     });
     setQuantity(1);
     setWhatIfPrice("");
-  }, []);
+    setFxTarget(currency === "USD" ? "PKR" : "USD");
+    setFxStatus({ state: "idle" });
+    setManualRate("");
+    setUseManual(false);
+  }, [currency]);
 
   const copySummary = useCallback(async () => {
+    const activeRate = useManual && manualRate.trim() !== "" ? parseRateInput(manualRate).value || null : fxStatus.state === "success" ? fxStatus.result.rate : null;
     let text = "";
     if (mode === "profit") {
       text = `Product Cost & Profit Summary
@@ -174,12 +195,42 @@ Selling Expenses: ${formatCurrency(profitResult.sellingExpenses, currency)}
 Net Profit: ${formatCurrency(profitResult.netProfit, currency)}
 Net Margin: ${profitResult.netMargin.toFixed(2)}%
 ROI: ${profitResult.roi.toFixed(2)}%`;
+      if (activeRate && fxTarget !== currency) {
+        const convertedSellingPrice = convertAmount(profitInputs.sellingPrice, activeRate);
+        const convertedLandedCost = convertAmount(profitResult.landedCost, activeRate);
+        const convertedSellingExpenses = convertAmount(profitResult.sellingExpenses, activeRate);
+        const convertedNetProfit = convertAmount(profitResult.netProfit, activeRate);
+        text += `
+
+Converted to ${fxTarget}
+${useManual ? `Exchange Rate: Manual
+1 ${currency} = ${activeRate.toFixed(4)} ${fxTarget}` : `Exchange Rate: 1 ${currency} = ${activeRate.toFixed(4)} ${fxTarget}
+Rate Date: ${fxStatus.state === "success" ? new Date(fxStatus.result.date).toISOString().split("T")[0] : "N/A"}`}
+Selling Price: ${formatConvertedCurrency(convertedSellingPrice, fxTarget)}
+Landed Cost: ${formatConvertedCurrency(convertedLandedCost, fxTarget)}
+Selling Expenses: ${formatConvertedCurrency(convertedSellingExpenses, fxTarget)}
+Net Profit: ${formatConvertedCurrency(convertedNetProfit, fxTarget)}`;
+      }
     } else {
       text = `Product Cost & Profit Summary
 Required Selling Price: ${formatCurrency(priceResult.requiredSellingPrice, currency)}
 Total Cost: ${formatCurrency(priceResult.totalCost, currency)}
 Desired Net Margin: ${priceResult.desiredNetMargin.toFixed(2)}%
 Expected Net Profit: ${formatCurrency(priceResult.expectedNetProfit, currency)}`;
+      if (activeRate && fxTarget !== currency) {
+        const convertedRequiredSellingPrice = convertAmount(priceResult.requiredSellingPrice, activeRate);
+        const convertedTotalCost = convertAmount(priceResult.totalCost, activeRate);
+        const convertedExpectedNetProfit = convertAmount(priceResult.expectedNetProfit, activeRate);
+        text += `
+
+Converted to ${fxTarget}
+${useManual ? `Exchange Rate: Manual
+1 ${currency} = ${activeRate.toFixed(4)} ${fxTarget}` : `Exchange Rate: 1 ${currency} = ${activeRate.toFixed(4)} ${fxTarget}
+Rate Date: ${fxStatus.state === "success" ? new Date(fxStatus.result.date).toISOString().split("T")[0] : "N/A"}`}
+Required Selling Price: ${formatConvertedCurrency(convertedRequiredSellingPrice, fxTarget)}
+Total Cost: ${formatConvertedCurrency(convertedTotalCost, fxTarget)}
+Expected Net Profit: ${formatConvertedCurrency(convertedExpectedNetProfit, fxTarget)}`;
+      }
     }
     try {
       await navigator.clipboard.writeText(text);
@@ -188,7 +239,7 @@ Expected Net Profit: ${formatCurrency(priceResult.expectedNetProfit, currency)}`
     } catch {
       // Clipboard unavailable — no-op
     }
-  }, [mode, profitInputs, profitResult, priceResult, currency]);
+  }, [mode, profitInputs, profitResult, priceResult, currency, fxTarget, useManual, manualRate, fxStatus]);
 
   const netMargin = mode === "profit" ? profitResult.netMargin : priceResult.desiredNetMargin;
 
@@ -263,18 +314,25 @@ Expected Net Profit: ${formatCurrency(priceResult.expectedNetProfit, currency)}`
                   </button>
                 </div>
 
-                <div className="form-grid" style={{ marginBottom: 16 }}>
-                  <div className="field">
-                    <label className="label-premium">Currency</label>
-                    <select
-                      className="select-premium"
-                      value={currency}
-                      onChange={e => setCurrency(e.target.value as Currency)}
-                    >
-                      {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                </div>
+                 <div className="form-grid" style={{ marginBottom: 16 }}>
+                   <div className="field">
+                     <label className="label-premium">Currency</label>
+                     <select
+                       className="select-premium"
+                       value={currency}
+                       onChange={e => {
+                         const next = e.target.value as Currency;
+                         setCurrency(next);
+                         setFxTarget(next === "USD" ? "PKR" : "USD");
+                         setFxStatus({ state: "idle" });
+                         setManualRate("");
+                         setUseManual(false);
+                       }}
+                     >
+                       {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                     </select>
+                   </div>
+                 </div>
 
                 {mode === "profit" ? (
                   <>
@@ -455,6 +513,186 @@ Expected Net Profit: ${formatCurrency(priceResult.expectedNetProfit, currency)}`
                   {copied ? "Copied" : "Copy Summary"}
                 </button>
               </div>
+
+              {currency !== fxTarget && (
+                <div className="finder-panel" style={{ marginTop: 24 }}>
+                  <h3 style={{ fontSize: 16, marginBottom: 16 }}>Convert Your Results</h3>
+                  <div className="form-grid" style={{ marginBottom: 16 }}>
+                    <div className="field">
+                      <label className="label-premium">Base Currency</label>
+                      <select className="select-premium" value={currency} disabled>
+                        <option value={currency}>{currency}</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label className="label-premium">Convert Results To</label>
+                      <select
+                        className="select-premium"
+                        value={fxTarget}
+                        onChange={e => {
+                          const next = e.target.value as Currency;
+                          setFxTarget(next);
+                          setFxStatus({ state: "idle" });
+                          setManualRate("");
+                          setUseManual(false);
+                        }}
+                      >
+                        {CURRENCIES.filter(c => c !== currency).map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {!useManual && (
+                    <div style={{ marginBottom: 16 }}>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (fxAbortController) fxAbortController.abort();
+                          const controller = new AbortController();
+                          setFxAbortController(controller);
+                          const requestId = ++fxRequestRef.current;
+                          setFxStatus({ state: "loading" });
+                          try {
+                            const result = await fetchLatestRate(currency, fxTarget, controller.signal);
+                            if (requestId !== fxRequestRef.current) {
+                              return;
+                            }
+                            setFxStatus({ state: "success", result });
+                          } catch (err) {
+                            if (requestId !== fxRequestRef.current) {
+                              return;
+                            }
+                            setFxStatus({
+                              state: "error",
+                              error: {
+                                message: err instanceof Error ? err.message : "Failed to fetch rate",
+                                reason: err instanceof Error && err.message.includes("Unsupported") ? "UNSUPPORTED" : "NETWORK",
+                              },
+                            });
+                          }
+                        }}
+                        className="button-indigo"
+                        disabled={fxStatus.state === "loading"}
+                      >
+                        {fxStatus.state === "loading" ? "Getting latest reference rate…" : "Use Latest Rate"}
+                      </button>
+                      <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>
+                        Reference exchange rates may differ from bank, card, payment-provider and exchange-company rates.
+                      </p>
+                    </div>
+                  )}
+
+                  {fxStatus.state === "success" && !useManual && (
+                    <div className="glass-panel on-dark" style={{ padding: 20, marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, color: "#C9CCF5", marginBottom: 4 }}>Latest Reference Rate</div>
+                      <div style={{ fontSize: 22, fontWeight: 700, color: "#fff", fontFamily: "var(--font-sora)" }}>
+                        1 {fxStatus.result.base} = {fxStatus.result.rate.toFixed(4)} {fxStatus.result.quote}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#A7ADD9", marginTop: 6 }}>
+                        Rate date: {new Date(fxStatus.result.date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#A7ADD9", marginTop: 2 }}>
+                        Source: {fxStatus.result.provider}
+                      </div>
+                    </div>
+                  )}
+
+                  {fxStatus.state === "error" && !useManual && (
+                    <div className="error-premium" style={{ marginBottom: 16 }}>
+                      {fxStatus.error.message}
+                    </div>
+                  )}
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+                      <button
+                        type="button"
+                        onClick={() => { setUseManual(false); setFxStatus({ state: "idle" }); }}
+                        className={classNames("showcase-tab", !useManual && "is-active")}
+                        style={{ flex: 1 }}
+                      >
+                        Latest Reference Rate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setUseManual(true); setFxStatus({ state: "idle" }); }}
+                        className={classNames("showcase-tab", useManual && "is-active")}
+                        style={{ flex: 1 }}
+                      >
+                        Manual Rate
+                      </button>
+                    </div>
+                    {useManual && (
+                      <div className="field">
+                        <label className="label-premium">Manual Exchange Rate</label>
+                        <div className="input-affix">
+                          <span className="affix-prefix">1 {currency} =</span>
+                          <input
+                            type="number"
+                            className="input-premium"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.0001"
+                            value={manualRate}
+                            onChange={e => setManualRate(e.target.value)}
+                            inputMode="decimal"
+                          />
+                          <span className="affix-prefix" style={{ borderLeft: "none", paddingLeft: 8 }}>{fxTarget}</span>
+                        </div>
+                        <p className="helper-premium">Enter the rate you actually receive from your bank, payment processor or exchange company.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {(() => {
+                    const manualParsed = manualRate.trim() === "" ? null : parseRateInput(manualRate);
+                    const activeRate = useManual && manualParsed ? manualParsed.value : fxStatus.state === "success" ? fxStatus.result.rate : null;
+
+                    if (activeRate === null || activeRate <= 0) return null;
+
+                    const convertedSellingPrice = convertAmount(mode === "profit" ? profitInputs.sellingPrice : priceResult.requiredSellingPrice, activeRate);
+                    const convertedLandedCost = convertAmount(mode === "profit" ? profitResult.landedCost : priceResult.totalCost - (mode === "price" ? priceResult.expectedNetProfit : profitResult.sellingExpenses), activeRate);
+                    const convertedGrossProfit = convertAmount(mode === "profit" ? profitResult.grossProfit : priceResult.expectedGrossProfit, activeRate);
+                    const convertedSellingExpenses = convertAmount(mode === "profit" ? profitResult.sellingExpenses : 0, activeRate);
+                    const convertedNetProfit = convertAmount(mode === "profit" ? profitResult.netProfit : priceResult.expectedNetProfit, activeRate);
+                    const convertedTotalCost = convertAmount(mode === "profit" ? profitResult.totalCostAndExpenses : priceResult.totalCost, activeRate);
+
+                    return (
+                      <div className="glass-panel on-dark" style={{ padding: 24 }}>
+                        <div style={{ fontSize: 13, color: "#C9CCF5", marginBottom: 16 }}>Converted Results</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(124,92,255,0.15)" }}>
+                            <span style={{ color: "#C9CCF5", fontSize: 13 }}>Selling Price</span>
+                            <span style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{formatConvertedCurrency(convertedSellingPrice, fxTarget)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(124,92,255,0.15)" }}>
+                            <span style={{ color: "#C9CCF5", fontSize: 13 }}>Landed Cost</span>
+                            <span style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{formatConvertedCurrency(convertedLandedCost, fxTarget)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(124,92,255,0.15)" }}>
+                            <span style={{ color: "#C9CCF5", fontSize: 13 }}>Gross Profit</span>
+                            <span style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{formatConvertedCurrency(convertedGrossProfit, fxTarget)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(124,92,255,0.15)" }}>
+                            <span style={{ color: "#C9CCF5", fontSize: 13 }}>Selling Expenses</span>
+                            <span style={{ color: "#fff", fontWeight: 600, fontSize: 13 }}>{formatConvertedCurrency(convertedSellingExpenses, fxTarget)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(124,92,255,0.22)" }}>
+                            <span style={{ color: "#C9CCF5", fontSize: 13, fontWeight: 600 }}>Total Cost &amp; Expenses</span>
+                            <span style={{ color: "#fff", fontWeight: 700, fontSize: 13 }}>{formatConvertedCurrency(convertedTotalCost, fxTarget)}</span>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0" }}>
+                            <span style={{ color: "#fff", fontSize: 13, fontWeight: 700 }}>Net Profit</span>
+                            <span style={{ color: convertedNetProfit < 0 ? "var(--danger)" : "#fff", fontWeight: 700, fontSize: 13 }}>{formatConvertedCurrency(convertedNetProfit, fxTarget)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </div>
         </div>
