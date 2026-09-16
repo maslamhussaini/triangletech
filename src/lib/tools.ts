@@ -19,8 +19,8 @@ export const toolCategories = [
 
 export type ToolCategory = (typeof toolCategories)[number];
 
-/** "coming-first" = next tool we ship. No "live" status exists yet. */
-export type ToolStatus = "coming-first" | "coming-soon";
+/** "coming-first" = next tool we ship. "live" = available now. */
+export type ToolStatus = "live" | "coming-first" | "coming-soon";
 
 export type Tool = {
   slug: string;
@@ -34,6 +34,7 @@ export type Tool = {
 };
 
 export const toolStatusLabels: Record<ToolStatus, string> = {
+  live: "Available Now",
   "coming-first": "Coming First",
   "coming-soon": "Coming Soon",
 };
@@ -44,7 +45,7 @@ export const tools: Tool[] = [
     name: "Product Cost & Profit Calculator",
     shortDescription: "Calculate true product cost, gross profit, net profit, margin and ROI.",
     category: "Business & Profit",
-    status: "coming-first",
+    status: "live",
     featured: true,
     icon: "calculator",
   },
