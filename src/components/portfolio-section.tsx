@@ -53,9 +53,16 @@ export function ProjectPreviewMockup({ theme }: { theme: PortfolioProject["mocku
 }
 
 export function ProjectPreviewFrame({ project }: { project: PortfolioProject }) {
+  const isRealImage = project.previewImage.endsWith(".png") || project.previewImage.endsWith(".jpg") || project.previewImage.endsWith(".jpeg") || project.previewImage.endsWith(".webp");
   return <div className="browser-frame portfolio-preview-frame">
     <div className="browser-chrome"><span className="chrome-dot" /><span className="chrome-dot" /><span className="chrome-dot" /><span className="chrome-url">{project.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span></div>
-    <div className="browser-body portfolio-preview-body"><ProjectPreviewMockup theme={project.mockupTheme} /></div>
+    <div className="browser-body portfolio-preview-body">
+      {isRealImage ? (
+        <img src={project.previewImage} alt={`${project.name} homepage screenshot`} className="portfolio-mockup" style={{ width: "100%", height: "auto", display: "block" }} />
+      ) : (
+        <ProjectPreviewMockup theme={project.mockupTheme} />
+      )}
+    </div>
   </div>;
 }
 
@@ -82,7 +89,7 @@ function ProjectCard({ project }: { project: PortfolioProject }) {
 
 export function PortfolioSection() {
   return <section id="selected-work" className="section portfolio-section" data-reveal><div className="container">
-    <div className="section-heading"><div><span className="eyebrow">SELECTED WORK</span><h2>Websites we&apos;ve built for clients.</h2><p>Three live client sites, each with a short case study covering the problem and the approach. The previews below are original illustrations of each layout, not screenshots.</p></div></div>
+    <div className="section-heading"><div><span className="eyebrow">SELECTED WORK</span><h2>Websites we&apos;ve built for clients.</h2><p>Three live client sites, each with a short case study covering the problem and the approach. The previews below are real homepage screenshots of the live sites.</p></div></div>
     <div className="portfolio-grid">
       {portfolioProjects.map(project => <ProjectCard key={project.id} project={project} />)}
     </div>

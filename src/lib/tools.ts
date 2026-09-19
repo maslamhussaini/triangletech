@@ -52,10 +52,10 @@ export const tools: Tool[] = [
   {
     slug: "pakistan-sales-tax-calculator",
     name: "Pakistan Sales Tax Calculator",
-    shortDescription: "Work out sales tax on any amount, and split a gross figure back into net and tax.",
+    shortDescription: "Calculate Pakistan sales tax using HS/PCT codes. Supports standard rate, Third Schedule, and further tax.",
     category: "Tax & Invoice",
-    status: "coming-soon",
-    featured: false,
+    status: "live",
+    featured: true,
     icon: "tax",
   },
   {

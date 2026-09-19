@@ -136,6 +136,27 @@ export const products = [
     ] as ProductScreen[],
     cta: "Explore Shopify Solutions",
   },
+  {
+    id: "dynamic-inventory-count",
+    name: "Dynamic Inventory Count",
+    category: "Odoo Inventory Module",
+    accent: "orange",
+    description: "Count fast-moving inventory based on actual stock activity — not only fixed calendar schedules. Activity-based cycle counting for Odoo 19.",
+    coreFeature: "Count based on actual stock movement and cumulative activity.",
+    audience: "For Odoo inventory teams that need faster cycle counts for fast-moving stock without waiting for the next scheduled count.",
+    features: ["Activity-Based Cycle Counting", "Count after X completed stock movements", "Count after X cumulative moved quantity", "Product + Location counters", "Receipts, deliveries, internal transfers, returns", "Partial and backorder completed quantities", "Native Odoo Physical Inventory integration", "Multi-company support", "Dashboard", "$39 price"],
+    heroLayout: "stats" as ScreenLayout,
+    screens: [
+      { id: "dashboard", title: "Dashboard", does: "See active rules, items due for count, trigger types and locations at a glance.", benefit: "Stock managers can prioritize counts without digging through lists.", layout: "stats" },
+      { id: "rules", title: "Dynamic Count Rules", does: "Configure activity-based count rules scoped by product, category or location.", benefit: "Flexible rules replace one-size-fits-all calendar schedules.", layout: "form" },
+      { id: "move-count", title: "Move Count Rule", does: "Request a physical count after a defined number of completed stock movements.", benefit: "Fast-moving items get counted sooner, not later.", layout: "form" },
+      { id: "cumulative-quantity", title: "Cumulative Quantity Rule", does: "Request a count after cumulative stock activity reaches a quantity threshold.", benefit: "High-volume items are caught by total activity, not just move count.", layout: "form" },
+      { id: "counts-due", title: "Counts Due", does: "View product + location combinations flagged for counting with trigger details.", benefit: "Clear visibility into what needs counting and why.", layout: "table" },
+      { id: "physical-inventory", title: "Native Physical Inventory", does: "Apply counts through Odoo's native Physical Inventory workflow.", benefit: "No replacement engine — works with the inventory process your team already knows.", layout: "workflow" },
+      { id: "counter-reset", title: "Counter Reset", does: "Automatic counter reset after successful physical inventory reconciliation.", benefit: "Counters start fresh without manual cleanup.", layout: "stats" },
+    ] as ProductScreen[],
+    cta: "View on Odoo Apps",
+  },
 ] as const;
 
 /** One specific line per feature, so feature grids don't fall back to filler. */
@@ -164,6 +185,19 @@ export const featureNotes: Record<string, string> = {
   "Mobile-first ecommerce design": "Designed for the phone first, because that's where most of your shoppers arrive.",
   "Domain connection": "Your own domain connected to the finished store as part of setup.",
   "Payment and shipping guidance": "Hands-on guidance configuring payment gateways and shipping options inside Shopify.",
+  "Activity-Based Cycle Counting": "Count inventory based on actual stock activity — receipts, deliveries, transfers and returns — instead of waiting for fixed calendar schedules.",
+  "Count after X completed stock movements": "Request a physical count after a configurable number of completed stock movements for a product at a location.",
+  "Count after X cumulative moved quantity": "Request a count after cumulative stock activity reaches a quantity threshold, normalized to the product's base unit of measure.",
+  "Product + Location counters": "Per-product and per-location counters accumulate automatically as matching stock moves complete.",
+  "Receipts": "Incoming receipts contribute to activity counters for matching products and locations.",
+  "Deliveries": "Customer deliveries contribute to activity counters for matching products and locations.",
+  "Internal transfers": "Internal transfers contribute to activity counters for matching products and locations.",
+  "Returns": "Returns contribute to activity counters for matching products and locations.",
+  "Partial/backorder completed quantities": "Partial deliveries, receipts and backorder completions contribute their completed quantities as they occur.",
+  "Native Odoo Physical Inventory integration": "Works directly with Odoo's existing Physical Inventory workflow — no replacement counting UI.",
+  "Multi-company support": "Rules and counters are isolated per company via standard Odoo multi-company record rules.",
+  "Dashboard": "A dedicated dashboard shows active rules, items due for count, trigger types, locations and top due items with clickable navigation.",
+  "$39 price": "Available on the Odoo Apps store for $39, ready for Odoo 19.",
 };
 
 export const demoOptions =["OrderMate", "FBR Digital", "WaterFlow", "Shopify Solutions", "Custom Software"];

@@ -127,6 +127,7 @@ address { font-style:normal; }
 .accent-blue { --dot:#2F80ED; }
 .accent-emerald { --dot:#35D07F; }
 .accent-violet { --dot:#8b7bff; }
+.accent-orange { --dot:#f59e0b; }
 
 /* --- dashboard mockup (original UI, no screenshots) --- */
 .dashboard-mockup { background:#0c1830; border-radius:10px; overflow:hidden; font-size:11px; color:#c7d2ea; border:1px solid #1c2b4c; }

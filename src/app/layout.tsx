@@ -15,13 +15,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(business.url),
   title: { default: "TriangleTech | Business Software and Digital Solutions", template: "%s | TriangleTech" },
   description: "TriangleTech builds practical business software, digital invoicing platforms, delivery solutions and ecommerce experiences. Explore our products and book a free demo.",
-  icons: { icon: [{ url: "/icon" }], apple: [{ url: "/icon" }] },
+  icons: { icon: [{ url: "/favicon.png" }], apple: [{ url: "/favicon.png" }] },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const structured = {
     "@context": "https://schema.org", "@type": "Organization", "@id": `${business.url}/#organization`,
-    name: business.name, url: business.url, logo: `${business.url}/icon`, email: business.email,
+    name: business.name, url: business.url, logo: `${business.url}/triangletech-logo.png`, email: business.email,
     sameAs: [],
   };
   return <html lang="en" className={`${inter.variable} ${sora.variable}`}><head><noscript><style>{`[data-reveal]{opacity:1!important;transform:none!important}`}</style></noscript></head><body><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replace(/</g, "\\u003c") }} /><NavigationProvider><ChatProvider><a className="skip-link" href="#main-content">Skip to content</a><Header /><main id="main-content" tabIndex={-1}>{children}</main><Footer /></ChatProvider></NavigationProvider></body></html>;

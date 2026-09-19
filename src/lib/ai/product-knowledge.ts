@@ -1,4 +1,4 @@
-export type ProductId = "ordermate" | "fbr-digital" | "waterflow" | "shopify-solutions";
+export type ProductId = "ordermate" | "fbr-digital" | "waterflow" | "shopify-solutions" | "dynamic-inventory-count";
 
 export type SuggestedQuestion = { question: string; answer: string };
 
@@ -109,6 +109,31 @@ export const productKnowledge: Record<ProductId, ProductKnowledge> = {
       { question: "Can I book a demo?", answer: "Yes — book a free demo and we'll walk through what a TriangleTech Shopify build looks like, and scope what your store would need." },
     ],
   },
+  "dynamic-inventory-count": {
+    id: "dynamic-inventory-count",
+    name: "Dynamic Inventory Count",
+    tagline: "Activity-based cycle counting for Odoo 19. Count based on actual stock movement and cumulative activity.",
+    facts: [
+      "Dynamic Inventory Count is an Odoo 19 module that triggers physical inventory counts from actual stock movement activity rather than fixed calendar schedules alone.",
+      "It supports two trigger types: Count after X completed stock movements, and Count after X cumulative moved quantity.",
+      "Counters are maintained per product and per location, accumulating activity as matching stock moves complete.",
+      "Supported stock activity includes receipts, deliveries, internal transfers and returns, with partial and backorder completed quantities included.",
+      "The module works with Odoo's native Physical Inventory workflow — it does not replace the native counting UI.",
+      "A dashboard provides an at-a-glance view of active rules, items due for count, trigger types, locations and top due items.",
+      "Multi-company support is included via standard Odoo multi-company record rules.",
+      "The module is priced at $39 on the Odoo Apps store.",
+      "It does not forecast, predict, or score inventory risk. It only counts completed, actual stock activity that has already occurred.",
+      "To move forward with Dynamic Inventory Count, the next step is viewing the Odoo Apps listing or booking a demo to see the module in context.",
+    ],
+    suggestedQuestions: [
+      { question: "What is Dynamic Inventory Count?", answer: "Dynamic Inventory Count is an Odoo 19 module from TriangleTech that triggers physical inventory counts based on actual stock movement activity — completed moves or cumulative quantity — rather than fixed calendar schedules alone." },
+      { question: "How does movement-based counting work?", answer: "You define a rule with a movement-count threshold. Every completed stock move for the matching product and location increments a counter. Once the threshold is reached, that product/location is flagged for a physical count." },
+      { question: "How does cumulative quantity counting work?", answer: "You define a rule with a quantity threshold. The absolute quantity of every matching stock move is summed into a counter normalized to the product's base unit of measure. Once the threshold is reached, a count is requested." },
+      { question: "Does it work with Odoo's native inventory count?", answer: "Yes. It flags items for counting and works directly with Odoo's native Physical Inventory workflow. There is no separate replacement counting UI." },
+      { question: "Does it support multiple companies?", answer: "Yes. Rules and counters are isolated per company via standard Odoo multi-company record rules." },
+      { question: "How much does it cost?", answer: "Dynamic Inventory Count is priced at $39 on the Odoo Apps store for Odoo 19." },
+    ],
+  },
 };
 
 /**
@@ -122,7 +147,7 @@ export const generalKnowledge: ProductKnowledge = {
   tagline: "Business software, digital invoicing, delivery operations and ecommerce.",
   facts: [
     "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce.",
-    "There are four products: OrderMate (business management), FBR Digital (digital invoicing), WaterFlow (delivery operations) and Shopify Solutions (ecommerce store setup).",
+    "There are five products: OrderMate for sales, inventory and business operations; FBR Digital for structured digital invoicing; WaterFlow for delivery operations; Shopify Solutions for online stores; and Dynamic Inventory Count, an Odoo 19 module for activity-based cycle counting.",
     "OrderMate connects sales, orders, inventory, customers, business location records and accounting workflows in one system.",
     "FBR Digital covers creating, validating and submitting digital invoices, with Excel upload, tracking numbers and PDF invoices. It is not a government system and TriangleTech is not affiliated with or endorsed by FBR.",
     "WaterFlow manages delivery operations from customer request through scheduling, driver and vehicle assignment, delivery tracking and reporting.",
