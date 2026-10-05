@@ -2271,3 +2271,757 @@ button.card-premium:focus-visible {
   .hero-visual-frame .hero-card-wf .mock-pill { font-size: 7.5px; padding: 1px 5px; }
   .hero-visual-frame .hero-card-wf .hero-card-foot { font-size: 8px; padding-top: 3px; }
 }
+
+/* ============================================================================
+   17. Phase 1C — Pakistan sales tax calculator mobile readability
+   ----------------------------------------------------------------------------
+   Calculator-scoped presentation only. The calculation input, handlers and
+   result values are unchanged; these rules give narrow screens a readable
+   one-column form, native selects room for their selected values, and a
+   clearer pending/verification hierarchy.
+   ========================================================================== */
+
+.pakistan-tax-calculator,
+.pakistan-tax-calculator * { min-width: 0; }
+
+.pakistan-tax-calculator .finder-grid,
+.pakistan-tax-calculator .finder-panel,
+.pakistan-tax-calculator .tax-results-column { min-width: 0; }
+
+.pakistan-tax-calculator .tax-product-search-field {
+  grid-column: 1 / -1;
+}
+
+.pakistan-tax-calculator .field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.pakistan-tax-calculator .field > label,
+.pakistan-tax-calculator .label-premium {
+  display: block;
+  margin: 0 0 1px;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.pakistan-tax-calculator .required-mark {
+  color: var(--danger);
+  font-size: 14px;
+  margin-left: 3px;
+}
+
+/* The generic .field input/select rules are more specific than the original
+   premium primitive rules. Keep this scoped override deliberately stronger so
+   the mobile controls cannot fall back to 12px/42px sizing. */
+.pakistan-tax-calculator .field input.input-premium,
+.pakistan-tax-calculator .field select.select-premium {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-color: #7F8DA7;
+  border-radius: var(--radius-sm);
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  outline: none;
+  overflow: visible;
+  transition: border-color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft), background-color var(--dur-base) var(--ease-out-soft);
+}
+
+.pakistan-tax-calculator .field select.select-premium {
+  padding-right: 46px;
+  text-overflow: clip;
+  white-space: nowrap;
+  /* The global .field shorthand resets background-image; restore the
+     calculator's native-select chevron at the scoped layer. */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #667085 50%),
+    linear-gradient(135deg, #667085 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) calc(50% - 2px),
+    calc(100% - 17px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.pakistan-tax-calculator .field select.select-premium:hover:not(:disabled),
+.pakistan-tax-calculator .field select.select-premium:focus {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--brand) 50%),
+    linear-gradient(135deg, var(--brand) 50%, transparent 50%);
+}
+
+.pakistan-tax-calculator .field input.input-premium::placeholder {
+  color: #667085;
+  opacity: 1;
+}
+
+.pakistan-tax-calculator .field input.input-premium:hover:not(:disabled),
+.pakistan-tax-calculator .field select.select-premium:hover:not(:disabled) {
+  border-color: var(--brand);
+}
+
+.pakistan-tax-calculator .field input.input-premium:focus,
+.pakistan-tax-calculator .field select.select-premium:focus,
+.pakistan-tax-calculator .field input.input-premium:focus-visible,
+.pakistan-tax-calculator .field select.select-premium:focus-visible {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+}
+
+/* Preserve the PKR/% affix slot after the calculator's readable control rule. */
+.pakistan-tax-calculator .field .input-affix > .input-premium {
+  padding-left: 58px !important;
+}
+
+.pakistan-tax-calculator .field input.input-premium:disabled,
+.pakistan-tax-calculator .field select.select-premium:disabled {
+  background-color: #F1F3F8;
+  border-color: #C7CEDC;
+  color: #566078;
+  -webkit-text-fill-color: #566078;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+.pakistan-tax-calculator .field select.select-premium:disabled {
+  background-image:
+    linear-gradient(45deg, transparent 50%, #667085 50%),
+    linear-gradient(135deg, #667085 50%, transparent 50%);
+}
+
+.pakistan-tax-calculator .helper-premium {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pakistan-tax-calculator .tax-disclaimer {
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+/* Selected product and search results may wrap instead of becoming unreadable
+   badges on a narrow screen. */
+.pakistan-tax-calculator .tax-product-summary > div:first-child {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pakistan-tax-calculator .tax-product-summary .tool-badge {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+.pakistan-tax-calculator .tax-product-search > div {
+  max-width: 100%;
+}
+
+.pakistan-tax-calculator .tax-product-search button {
+  min-height: 48px;
+  font-size: 14px !important;
+  line-height: 1.4;
+}
+
+.pakistan-tax-calculator .tax-product-search button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -3px;
+  background: var(--brand-soft);
+}
+
+.pakistan-tax-calculator .tax-product-search button > div > div:last-child {
+  color: var(--text-muted) !important;
+  font-size: 12px !important;
+}
+
+/* Further Tax is a decision group, not a pair of competing promotional CTAs. */
+.pakistan-tax-calculator .further-tax-card {
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid rgba(124, 92, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(124, 92, 255, 0.07);
+}
+
+.pakistan-tax-calculator .further-tax-title {
+  margin: 0 0 10px;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.pakistan-tax-calculator .further-tax-copy {
+  margin: 0 0 16px;
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.pakistan-tax-calculator .further-tax-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.pakistan-tax-calculator .tax-choice {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  cursor: pointer;
+  transition: background-color var(--dur-base) var(--ease-out-soft), border-color var(--dur-base) var(--ease-out-soft), color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft), transform var(--dur-fast) var(--ease-out-soft);
+}
+
+.pakistan-tax-calculator .tax-choice-primary {
+  border: 1px solid #B8BEEB;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--brand-strong);
+}
+
+.pakistan-tax-calculator .tax-choice-primary:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.pakistan-tax-calculator .tax-choice-primary.is-selected {
+  border-color: transparent;
+  background: var(--gradient-brand);
+  color: var(--text-on-brand);
+  box-shadow: var(--shadow-brand);
+}
+
+.pakistan-tax-calculator .tax-choice-secondary {
+  border: 1px solid #BFC6D9;
+  background: rgba(255, 255, 255, 0.45);
+  color: #3E4A64;
+}
+
+.pakistan-tax-calculator .tax-choice-secondary:hover {
+  border-color: #8D97B0;
+  background: #F6F7FB;
+}
+
+.pakistan-tax-calculator .tax-choice-secondary.is-selected {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.16);
+}
+
+/* A disabled choice remains readable; emphasis is reduced with colour and
+   border treatment instead of applying opacity to the whole button. */
+.pakistan-tax-calculator .tax-choice:disabled,
+.pakistan-tax-calculator .tax-choice[aria-disabled="true"] {
+  border-color: #B9C0D0 !important;
+  background: #EEF1F6 !important;
+  color: #4F5B73 !important;
+  -webkit-text-fill-color: #4F5B73;
+  box-shadow: none;
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pakistan-tax-calculator .tax-form-actions {
+  align-items: stretch;
+}
+
+.pakistan-tax-calculator .tax-form-actions .button-indigo-secondary {
+  min-width: 0;
+}
+
+.pakistan-tax-calculator .tax-estimator-heading {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pakistan-tax-calculator .tax-estimator-heading h3 {
+  font-size: 17px;
+}
+
+.pakistan-tax-calculator .tax-estimator-heading .button-indigo-secondary {
+  flex: 0 0 auto;
+  width: auto !important;
+  min-width: 76px;
+  min-height: 48px;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+}
+
+.pakistan-tax-calculator .tax-estimator-grid > div {
+  min-width: 0;
+}
+
+.pakistan-tax-calculator .tax-estimator-grid > div > div:first-child {
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+}
+
+.pakistan-tax-calculator .tax-estimator-grid > div > div:last-child {
+  overflow-wrap: anywhere;
+  font-size: 18px !important;
+}
+
+/* Result cards: values wrap safely and verification is ordered before the
+   numeric summary so a pending zero cannot read as a legitimate zero rating. */
+.pakistan-tax-calculator .tax-results-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.pakistan-tax-calculator .tax-total-card,
+.pakistan-tax-calculator .tax-breakdown-card {
+  min-width: 0;
+  background: linear-gradient(145deg, #242257 0%, #17173F 100%);
+}
+
+.pakistan-tax-calculator .tax-total-card .eyebrow {
+  color: #C9CCF5 !important;
+  font-size: 11px;
+}
+
+.pakistan-tax-calculator .tax-total-value {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  font-size: clamp(32px, 4vw, 42px) !important;
+}
+
+.pakistan-tax-calculator .tax-total-card.is-pending {
+  border-color: rgba(251, 191, 36, 0.48);
+}
+
+.pakistan-tax-calculator .tax-breakdown-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+
+.pakistan-tax-calculator .tax-breakdown-row > span {
+  min-width: 0;
+}
+
+.pakistan-tax-calculator .tax-breakdown-row > span:last-child {
+  max-width: 100%;
+  text-align: right;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.pakistan-tax-calculator .tax-metrics-grid > .metric-card {
+  min-width: 0;
+}
+
+.pakistan-tax-calculator .tax-metric-card .metric-label,
+.pakistan-tax-calculator .tax-why-card .metric-label,
+.pakistan-tax-calculator .tax-verification-label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.pakistan-tax-calculator .tax-treatment-value {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-size: 15px !important;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.pakistan-tax-calculator .tax-why-card > div {
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.pakistan-tax-calculator .tax-verification-card {
+  order: initial;
+  background: #FFF8E6;
+  border-color: #D99B2B !important;
+}
+
+.pakistan-tax-calculator .tax-verification-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8A4B08 !important;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.pakistan-tax-calculator .tax-verification-label span {
+  display: inline-grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #8A4B08;
+  color: #FFFFFF;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.pakistan-tax-calculator .tax-verification-message {
+  color: #3F4B63 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.pakistan-tax-calculator .tax-verification-note {
+  color: #5C6477 !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+.pakistan-tax-calculator .tax-warning-card {
+  background: #FFF8E1 !important;
+  border-color: #E3B341 !important;
+}
+
+.pakistan-tax-calculator .tax-warning-text {
+  color: #7A4A08 !important;
+  font-size: 13px !important;
+  line-height: 1.55;
+}
+
+.pakistan-tax-calculator .tax-copy-summary {
+  margin-top: 4px;
+}
+
+/* At tablet widths, keep the calculator as one full-width work area so each
+   form pair has enough room for native select labels. The two-column form is
+   retained inside that work area until the phone breakpoint. */
+@media (max-width: 1100px) {
+  .pakistan-tax-calculator .finder-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Mobile only: controls become one column before the native select can become
+   cryptic, and the fixed mobile CTA receives a final-action safe area. */
+@media (max-width: 799px) {
+  html:has(.pakistan-tax-calculator) {
+    scroll-padding-bottom: calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .pakistan-tax-calculator {
+    /* The route CTA is placed in normal flow below; this keeps the calculator
+       itself compact while preserving the existing global section rhythm. */
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+  }
+
+  /* A fixed mobile bar necessarily crosses whichever long-form control happens
+     to sit at the viewport bottom. Keep the CTA available, but release it from
+     fixed positioning on this calculator route so controls and results are
+     never covered. */
+  body:has(.pakistan-tax-calculator) .mobile-cta {
+    position: static;
+    z-index: auto;
+  }
+
+  .pakistan-tax-calculator .finder-panel {
+    padding: 20px 16px;
+  }
+
+  .pakistan-tax-calculator .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+
+  .pakistan-tax-calculator .form-grid > .field {
+    grid-column: 1 / -1;
+  }
+
+  .pakistan-tax-calculator .tax-total-card,
+  .pakistan-tax-calculator .tax-breakdown-card {
+    padding: 20px 18px !important;
+    margin-bottom: 20px !important;
+  }
+
+  .pakistan-tax-calculator .further-tax-card {
+    padding: 16px;
+  }
+
+  .pakistan-tax-calculator .further-tax-actions {
+    flex-direction: column;
+  }
+
+  .pakistan-tax-calculator .tax-choice {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
+  .pakistan-tax-calculator .tax-form-actions {
+    flex-direction: column !important;
+  }
+
+  .pakistan-tax-calculator .tax-form-actions .button-indigo-secondary {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .pakistan-tax-calculator .tax-estimator-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .pakistan-tax-calculator .tax-copy-summary {
+    margin-bottom: 0;
+  }
+
+  .pakistan-tax-calculator .field,
+  .pakistan-tax-calculator .further-tax-card,
+  .pakistan-tax-calculator .tax-copy-summary {
+    scroll-margin-bottom: 90px;
+  }
+
+  /* The calculator already has a full-width WhatsApp CTA. Suppress the
+     floating chat launcher only on this narrow route so it cannot sit over a
+     helper paragraph, field, warning, or result action. */
+  body:has(.pakistan-tax-calculator) .chat-launcher,
+  body:has(.pakistan-tax-calculator) .chat-minibar {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .pakistan-tax-calculator .tax-breakdown-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .pakistan-tax-calculator .tax-breakdown-row > span:last-child {
+    text-align: left;
+  }
+
+  .pakistan-tax-calculator .tax-metrics-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .pakistan-tax-calculator .tax-product-summary > div:first-child {
+    align-items: flex-start;
+  }
+
+  .pakistan-tax-calculator .tax-product-summary .tool-badge {
+    margin-left: 0;
+  }
+}
+
+/* The fixed route-level controls need a real outer gutter. Below the wide
+   desktop threshold there is no safe horizontal lane beside the calculator,
+   so keep the existing mobile CTA and suppress only the floating controls. */
+@media (max-width: 1411px) {
+  body:has(.pakistan-tax-calculator) .chat-launcher,
+  body:has(.pakistan-tax-calculator) .chat-minibar,
+  body:has(.pakistan-tax-calculator) .chat-window,
+  body:has(.pakistan-tax-calculator) .floating-whatsapp {
+    display: none;
+  }
+}
+
+/* The desktop floating WhatsApp control is kept, but lifted on this route so
+   it cannot sit over the result action row. Mobile keeps the existing hidden
+   floating control and global CTA behavior. */
+@media (min-width: 800px) {
+  body:has(.pakistan-tax-calculator) .floating-whatsapp {
+    bottom: 132px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pakistan-tax-calculator .tax-choice,
+  .pakistan-tax-calculator .field input.input-premium,
+  .pakistan-tax-calculator .field select.select-premium { transition: none !important; }
+}
+
+/* ============================================================================
+    18. /privacy — long-form legal document
+    ----------------------------------------------------------------------------
+    Scoped entirely to `.legal-*` class names, so nothing here touches an
+    existing component. Built on the shared section rhythm (.section,
+    .container) and the indigo type ramp already used by .tools-main. The
+    document column is width-capped for readability; the contents rail is
+    sticky on desktop and stacks above the copy on mobile.
+    ========================================================================== */
+
+.legal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 64px;
+  align-items: start;
+}
+.legal-layout > * { min-width: 0; }
+
+/* --- Document column --------------------------------------------------------
+   72ch is the comfortable measure for this body size. Lists, headings and
+   inline links inherit the same measure so the rag stays even. */
+.legal-doc { max-width: 72ch; }
+.legal-doc > p { margin-top: 16px; color: var(--text-secondary); font-size: 15px; line-height: 1.8; }
+.legal-doc > p:first-of-type { margin-top: 0; }
+
+/* Effective-date line: quiet, but above the document rather than buried in it. */
+.legal-meta {
+  margin-top: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+
+.legal-doc h2 {
+  margin-top: 48px;
+  font-size: 22px;
+  line-height: 1.3;
+  /* The global h2 tracking (-.02em) visually collides the section numeral with
+     the first word at this size ("1.Who we are"), so these headings track
+     neutral. */
+  letter-spacing: 0;
+  color: var(--text-primary);
+  /* globals.css already sets html{scroll-padding-top:110px} for the sticky
+     header. Only a small extra offset is needed here, or an in-page anchor
+     click lands the heading ~230px down with dead space beneath the bar. */
+  scroll-margin-top: 12px;
+}
+.legal-doc h2:first-of-type { margin-top: 40px; }
+.legal-doc h3 {
+  margin-top: 28px;
+  font-size: 16px;
+  color: var(--brand-strong);
+  scroll-margin-top: 12px;
+}
+
+.legal-doc ul {
+  margin-top: 16px;
+  padding-left: 22px;
+  list-style: none;
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.8;
+}
+.legal-doc ul li { position: relative; margin-top: 10px; padding-left: 18px; }
+.legal-doc ul li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: .72em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+}
+.legal-doc strong { color: var(--text-primary); font-weight: 600; }
+
+/* Inline links inside the copy carry their own affordance, because the global
+   `a` rule strips underlines. */
+.legal-doc a:not(.text-link):not(.button-indigo-secondary) {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--border-brand);
+}
+.legal-doc a:not(.text-link):not(.button-indigo-secondary):hover {
+  text-decoration-color: var(--brand);
+}
+
+.legal-note {
+  margin-top: 44px;
+  padding: 20px 22px;
+  border-radius: var(--radius-md);
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-brand);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* --- Contents rail ----------------------------------------------------------
+   Sticky so a 15-section document stays navigable. Falls back to a normal
+   static block below the desktop breakpoint (see the media queries at the end
+   of this section). */
+.legal-aside { position: sticky; top: 118px; }
+.legal-aside-card {
+  padding: 22px;
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+}
+.legal-aside-card > h2 {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--brand-strong);
+  margin-bottom: 14px;
+}
+.legal-aside-card ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: legal-toc;
+}
+.legal-aside-card ol li { border-top: 1px solid var(--border-soft); }
+.legal-aside-card ol li:first-child { border-top: 0; }
+.legal-aside-card ol li a {
+  display: block;
+  padding: 9px 0;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+.legal-aside-card ol li a:hover { color: var(--brand); }
+
+.legal-aside-contact { margin-top: 18px; background: var(--gradient-soft); border-color: var(--border-brand); }
+.legal-aside-contact p {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.legal-aside-contact p a { color: var(--brand); font-weight: 600; }
+.legal-aside-contact .button-indigo-secondary { width: 100%; font-size: 13px; }
+
+/* --- Responsive ------------------------------------------------------------ */
+@media (max-width: 1023px) {
+  .legal-layout { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .legal-aside { position: static; order: -1; }
+  /* Contents rail becomes a compact reference card above the document. */
+  .legal-aside-card ol { columns: 2; column-gap: 28px; }
+  .legal-aside-card ol li { break-inside: avoid; }
+}
+@media (max-width: 799px) {
+  .legal-doc h2 { margin-top: 38px; font-size: 20px; }
+  .legal-doc > p,
+  .legal-doc ul { font-size: 14.5px; line-height: 1.75; }
+  .legal-note { padding: 18px; }
+}
+@media (max-width: 560px) {
+  .legal-aside-card ol { columns: 1; }
+  .legal-aside-card { padding: 18px; }
+}
