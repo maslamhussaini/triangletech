@@ -17,7 +17,7 @@ export function LandingSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="section" id={id}>
+    <section className="section us-section" id={id}>
       <div className="container">
         {(eyebrow || title || description) && (
           <div className="section-heading">
