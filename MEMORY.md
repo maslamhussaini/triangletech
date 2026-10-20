@@ -176,16 +176,32 @@ another inquiry". Verified by 11 new unit tests (151 total) and a
 desktop 1440 and mobile 390, zero console errors. Note: the repo has no
 DOM test environment (Node-only Vitest; no jsdom) — DOM focus behavior
 is covered by the browser suite, decision logic by unit tests.
+P1.11 (owner-authorized, in progress): Stage A prepared the safe
+Preview configuration (workspace research
+`phase1-qa/p1.11-safe-preview-configuration.md`) — no Resend key or GA4
+ID exists and the mock flag is unset, so Preview lead submissions
+resolve to the honest-503 store and no analytics can fire. Stage B: the
+branch was pushed via the GitHub connector's snapshot route (the git
+CLI has no credentials by design): remote branch created at `40cbce8`,
+snapshot commit `9f168266ca5ad88507c05451c0387018e08a60e5` carries the
+43-file delta; all 43 files verified byte-identical to local HEAD by
+blob SHA. The remote history is that single snapshot commit — the 21
+local commits remain local. First deployment round: the
+"triangletechco" project's Preview SUCCEEDED; the "triangletech"
+project's Preview FAILED on the identical tree (cause not visible
+outside the Vercel dashboard — under investigation; the same tree
+builds locally and in the other project). `main` is unchanged and no
+Production deployment was triggered.
 Finding F2: the privacy policy does not state the internal 30-day
 deletion standard or 12-month purge period (B2 legal review). Full
 report: workspace research `phase1-qa/p1.10-qa-report.md`, including the
 16-item release-blocker inventory. No production code changed in P1.10.
 
 ## Next exact action
-Submit the P1.10-D1 evidence for ChatGPT's independent review (D1 is
-fixed; the waiver question is closed). Then request the owner's
-authorization for P1.11 (Preview UAT — first branch push; Vercel
-dashboard audit is a prerequisite). P1.11 is NOT yet authorized.
+Complete P1.11: diagnose/retry the failed "triangletech" Preview
+deployment, obtain the working Preview URL from the Vercel dashboard,
+then run Stages C–F (hosted UAT, Lighthouse/axe, security/ops checks,
+defect remediation) and the Stage G report. P1.12 is NOT authorized.
 Before any production release, the owner
 must: verify the sending domain with Resend (SPF/DKIM for
 notifications@triangletech.co), create the `RESEND_API_KEY`, confirm the
