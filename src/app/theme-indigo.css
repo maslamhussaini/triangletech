@@ -3025,3 +3025,332 @@ button.card-premium:focus-visible {
   .legal-aside-card ol { columns: 1; }
   .legal-aside-card { padding: 18px; }
 }
+
+/* --- USA growth landing primitives (P1.4) -----------------------------------
+   Opt-in classes for src/components/us/. Composed on top of .card-premium;
+   no existing rule is modified. Breakpoints follow the file convention
+   (799px mobile, 1100px grid collapse). */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: stretch;
+}
+@media (min-width: 1101px) {
+  .pricing-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.plan-card { height: 100%; }
+.plan-badge {
+  align-self: flex-start;
+  background: var(--brand);
+  color: var(--text-on-brand);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.plan-tagline { color: var(--text-secondary); font-size: 13.5px; margin-top: 6px; }
+.plan-price {
+  font-family: var(--font-sora), Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin: 18px 0 4px;
+}
+.plan-billing {
+  display: block;
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.plan-features {
+  list-style: none;
+  margin: 14px 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.plan-features li {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+.plan-features .icon {
+  color: var(--brand);
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+}
+.plan-exclusions { font-size: 12.5px; color: var(--text-muted); margin-bottom: 16px; }
+.plan-cta { margin-top: auto; }
+.trust-signal .icon { color: var(--brand); width: 22px; height: 22px; }
+.trust-signal h3 { font-size: 15px; margin: 12px 0 7px; }
+.trust-signal p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+/* --- USA landing page assembly (P1.5) ---------------------------------------
+   Small scoped additions for /websites-for-us-small-business/ only. */
+.us-chip-row {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 0;
+  padding: 0;
+}
+.us-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.us-chip .icon { color: var(--brand); width: 15px; height: 15px; }
+.us-card-text { color: var(--text-secondary); font-size: 14px; line-height: 1.7; margin-top: 10px; }
+.us-cta-note {
+  color: var(--text-inverse-soft);
+  font-size: 14.5px;
+  line-height: 1.7;
+  margin-top: 16px;
+  max-width: 52ch;
+}
+/* P1.6 fix: FAQ answers on the USA landing page use --text-secondary
+   (7.4:1) instead of the legacy --muted (2.99:1, fails WCAG AA). Scoped
+   to .us-faq so the existing /faq page is untouched. */
+.us-faq .faq-list details > p { color: var(--text-secondary); }
+
+/* --- Consent-first analytics UI (P1.7) --------------------------------------
+   Rendered only when a GA4 measurement ID is configured. The banner sits
+   above the mobile action bar on small screens. */
+.consent-banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 86px;
+  z-index: 95;
+  width: min(620px, calc(100% - 28px));
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: 18px 20px;
+  color: var(--text-primary);
+}
+@media (min-width: 800px) {
+  .consent-banner { bottom: 22px; }
+}
+.consent-banner p { font-size: 13.5px; line-height: 1.65; color: var(--text-secondary); }
+.consent-banner p strong { color: var(--text-primary); }
+.consent-banner a { color: var(--brand-strong); text-decoration: underline; }
+.consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.consent-status { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-right: 4px; }
+.consent-reopen {
+  position: fixed;
+  left: 14px;
+  bottom: 86px;
+  z-index: 94;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  box-shadow: var(--shadow-card);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+@media (min-width: 800px) {
+  .consent-reopen { bottom: 18px; }
+}
+.consent-reopen:hover { color: var(--brand-strong); border-color: var(--border-brand); }
+.us-more-link { margin-top: 26px; font-size: 14px; color: var(--text-secondary); }
+
+/* ============================================================================
+   P1.8 — USA consultation lead form (opt-in .lead-* classes only; composed
+   with the §4 form primitives above — no existing rule is modified).
+   ========================================================================== */
+
+.lead-form-panel { max-width: 880px; margin: 0 auto; }
+
+.lead-form { position: relative; display: flex; flex-direction: column; gap: 18px; }
+
+.lead-form-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+@media (min-width: 720px) {
+  .lead-form-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Honeypot: off-screen, never display:none (bots skip display:none fields),
+   and removed from the tab order + assistive tech in the markup. */
+.lead-honeypot {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.lead-consent { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.lead-consent > input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.lead-consent > span { font-weight: 400; font-size: 14px; line-height: 1.55; color: var(--text-secondary); }
+.lead-consent a { color: var(--brand-strong); text-decoration: underline; }
+
+.lead-form-actions { display: flex; flex-direction: column; gap: 12px; }
+@media (min-width: 720px) {
+  .lead-form-actions { flex-direction: row; align-items: center; gap: 18px; }
+  .lead-form-actions .helper-premium { flex: 1; }
+}
+
+.lead-alert {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+.lead-success { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.lead-success h3 { font-size: 22px; }
+.lead-success p { color: var(--text-secondary); line-height: 1.65; max-width: 62ch; }
+.lead-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--success);
+}
+.lead-success-icon .icon { width: 22px; height: 22px; }
+
+/* ============================================================================
+   P1.9 — USA project estimator (opt-in .estimator-* classes only; composed
+   with the §4 form primitives — no existing rule is modified). No motion
+   beyond the site's standard transitions, so reduced-motion users get the
+   same experience.
+   ========================================================================== */
+
+.estimator-panel { max-width: 880px; margin: 0 auto; }
+
+.estimator-progress-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 22px; }
+.estimator-progress-label { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.estimator-progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  overflow: hidden;
+}
+.estimator-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: width var(--dur-base) var(--ease-out-soft);
+}
+
+.estimator { display: flex; flex-direction: column; gap: 24px; }
+
+/* Block flow, deliberately not flex: a flex fieldset breaks legend layout. */
+.estimator-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.estimator-fieldset > legend {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text-primary);
+  padding: 0;
+  margin-bottom: 10px;
+}
+.estimator-fieldset > .helper-premium { margin: -4px 0 10px; }
+.estimator-fieldset .error-premium { margin-top: 10px; }
+
+.estimator-options { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 720px) {
+  .estimator-options { grid-template-columns: 1fr 1fr; }
+}
+
+.estimator-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-elevated);
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease-out-soft), background-color var(--dur-base) var(--ease-out-soft);
+}
+.estimator-option:hover { border-color: var(--border-brand); }
+.estimator-option:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); }
+.estimator-option:has(input:focus-visible) { box-shadow: var(--focus-ring); }
+.estimator-option > input { flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; accent-color: var(--brand); cursor: pointer; }
+.estimator-option-label { display: block; font-size: 14.5px; font-weight: 600; line-height: 1.4; color: var(--text-primary); }
+.estimator-option-hint { display: block; font-size: 12.5px; line-height: 1.5; color: var(--text-muted); margin-top: 2px; }
+
+.estimator-nav { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+.estimator-result { display: flex; flex-direction: column; gap: 14px; }
+.estimator-result-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--brand-strong);
+}
+.estimator-result h3 { font-size: 26px; }
+.estimator-result h4 { font-size: 16px; margin-top: 8px; }
+
+.estimator-summary { display: flex; flex-direction: column; gap: 4px; }
+.estimator-summary li { font-size: 15px; line-height: 1.6; color: var(--text-secondary); }
+
+.estimator-complexity { font-size: 15px; line-height: 1.6; color: var(--text-secondary); }
+.estimator-complexity strong { color: var(--text-primary); }
+
+.estimator-explanation { font-size: 15px; line-height: 1.65; color: var(--text-secondary); max-width: 65ch; }
+
+.estimator-checklist { display: flex; flex-direction: column; gap: 8px; }
+.estimator-checklist li { display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; line-height: 1.55; color: var(--text-secondary); }
+.estimator-checklist .icon { flex-shrink: 0; width: 17px; height: 17px; margin-top: 2px; color: var(--success); }
+
+.estimator-assumptions { display: flex; flex-direction: column; gap: 6px; }
+.estimator-assumptions li { font-size: 14px; line-height: 1.6; color: var(--text-muted); padding-left: 16px; position: relative; }
+.estimator-assumptions li::before { content: "•"; position: absolute; left: 2px; }
+
+/* P1.10-D1: headings that receive programmatic focus on view transitions
+   (tabIndex={-1}, never in the tab order) should not paint a focus
+   outline — the focus move itself, plus the heading text, is the cue. */
+.estimator-progress-label:focus,
+.estimator-result h3:focus,
+.lead-success h3:focus {
+  outline: none;
+}

@@ -50,6 +50,7 @@ export default function Privacy() {
       <p>We only receive the information you choose to give us. This typically includes:</p>
       <ul>
         <li><strong>Contact and account information</strong> you enter on our contact or demo request form or send by email or WhatsApp &mdash; for example your name, business name, email address, phone or WhatsApp number, business type, the product you are interested in, your preferred contact time, and anything you include in the message field.</li>
+        <li><strong>Consultation inquiries</strong> you send through the inquiry form on our page for US small businesses &mdash; your name, business name, email address, your current website address if you choose to give it, the service you are interested in, and your description of your project. When you submit that form, your inquiry is delivered to us as an email by our transactional email provider (see section 6). We use these details only to respond to your inquiry; submitting the form does not subscribe you to any mailing list.</li>
         <li><strong>Product assistant details</strong> you type into the assistant on this website &mdash; including your name, email address, phone number and business name if you choose to give them, together with the messages you send in that conversation.</li>
         <li><strong>Project and support information</strong> you send while evaluating or using a TriangleTech product, such as workflow descriptions, requirements, and files or records you submit for the work you have asked us to do.</li>
         <li><strong>Account information</strong> you provide when you create an account for a TriangleTech product or service, including a user name, email address and the permissions or access level you assign to other users of your workspace.</li>
@@ -103,6 +104,9 @@ export default function Privacy() {
       <p>
         We do not control and are not responsible for the content, privacy practices or data handling of third-party services, including information you choose to publish through them.
       </p>
+      <p>
+        One provider acts on our behalf rather than as a service you connect: we use Resend to deliver consultation inquiry submissions from this website to us by email. Resend processes the contents of an inquiry in transit, as our service provider, so that the email reaches us; the submitted details are also included in the email itself, which is what we reply to.
+      </p>
 
       <h2 id="how-we-use-information">7. How we use information</h2>
       <ul>
@@ -119,7 +123,7 @@ export default function Privacy() {
 
       <h2 id="cookies-and-storage">8. Cookies and storage used by this website</h2>
       <p>
-        This website does not set tracking cookies, does not use advertising or cross-site tracking technology, and does not embed third-party analytics or advertising trackers. If you use the product assistant, the conversation you have with it stays in your browser session and is not used to build a profile of you.
+        This website does not use advertising or cross-site tracking technology, and it does not run analytics by default. Analytics is optional and consent-based: only if you accept analytics in the consent banner does this site load Google Analytics (GA4), which sets cookies that measure visits and page views so we can understand, in aggregate, which pages are useful. No analytics script is loaded before you accept, and IP addresses are anonymized in our analytics configuration. You can change your mind at any time through the &ldquo;Privacy choices&rdquo; control on this site; withdrawing consent stops further analytics collection. Your consent choice itself is stored in your browser&apos;s local storage so the site can remember it &mdash; that record holds only your choice. Analytics data is retained only for the period configured in our Google Analytics property and is then deleted by Google. If a Google Analytics measurement is not configured on the site, no consent banner is shown and no analytics takes place. If you use the product assistant, the conversation you have with it stays in your browser session and is not used to build a profile of you.
       </p>
       <p>
         Where a TriangleTech product requires a cookie or similar browser storage, it does so to keep you signed in and to remember in-product preferences and workspace state. We will describe any additional storage a specific product uses in that product&apos;s own documentation when it is introduced.
@@ -128,6 +132,9 @@ export default function Privacy() {
       <h2 id="retention-and-disconnecting">9. Retention and disconnecting integrations</h2>
       <p>
         We keep personal information only for as long as it is needed for the purposes described in this policy &mdash; typically while an account or customer relationship is active, and afterwards only as long as needed for legitimate business or legal reasons such as record-keeping, resolving disputes or meeting legal obligations. When information is no longer needed we delete it or reduce it to a form that cannot identify you.
+      </p>
+      <p>
+        Consultation inquiries are kept in our email while we are dealing with the inquiry and afterwards only for as long as the record-keeping purposes above apply. You can ask us to delete an inquiry at any time (see section 10).
       </p>
       <p>
         <strong>Disconnecting an integration.</strong> You can disconnect a connected third-party service at any time from within the product. Disconnecting revokes our access going forward and removes the authorization token we hold for that connection. Content that has already been published to the third-party service is controlled by that service and is not automatically removed &mdash; you manage that from your account there.
