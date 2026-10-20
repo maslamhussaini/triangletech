@@ -46,10 +46,12 @@
      --text-primary reuses the existing --text (#1a2338, 14.5:1 on white).
      --text-secondary and --text-muted are NEW, deliberately darker than the
      existing --muted (#8592ad ~ 3.4:1, which fails WCAG AA for body copy).
-     --text-muted is #6B7690 ~ 4.9:1, so new copy meets AA. */
+     --text-muted is #626D87 ~ 5.1:1 on the form card background, so new
+     copy meets AA. (Was #6B7690, measured 4.49:1 by axe in P1.11 —
+     just under AA; darkened one step in P1.11 Stage F.) */
   --text-primary: var(--text);
   --text-secondary: #4A5573;
-  --text-muted: #6B7690;
+  --text-muted: #626D87;
   --text-on-brand: #FFFFFF;
   --text-inverse-soft: #C9CCF5;
 
@@ -3133,6 +3135,19 @@ button.card-premium:focus-visible {
    (7.4:1) instead of the legacy --muted (2.99:1, fails WCAG AA). Scoped
    to .us-faq so the existing /faq page is untouched. */
 .us-faq .faq-list details > p { color: var(--text-secondary); }
+
+/* P1.11 Stage F fix (axe, 25 color-contrast nodes on the landing page):
+   the legacy accent blue (--blue, #2F80ED, 3.69:1 on the light section
+   background) and legacy --muted (2.99:1) fail WCAG AA for the small
+   text they color on this page. Scoped to the USA landing sections
+   (.us-section / .us-faq) so every other page keeps its current colors,
+   reusing the same brand tokens the indigo sections already use for
+   these elements (.eyebrow -> --brand-strong at 10.9:1, links and FAQ
+   numbers -> --brand at 6.0:1, process copy -> --text-secondary). */
+.us-section .eyebrow { color: var(--brand-strong); }
+.us-section .text-link { color: var(--brand); border-color: var(--border-brand); }
+.us-section .process-grid p { color: var(--text-secondary); }
+.us-faq .faq-number { color: var(--brand); }
 
 /* --- Consent-first analytics UI (P1.7) --------------------------------------
    Rendered only when a GA4 measurement ID is configured. The banner sits
