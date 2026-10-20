@@ -176,33 +176,72 @@ another inquiry". Verified by 11 new unit tests (151 total) and a
 desktop 1440 and mobile 390, zero console errors. Note: the repo has no
 DOM test environment (Node-only Vitest; no jsdom) — DOM focus behavior
 is covered by the browser suite, decision logic by unit tests.
-P1.11 (owner-authorized, in progress): Stage A prepared the safe
-Preview configuration (workspace research
-`phase1-qa/p1.11-safe-preview-configuration.md`) — no Resend key or GA4
-ID exists and the mock flag is unset, so Preview lead submissions
-resolve to the honest-503 store and no analytics can fire. Stage B: the
-branch was pushed via the GitHub connector's snapshot route (the git
-CLI has no credentials by design): remote branch created at `40cbce8`,
-snapshot commit `9f168266ca5ad88507c05451c0387018e08a60e5` carries the
-43-file delta; all 43 files verified byte-identical to local HEAD by
-blob SHA. The remote history is that single snapshot commit — the 21
-local commits remain local. First deployment round: the
-"triangletechco" project's Preview SUCCEEDED; the "triangletech"
-project's Preview FAILED on the identical tree (cause not visible
-outside the Vercel dashboard — under investigation; the same tree
-builds locally and in the other project). `main` is unchanged and no
-Production deployment was triggered.
+P1.11 COMPLETE (owner-authorized Preview UAT; full report: workspace
+research `phase1-qa/p1.11-preview-uat-report.md`). Stage A: safe
+Preview configuration documented (`phase1-qa/p1.11-safe-preview-
+configuration.md`) — no Resend key or GA4 ID exists and the mock flag
+is unset, so Preview lead submissions resolve to the honest-503 store
+and no analytics can fire; this was later CONFIRMED empirically on the
+hosted Preview (a valid form submission returned the honest
+delivery-failure message; no success, no email). Stage B: the branch
+was pushed via the GitHub connector's snapshot route (the git CLI has
+no credentials by design): remote branch created at `40cbce8`, snapshot
+commit `9f168266ca5ad88507c05451c0387018e08a60e5` carries the 43-file
+delta, all verified byte-identical to local HEAD by blob SHA; the
+remote history is snapshot commits, not the local commit history
+(which remains local). Deployments: both projects' Previews ultimately
+SUCCEEDED on the final tree (remote head `420dc273`, Stage F fix). The
+first "triangletech" build failed inside Vercel's Turbopack Google
+Fonts step (`Can't resolve '@vercel/turbopack-next/internal/font/
+google/font'` in the Sora font module) — a platform flake, proven by
+three successful builds of the identical tree (the other project, an
+owner redeploy, and the retry commit); noted for P1.12 monitoring, not
+a code defect. Both projects' Preview deployments sit behind Vercel
+Authentication (SSO) — verified by redirect; the Preview is not
+public. Hosted UAT (Stage C) passed every observable check: page,
+title and H1 correct on both projects' aliases; zero pricing strings;
+sitemap lists the landing URL exactly once; robots as expected;
+estimator recommends Growth SEO for the canonical inputs and Edit
+preserves all answers; empty form shows 6 field errors; valid form
+shows the honest failure (above). Checks the hosted toolset could not
+observe (meta description, canonical, JSON-LD, response headers,
+exact focus targets, viewport measurements, direct POST status) stand
+on identical-build local evidence and are recorded as hosted-
+UNVERIFIED in the report. Stage D: axe-core (local, final tree) —
+zero critical violations in all states; the Stage F fix below removed
+all 25 color-contrast nodes; the only remaining axe findings are
+three pre-existing site-chrome items shared with the homepage
+(footer-social aria-label, logo-link accessible name, WhatsApp
+landmark) — owner decision, not Phase 1 regressions. Lighthouse
+remains UNVERIFIED: the hosted URL is SSO-walled to this sandbox and
+the sandbox Chromium's Local Network Access interstitial blocks
+Lighthouse's navigation to the local build (four documented
+attempts); no scores are claimed. Screen readers remain UNVERIFIED.
+Stage E: Preview isolation confirmed (SSO + no key + failure message);
+rate limiting re-verified on the final tree (5 processed, then 429)
+— still in-memory/best-effort; a durable distributed limiter remains
+a production release blocker. Stage F fix (commit `08e87cf`): axe
+found 25 color-contrast nodes on the landing page (legacy --blue at
+3.69:1 and --muted at 2.99:1 on small text; --text-muted measured
+4.49:1 against its documented AA target). Fixed landing-scoped,
+reusing the design system's own brand tokens (eyebrows ->
+--brand-strong, FAQ numbers and text links -> --brand, process copy
+-> --text-secondary; `.us-section` scope class added to
+LandingSection) and --text-muted darkened one step to #626D87 (5.1:1).
+Post-fix axe: zero contrast nodes, estimator and form states fully
+clean; gates 151/151, lint 0 errors / 5 baseline warnings, build
+42/42. `main` untouched throughout; no Production deployment, no real
+email, no analytics activation, no price publication.
 Finding F2: the privacy policy does not state the internal 30-day
 deletion standard or 12-month purge period (B2 legal review). Full
 report: workspace research `phase1-qa/p1.10-qa-report.md`, including the
 16-item release-blocker inventory. No production code changed in P1.10.
 
 ## Next exact action
-Complete P1.11: diagnose/retry the failed "triangletech" Preview
-deployment, obtain the working Preview URL from the Vercel dashboard,
-then run Stages C–F (hosted UAT, Lighthouse/axe, security/ops checks,
-defect remediation) and the Stage G report. P1.12 is NOT authorized.
-Before any production release, the owner
+Submit the P1.11 evidence for ChatGPT's independent review, then
+request the owner's authorization for P1.12 (Release Readiness).
+P1.12 is NOT authorized — no merge to `main`, no Production
+deployment. Before any production release, the owner
 must: verify the sending domain with Resend (SPF/DKIM for
 notifications@triangletech.co), create the `RESEND_API_KEY`, confirm the
 hello@triangletech.co inbox is created and monitored, decide on durable
