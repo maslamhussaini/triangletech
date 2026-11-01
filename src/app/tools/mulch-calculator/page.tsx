@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { pageMetadata, business } from "@/lib/site";
+import { LOCALE_COOKIE, localeFromValue } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import LandscapingCalculator from "@/components/tools/landscaping-calculator";
 
 export const metadata: Metadata = pageMetadata(
@@ -19,19 +22,6 @@ const breadcrumb = {
   ],
 };
 
-const FAQS = [
-  { question: "How deep should mulch be?", answer: "Suitable depth depends on material and use. University extension guidance commonly cites 2–3 inches for most garden beds (Mississippi State University Extension, 2022). Keep mulch away from trunks and stems, and confirm depth for your plants and material — this calculator does not prescribe a universal depth." },
-  { question: "Do I need density for a mulch calculation?", answer: "No. Mulch here is calculated by volume, so no density is required and no gravel compaction assumptions are applied." },
-  { question: "Bags versus bulk — which is cheaper?", answer: "Enter both prices and compare the two scenarios on the page. Bagged quantities are rounded up to whole bags; bulk is rounded up only when you set a supplier increment or minimum." },
-  { question: "What is the excess after bag rounding?", answer: "It is the purchased volume minus the required volume, caused by rounding up to whole bags. It is shown separately so you can see exactly how much extra material the bag rounding buys." },
-] as const;
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQS.map(faq => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
-};
-
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -42,7 +32,22 @@ const softwareSchema = {
   publisher: { "@id": `${business.url}/#organization` },
 };
 
-export default function MulchCalculatorPage() {
+function cap(s: string): string {
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+export default async function MulchCalculatorPage() {
+  const cookieStore = await cookies();
+  const locale = localeFromValue(cookieStore.get(LOCALE_COOKIE)?.value);
+  const FAQS = [1, 2, 3, 4].map(i => ({
+    question: tServer(locale, `ls.mulchFaq${i}Q`),
+    answer: tServer(locale, `ls.mulchFaq${i}A`),
+  }));
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map(faq => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
+  };
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
@@ -50,20 +55,20 @@ export default function MulchCalculatorPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema).replace(/</g, "\\u003c") }} />
       <LandscapingCalculator material="mulch" />
       <section className="container" style={{ paddingBottom: 48 }}>
-        <h2>Related tools</h2>
+        <h2>{tServer(locale, "ls.relatedTitle")}</h2>
         <ul>
-          <li><Link href="/tools/gravel-calculator">Gravel Calculator</Link> — volume-to-weight with supplier density, bagged and bulk costs.</li>
-          <li><Link href="/tools/topsoil-calculator">Topsoil Calculator</Link> — topsoil and raised-bed fill, bagged versus bulk.</li>
-          <li><Link href="/tools">All free tools</Link> — the full TriangleTech tools index.</li>
+          <li><Link href="/tools/gravel-calculator">{tServer(locale, "ls.title", { material: cap(tServer(locale, "mat.gravel")) })}</Link> — {tServer(locale, "ls.relatedGravelDesc")}</li>
+          <li><Link href="/tools/topsoil-calculator">{tServer(locale, "ls.title", { material: cap(tServer(locale, "mat.topsoil")) })}</Link> — {tServer(locale, "ls.relatedTopsoilDesc")}</li>
+          <li><Link href="/tools">{tServer(locale, "common.toolsIndex")}</Link> — {tServer(locale, "ls.relatedIndexDesc")}</li>
         </ul>
-        <h2>Frequently asked questions</h2>
+        <h2>{tServer(locale, "ls.faqHeading")}</h2>
         {FAQS.map(faq => (
           <div key={faq.question}>
             <h3>{faq.question}</h3>
             <p>{faq.answer}</p>
           </div>
         ))}
-        <p>Powered by TriangleTech. This tool estimates quantities from the figures you enter; it does not verify supplier prices, product quality, or suitability for a specific site.</p>
+        <p>{tServer(locale, "common.poweredBy")}. {tServer(locale, "ls.disclaimer")}</p>
       </section>
     </>
   );

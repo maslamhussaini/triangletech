@@ -7,7 +7,7 @@ import {
   metersToDisplayArea, metersToDisplayDepth, metersToDisplayLength,
   validateArea, type AreaInput, type MaterialKind, type Shape, type UnitSystem, type ValidationCode,
 } from "@/lib/tools/landscaping";
-import { buildPdfBlob, downloadBlob } from "@/lib/tools/simple-pdf";
+import { downloadBlob } from "@/lib/tools/simple-pdf";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getDictionary, translate } from "@/lib/i18n/dictionaries";
 import {
@@ -37,34 +37,36 @@ function trimNum(n: number): string {
 }
 function cap(s: string): string { return s ? s[0].toUpperCase() + s.slice(1) : s; }
 
-function Diagram({ draft, system }: { draft: Draft; system: UnitSystem }) {
+type DiagramLabels = { circle: string; direct: string; rectangle: string; length: string; width: string; area: string; depth: string };
+
+function Diagram({ draft, system, labels }: { draft: Draft; system: UnitSystem; labels: DiagramLabels }) {
   const lenLabel = system === "imperial" ? "ft" : "m";
   const depLabel = system === "imperial" ? "in" : "cm";
   if (draft.shape === "circle") {
     return (
-      <svg viewBox="0 0 200 120" role="img" aria-label="Circle diagram" style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
+      <svg viewBox="0 0 200 120" role="img" aria-label={labels.circle} style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
         <circle cx="100" cy="58" r="46" fill="#EEF0FF" stroke="#4F46E5" strokeWidth="2" />
         <line x1="54" y1="58" x2="146" y2="58" stroke="#312E81" strokeWidth="1.5" strokeDasharray="4 3" />
         <text x="100" y="62" textAnchor="middle" fontSize="11" fill="#1B1B4B">d = {draft.diameter || "—"} {lenLabel}</text>
-        <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">depth {draft.depth || "—"} {depLabel}</text>
+        <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">{labels.depth} {draft.depth || "—"} {depLabel}</text>
       </svg>
     );
   }
   if (draft.shape === "direct") {
     return (
-      <svg viewBox="0 0 200 120" role="img" aria-label="Direct area diagram" style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
+      <svg viewBox="0 0 200 120" role="img" aria-label={labels.direct} style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
         <rect x="30" y="12" width="140" height="80" rx="6" fill="#EEF0FF" stroke="#4F46E5" strokeWidth="2" />
-        <text x="100" y="55" textAnchor="middle" fontSize="12" fill="#1B1B4B">area {draft.area || "—"} {system === "imperial" ? "ft²" : "m²"}</text>
-        <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">depth {draft.depth || "—"} {depLabel}</text>
+        <text x="100" y="55" textAnchor="middle" fontSize="12" fill="#1B1B4B">{labels.area} {draft.area || "—"} {system === "imperial" ? "ft²" : "m²"}</text>
+        <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">{labels.depth} {draft.depth || "—"} {depLabel}</text>
       </svg>
     );
   }
   return (
-    <svg viewBox="0 0 200 120" role="img" aria-label="Rectangle diagram" style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
+    <svg viewBox="0 0 200 120" role="img" aria-label={labels.rectangle} style={{ width: "100%", maxWidth: 220, height: "auto", display: "block" }}>
       <rect x="30" y="12" width="140" height="80" rx="6" fill="#EEF0FF" stroke="#4F46E5" strokeWidth="2" />
-      <text x="100" y="48" textAnchor="middle" fontSize="11" fill="#1B1B4B">length {draft.length || "—"} {lenLabel}</text>
-      <text x="100" y="66" textAnchor="middle" fontSize="11" fill="#1B1B4B">width {draft.width || "—"} {lenLabel}</text>
-      <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">depth {draft.depth || "—"} {depLabel}</text>
+      <text x="100" y="48" textAnchor="middle" fontSize="11" fill="#1B1B4B">{labels.length} {draft.length || "—"} {lenLabel}</text>
+      <text x="100" y="66" textAnchor="middle" fontSize="11" fill="#1B1B4B">{labels.width} {draft.width || "—"} {lenLabel}</text>
+      <text x="100" y="112" textAnchor="middle" fontSize="11" fill="#475569">{labels.depth} {draft.depth || "—"} {depLabel}</text>
     </svg>
   );
 }
@@ -277,9 +279,66 @@ export default function LandscapingCalculator({ material }: { material: Material
     return lines;
   };
 
-  const downloadPdf = () => {
-    const lines = exportLines(true);
-    downloadBlob(buildPdfBlob(title, lines), `${material}-calculator.pdf`);
+  // Premium branded report: project/area table, material assumptions,
+  // required-vs-purchased quantities, bag/bulk scenarios with a
+  // delivery/tax breakdown, and a shopping list. The CSV export keeps
+  // its importable schema untouched; this PDF is its branded companion.
+  const downloadPdf = async () => {
+    const lang: Locale = meta.script !== "latin" ? "en" : locale;
+    const L = (key: string, vars?: Record<string, string | number>) => t(lang, key, vars);
+    const reportTitle = L("ls.title", { material: cap(L(`mat.${material}`)) });
+    const fmtPdf = (n: number, d = 2) => formatNumber(lang, n, d);
+    const moneyPdf = (n: number) => {
+      try { return new Intl.NumberFormat(LOCALE_META[lang].intl, { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n); }
+      catch { return `${currency} ${n.toFixed(2)}`; }
+    };
+    const dateLine = (() => { try { return new Intl.DateTimeFormat(LOCALE_META[lang].intl).format(new Date()); } catch { return new Date().toISOString().slice(0, 10); } })();
+    const areaRows = validAreas.map(a => {
+      const am = areaM2(a);
+      return [
+        a.name || L("ls.area"),
+        L(`ls.${a.shape}`),
+        am !== undefined ? `${fmtPdf(am, 2)} m²` : "",
+        a.depthM !== undefined ? `${fmtPdf(metersToDisplayDepth(a.depthM, system), 2)} ${depUnit}` : "",
+        a.group || "",
+      ];
+    });
+    const assumptionLines = [
+      `${L("ls.extra")} ${extra}%; ${L("ls.looseMultiplier")} ${loose}${material === "topsoil" && raisedBed ? `; ${L("ls.raisedBed")}` : ""}`,
+      `${L("ls.baseVolume")}: ${fmtPdf(totals.baseFt3, 2)} ft³ = ${fmtPdf(totals.baseYd3, 4)} yd³ = ${fmtPdf(totals.baseM3, 3)} m³`,
+      `${L("ls.orderingVolume")}: ${fmtPdf(totals.orderingFt3, 2)} ft³ = ${fmtPdf(totals.orderingYd3, 4)} yd³ = ${fmtPdf(totals.orderingM3, 3)} m³ = ${fmtPdf(totals.orderingLiters, 0)} L`,
+      ...(totals.weightLb !== undefined ? [`${L("ls.weight")}: ${fmtPdf(totals.weightLb, 0)} lb = ${fmtPdf(totals.weightKg ?? 0, 0)} kg = ${fmtPdf(totals.weightShortTons ?? 0, 3)} US short tons = ${fmtPdf(totals.weightTonnes ?? 0, 3)} tonnes (density ${density} lb/ft³, supplier-supplied)`] : []),
+    ];
+    const scenarioRows: string[][] = [];
+    if (scenarios.bagged) {
+      const b = scenarios.bagged;
+      scenarioRows.push([L("ls.bagged"), `${fmtPdf(b.requiredQty, 2)} ${b.qtyUnit}`, `${fmtPdf(b.purchasedQty, 2)} ${b.qtyUnit}`, b.materialSubtotal !== undefined ? moneyPdf(b.materialSubtotal) : "—", b.delivery !== undefined ? moneyPdf(b.delivery) : "—", b.tax !== undefined ? moneyPdf(b.tax) : "—", b.total !== undefined ? moneyPdf(b.total) : "—"]);
+    }
+    const bk = scenarios.bulk;
+    scenarioRows.push([L("ls.bulk"), `${fmtPdf(bk.requiredQty, 4)} ${bk.qtyUnit}`, `${fmtPdf(bk.purchasedQty, 4)} ${bk.qtyUnit}`, bk.materialSubtotal !== undefined ? moneyPdf(bk.materialSubtotal) : "—", bk.delivery !== undefined ? moneyPdf(bk.delivery) : "—", bk.tax !== undefined ? moneyPdf(bk.tax) : "—", bk.total !== undefined ? moneyPdf(bk.total) : "—"]);
+    const shoppingLines = [
+      ...(bag ? [`${L("ls.bagsToBuy")}: ${bag.bags} × ${bagCapacity} ${bagQtyUnit} = ${fmtPdf(bag.purchasedQty, 2)} ${bagQtyUnit} (${L("ls.excess")}: ${fmtPdf(bag.excessQty, 2)} ${bagQtyUnit})`] : []),
+      `${L("ls.bulk")}: ${L("ls.required")} ${fmtPdf(bulk.requiredQty, 4)} ${bulkUnit}; ${L("ls.purchased")} ${fmtPdf(bulk.purchasedQty, 4)} ${bulkUnit}`,
+    ];
+    const { buildPremiumPdfBytes, fetchLogoBytes } = await import("@/lib/tools/premium-pdf");
+    const bytes = await buildPremiumPdfBytes({
+      title: reportTitle,
+      meta: [
+        ...(meta.script !== "latin" ? [t("en", "tc.pdfNonLatinNote", { script: meta.scriptName })] : []),
+        ...(projectName ? [`${L("ls.reportProject")}: ${projectName}`] : []),
+        dateLine,
+      ],
+      sections: [
+        { heading: L("ls.areas"), table: { headers: [L("ls.area"), L("ls.shape"), `${L("ls.area")} (m²)`, L("ls.depth"), L("ls.reportGroup")], widths: [140, 100, 100, 84, 80], align: ["left", "left", "right", "right", "left"] as ("left" | "right")[], rows: areaRows } },
+        { heading: L("ls.assumptions"), lines: assumptionLines },
+        { heading: L("ls.cost"), table: { headers: [L("ls.scenario"), L("ls.required"), L("ls.purchased"), L("ls.subtotal"), L("ls.delivery"), L("ls.taxAmount"), L("ls.total")], widths: [66, 72, 72, 72, 72, 60, 90], align: ["left", "right", "right", "right", "right", "right", "right"] as ("left" | "right")[], rows: scenarioRows } },
+        { heading: L("ls.shoppingList"), lines: shoppingLines },
+        { heading: L("common.notes"), lines: [L("ls.requiredVsPurchased"), L("ls.disclaimer"), ...(((scenarios.bagged && scenarios.bagged.total === undefined) || bk.total === undefined) ? [L("ls.noPriceNote")] : [])] },
+      ],
+      createdWith: L("common.createdWith"),
+      logoBytes: await fetchLogoBytes(),
+    });
+    downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), `${material}-calculator.pdf`);
   };
   const downloadCsv = () => {
     const rows: (string | number)[][] = [
@@ -319,12 +378,12 @@ export default function LandscapingCalculator({ material }: { material: Material
     setSystem(next);
   };
 
-  if (!mounted) return <section className="container" style={{ padding: 32 }}><p>Loading…</p></section>;
+  if (!mounted) return <section className="container" style={{ padding: 32 }}><p>{t(locale, "ls.loading")}</p></section>;
 
   return (
     <section className="container" dir={meta.dir} style={{ paddingTop: 32, paddingBottom: 48, overflowX: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
-        <p className="eyebrow-indigo">FREE LANDSCAPING TOOL</p>
+        <p className="eyebrow-indigo">{t(locale, "ls.eyebrow")}</p>
         {/* Language is chosen in the shared tools header above (src/app/tools/layout.tsx). */}
       </div>
       <h1 style={{ fontSize: 34, lineHeight: 1.2, margin: "8px 0" }}>{title}</h1>
@@ -401,7 +460,7 @@ export default function LandscapingCalculator({ material }: { material: Material
                 <div className="field" style={{ flex: "1 1 200px" }}><label className="label-premium" htmlFor={`grp-${d.id}`}>{t(locale, "ls.group")}</label><input id={`grp-${d.id}`} className="input-premium" value={d.group} onChange={e => updateDraft(d.id, { group: e.target.value })} placeholder={t(locale, "ls.groupPlaceholder")} style={{ minHeight: 44 }} /></div>
               </div>
               <p style={{ color: "#475569", fontSize: 14 }}>{t(locale, "ls.groupNote")}</p>
-              <Diagram draft={d} system={system} />
+              <Diagram draft={d} system={system} labels={{ circle: t(locale, "ls.diagramCircle"), direct: t(locale, "ls.diagramDirect"), rectangle: t(locale, "ls.diagramRectangle"), length: t(locale, "ls.diagramLength"), width: t(locale, "ls.diagramWidth"), area: t(locale, "ls.diagramArea"), depth: t(locale, "ls.diagramDepth") }} />
               {(errs.codes.length > 0 || errs.badNumber) && (
                 <div role="alert" style={{ color: "#B91C1C", marginTop: 8 }}>
                   {errs.badNumber && <p>{t(locale, "ls.errInvalidNumber")}</p>}
@@ -434,7 +493,7 @@ export default function LandscapingCalculator({ material }: { material: Material
         {!assumptionsValid && <p role="alert" style={{ color: "#B91C1C" }}>{t(locale, "ls.errNotPositive")}</p>}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12, alignItems: "end" }}>
-          <div className="field"><label className="label-premium" htmlFor="ls-bagmode">Bag</label>
+          <div className="field"><label className="label-premium" htmlFor="ls-bagmode">{t(locale, "ls.bagLabel")}</label>
             <select id="ls-bagmode" className="select-premium" value={bagMode} onChange={e => setBagMode(e.target.value as "volume" | "weight")} style={{ minHeight: 44 }}>
               <option value="volume">{t(locale, "ls.bagVolume")}</option>
               {material !== "mulch" && <option value="weight">{t(locale, "ls.bagWeight")}</option>}
@@ -442,13 +501,13 @@ export default function LandscapingCalculator({ material }: { material: Material
           </div>
           {bagMode === "volume" ? (<>
             <div className="field"><label className="label-premium" htmlFor="ls-bagvol">{t(locale, "ls.bagVolume")}</label><input id="ls-bagvol" className="input-premium" inputMode="decimal" value={bagVolume} onChange={e => setBagVolume(e.target.value)} style={{ minHeight: 44, direction: "ltr" }} /></div>
-            <div className="field"><label className="label-premium" htmlFor="ls-bagunit">Unit</label><select id="ls-bagunit" className="select-premium" value={bagVolumeUnit} onChange={e => setBagVolumeUnit(e.target.value as "ft3" | "m3" | "L")} style={{ minHeight: 44 }}><option value="ft3">ft³</option><option value="m3">m³</option><option value="L">L</option></select></div>
+            <div className="field"><label className="label-premium" htmlFor="ls-bagunit">{t(locale, "ls.unitLabel")}</label><select id="ls-bagunit" className="select-premium" value={bagVolumeUnit} onChange={e => setBagVolumeUnit(e.target.value as "ft3" | "m3" | "L")} style={{ minHeight: 44 }}><option value="ft3">ft³</option><option value="m3">m³</option><option value="L">L</option></select></div>
             {material === "mulch" && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{["1.5", "2", "3"].map(v => <button key={v} type="button" className="button-indigo-secondary" onClick={() => { setBagVolume(v); setBagVolumeUnit("ft3"); }}>{v} ft³</button>)}</div>}
           </>) : (
             <div className="field"><label className="label-premium" htmlFor="ls-bagwt">{t(locale, "ls.bagWeight")}</label><input id="ls-bagwt" className="input-premium" inputMode="decimal" value={bagWeight} onChange={e => setBagWeight(e.target.value)} style={{ minHeight: 44, direction: "ltr" }} /></div>
           )}
           <p style={{ color: "#475569", flexBasis: "100%" }}>{t(locale, "ls.bagExamplesNote")}</p>
-          <div className="field"><label className="label-premium" htmlFor="ls-bulkunit">Bulk unit</label><select id="ls-bulkunit" className="select-premium" value={bulkUnit} onChange={e => setBulkUnit(e.target.value as "yd3" | "m3")} style={{ minHeight: 44 }}><option value="yd3">yd³</option><option value="m3">m³</option></select></div>
+          <div className="field"><label className="label-premium" htmlFor="ls-bulkunit">{t(locale, "ls.bulkUnitLabel")}</label><select id="ls-bulkunit" className="select-premium" value={bulkUnit} onChange={e => setBulkUnit(e.target.value as "yd3" | "m3")} style={{ minHeight: 44 }}><option value="yd3">yd³</option><option value="m3">m³</option></select></div>
           <div className="field"><label className="label-premium" htmlFor="ls-inc">{t(locale, "ls.bulkIncrement")}</label><input id="ls-inc" className="input-premium" inputMode="decimal" value={bulkIncrement} onChange={e => setBulkIncrement(e.target.value)} style={{ minHeight: 44, direction: "ltr" }} /></div>
           <div className="field"><label className="label-premium" htmlFor="ls-min">{t(locale, "ls.bulkMinimum")}</label><input id="ls-min" className="input-premium" inputMode="decimal" value={bulkMinimum} onChange={e => setBulkMinimum(e.target.value)} style={{ minHeight: 44, direction: "ltr" }} /></div>
         </div>
@@ -465,7 +524,7 @@ export default function LandscapingCalculator({ material }: { material: Material
           {bagMode === "weight" && totals.weightLb === undefined && <p role="alert" style={{ color: "#B91C1C" }}>{t(locale, "ls.densityNote")}</p>}
           {totals.groups.length > 1 && (
             <div>
-              <p><strong>Groups (separate orders):</strong></p>
+              <p><strong>{t(locale, "ls.groupsHeading")}:</strong></p>
               <ul>{totals.groups.map(g => <li key={g.group || "ungrouped"}>{g.group || "—"}: {fmt(g.orderingM3 * 35.31466672148859)} ft³ = {fmt(g.orderingM3 / 0.764554857984, 4)} yd³</li>)}</ul>
             </div>
           )}

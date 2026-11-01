@@ -49,19 +49,56 @@ tools now use the single shared system:
 
 Dictionary coverage is asserted by
 `src/lib/i18n/unified-coverage.test.ts` (0 missing keys vs English in
-every locale, for every tool prefix): **276 keys, 10 languages, 0
-missing in any locale**.
+every locale, for every tool prefix): **363 keys, 10 languages, 0
+missing in any locale** (276 at integration, +87 across the PDF /
+localization quality pass and the premium output standard: report and
+invoice labels, landscaping diagram words, page-level FAQ / related /
+disclaimer copy, premium footer wording, invoice table headings,
+landscaping scenario / tax-amount labels).
 
 | Tool | Route | Localization status |
 | --- | --- | --- |
 | Work Hours & Time Card Calculator | `/tools/time-card-calculator` | **Complete** — workflow, labels, help, validation, results, import wizard, export controls, privacy, invoice, save, FAQ, related tools; RTL for ar/ur; locale numbers/dates/money; data preserved on switch; import date format independent of language. Midnight break-allocation warning translated (`tc.warnBreakAllocationOvertime`). |
 | Hours to Decimal Converter | `/tools/hours-to-decimal` | **Complete** — same infrastructure; locale decimal separator in results and conversion table. |
 | Work Hours Calculator | `/tools/work-hours-calculator` | **Complete** — same infrastructure; translated validation, overnight split dates localized. |
-| Gravel Calculator | `/tools/gravel-calculator` | **Complete** — workflow, areas, assumptions, results, bagged/bulk costs, save/restore, PDF/CSV/print; RTL for ar/ur; language switch preserves entries, units, currency and results. |
-| Mulch Calculator | `/tools/mulch-calculator` | **Complete** — same as gravel, plus bag-size example chips and the 2–3 inch depth guidance. |
-| Topsoil Calculator | `/tools/topsoil-calculator` | **Complete** — same as gravel, plus raised-bed fill mode with its "not interchangeable" note. |
+| Gravel Calculator | `/tools/gravel-calculator` | **Complete** — workflow, areas, assumptions, results, bagged/bulk costs, save/restore, PDF/CSV/print; RTL for ar/ur; language switch preserves entries, units, currency and results. Page-level sections (FAQ, related tools, footer disclaimer) are server-translated since the 2026-11-01 quality pass — they were English-only at integration and are no longer an exception. |
+| Mulch Calculator | `/tools/mulch-calculator` | **Complete** — same as gravel, plus bag-size example chips and the 2–3 inch depth guidance; page-level sections server-translated since the 2026-11-01 quality pass. |
+| Topsoil Calculator | `/tools/topsoil-calculator` | **Complete** — same as gravel, plus raised-bed fill mode with its "not interchangeable" note; page-level sections server-translated since the 2026-11-01 quality pass. |
 
-## PDF / print support — disclosed limitation (unchanged by unification)
+## Premium output standard (2026-11-01, mandatory for all current and future tools)
+
+All six tools export through the shared branded renderer
+`src/lib/tools/premium-pdf.ts` (pdf-lib, dynamic-imported so it stays
+out of the initial page bundle): official `public/triangletech-logo.png`
+used unaltered and in proportion, Indigo (#4F46E5) to violet (#7C5CFF)
+gradient header band, "Created with TriangleTech™ · triangletech.co"
+footer lockup with a clickable link annotation to
+https://triangletech.co/ and "Page X of Y" on every page, repeating
+table headings, alternating rows, right-aligned numeric columns, and
+distinct subtotal / final-total treatments. Report labels and footer
+wording are translated; the brand name and URL never are. Form-only
+labels (such as "(optional)") never appear in finished reports, and
+empty optional fields are hidden. CSV exports keep their importable
+schema untouched; the branded PDF is their companion. Time Card PDF:
+chronological sessions, daily totals, biweekly workweek totals,
+overtime settings, rates, regular / overtime / gross pay (parts sum
+exactly). Landscaping PDF: project / area table, assumptions,
+required-vs-purchased quantities, bag / bulk scenarios with delivery
+and tax breakdown, shopping list. Companion converters: compact
+branded result sheets with inputs, units, result and formula.
+
+## PDF / print support — disclosed limitation (unchanged by unification, renderer changed)
+
+The renderer changed from the dependency-free writer to pdf-lib in the
+2026-11-01 premium pass; the font limitation is unchanged (built-in
+Helvetica, WinAnsi Latin-1). Additionally, every string is sanitized
+before rendering (`sanitizePdfText`): bidi controls are stripped, a few
+symbols are mapped to ASCII (→ becomes ->), and characters outside
+Windows-1252 become "?". This exists because an RTL locale formatter
+can inject a U+200F mark into clock/money strings, which previously
+aborted the Arabic PDF download entirely; the callers also format
+clocks and money in ASCII for the non-Latin fallback, so "?" should
+never appear in a shipped fallback report.
 
 - Latin-script languages (en, es, fr, de, pt): PDF exports are fully
   translated; the writer uses WinAnsi Latin-1 so accents survive
@@ -118,6 +155,40 @@ Migration path for each: wrap its client in `useLanguage()`, move its
 user-facing strings into `src/lib/i18n/dictionaries.ts` (English first,
 then the other 9 languages), keep calculations in the existing pure
 modules, and re-run the coverage test so a missing key fails loudly.
+
+## Verification — 2026-11-01 PDF / localization quality pass + premium standard
+
+- Screenshot scenario (30 total hours, 20 regular, 10 overtime, $315
+  gross): the screenshot's actual inputs were never recorded anywhere
+  searchable (memory, daily notes, QA evidence, side chats) and are
+  documented as **unknown**, not reconstructed. Reproducible
+  equivalent, unit-tested in `src/lib/tools/timesheet-report.test.ts`:
+  Mon–Fri 2026-11-02…06, 09:00–15:00 (30h), threshold 20, rate $9,
+  multiplier 1.5 → 20h regular / 10h overtime / $315.00 gross. Control:
+  the same 30h at the default threshold 40 → 30h regular / 0 overtime /
+  $270 gross; the configurable threshold behavior was NOT changed to
+  match the screenshot.
+- Browser QA (local production build, real Chromium, CDP harness
+  `~/workspace/qa-evidence/premium-qa/cdp-premium.mjs`): 10/10 pass, 0
+  console errors — EN short + biweekly time-card PDFs, ES time-card
+  PDF, AR fallback PDF, EN gravel PDF, ES gravel FAQ translation
+  (Spanish question present, English question absent), DE mulch PDF,
+  EN hours-to-decimal + work-hours result sheets.
+- Visual PDF inspection (rendered with pdftoppm, not signature-only):
+  short EN, biweekly p2, ES, AR fallback, gravel EN (long project
+  name), mulch DE, both companions, 45-row multipage (repeated
+  headings, Page 2 of 2), A4 (595.28 × 841.89 pt), and a grayscale
+  render (contrast readable). Defects found and fixed in this pass:
+  cost-table header overlap (headers now wrap with dynamic height),
+  missing emphasis band (pdf-lib SVG paths use top-left coordinates;
+  bands now use drawRectangle), Arabic PDF crash on U+200F (sanitizer
+  + ASCII clocks/money in the fallback), no-price note inflating a
+  narrow money column (moved to Notes, "—" in the table).
+- Link annotation: verified at object level in
+  `src/lib/tools/premium-pdf.test.ts` (Link annotation, URI
+  https://triangletech.co/, Rect over the domain text). A viewer click
+  on the footer link was NOT TESTED.
+- Full suite at this pass: 331 tests, typecheck clean, lint 0 errors.
 
 ## Verification (integrated branch — actual counts, not summed batches)
 

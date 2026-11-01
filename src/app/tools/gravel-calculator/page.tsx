@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { pageMetadata, business } from "@/lib/site";
+import { LOCALE_COOKIE, localeFromValue } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import LandscapingCalculator from "@/components/tools/landscaping-calculator";
 
 export const metadata: Metadata = pageMetadata(
@@ -19,19 +22,6 @@ const breadcrumb = {
   ],
 };
 
-const FAQS = [
-  { question: "How much gravel do I need?", answer: "Area × depth gives the base volume. For example, 10 ft × 12 ft at 3 inches = 30 ft³ = 1.111 yd³. Add an extra percentage for waste and use the loose-volume multiplier only when your supplier quotes loose volume." },
-  { question: "Why does gravel volume-to-weight conversion need density?", answer: "The same cubic yard weighs very different amounts depending on stone size, moisture, and compaction. Only a supplier density for your actual product gives a trustworthy weight — there is no universal tons-per-yard figure." },
-  { question: "What is the difference between required and purchased quantity?", answer: "Required is the physical need. Purchased is what you actually order after bag rounding, supplier increments, and minimums — and it is the quantity used for cost. A supplier minimum never inflates the displayed requirement." },
-  { question: "Does this calculator design a driveway or drainage system?", answer: "No. This is a quantity estimator only. It does not design a structurally suitable driveway, foundation, or drainage system." },
-] as const;
-
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQS.map(faq => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
-};
-
 const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -42,7 +32,22 @@ const softwareSchema = {
   publisher: { "@id": `${business.url}/#organization` },
 };
 
-export default function GravelCalculatorPage() {
+function cap(s: string): string {
+  return s ? s[0].toUpperCase() + s.slice(1) : s;
+}
+
+export default async function GravelCalculatorPage() {
+  const cookieStore = await cookies();
+  const locale = localeFromValue(cookieStore.get(LOCALE_COOKIE)?.value);
+  const FAQS = [1, 2, 3, 4].map(i => ({
+    question: tServer(locale, `ls.gravelFaq${i}Q`),
+    answer: tServer(locale, `ls.gravelFaq${i}A`),
+  }));
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map(faq => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
+  };
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
@@ -50,20 +55,20 @@ export default function GravelCalculatorPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema).replace(/</g, "\\u003c") }} />
       <LandscapingCalculator material="gravel" />
       <section className="container" style={{ paddingBottom: 48 }}>
-        <h2>Related tools</h2>
+        <h2>{tServer(locale, "ls.relatedTitle")}</h2>
         <ul>
-          <li><Link href="/tools/mulch-calculator">Mulch Calculator</Link> — beds, bagged versus bulk, and excess after bag rounding.</li>
-          <li><Link href="/tools/topsoil-calculator">Topsoil Calculator</Link> — topsoil and raised-bed fill, bagged versus bulk.</li>
-          <li><Link href="/tools">All free tools</Link> — the full TriangleTech tools index.</li>
+          <li><Link href="/tools/mulch-calculator">{tServer(locale, "ls.title", { material: cap(tServer(locale, "mat.mulch")) })}</Link> — {tServer(locale, "ls.relatedMulchDesc")}</li>
+          <li><Link href="/tools/topsoil-calculator">{tServer(locale, "ls.title", { material: cap(tServer(locale, "mat.topsoil")) })}</Link> — {tServer(locale, "ls.relatedTopsoilDesc")}</li>
+          <li><Link href="/tools">{tServer(locale, "common.toolsIndex")}</Link> — {tServer(locale, "ls.relatedIndexDesc")}</li>
         </ul>
-        <h2>Frequently asked questions</h2>
+        <h2>{tServer(locale, "ls.faqHeading")}</h2>
         {FAQS.map(faq => (
           <div key={faq.question}>
             <h3>{faq.question}</h3>
             <p>{faq.answer}</p>
           </div>
         ))}
-        <p>Powered by TriangleTech. This tool estimates quantities from the figures you enter; it does not verify supplier prices, product quality, or suitability for a specific site.</p>
+        <p>{tServer(locale, "common.poweredBy")}. {tServer(locale, "ls.disclaimer")}</p>
       </section>
     </>
   );

@@ -1,12 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { LOCALE_META } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { calculateTimesheet, formatDecimalHours, formatDuration, parseTimeToMinutes } from "@/lib/tools/time-card";
+import { calculateTimesheet, formatDecimalHours, formatDuration, formatMoney as formatMoneyAscii, parseTimeToMinutes } from "@/lib/tools/time-card";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export default function WorkHoursClient() {
-  const { t, formatDate, formatMoney } = useLanguage();
+  const { t, locale, formatDate, formatMoney } = useLanguage();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [start, setStart] = useState("09:00");
   const [end, setEnd] = useState("17:30");
@@ -38,6 +40,54 @@ export default function WorkHoursClient() {
     const gross = endMin - startMin + (endsNextDay ? 1440 : 0);
     return t(`tc.err.${e.code}`, { date: s.date, start: s.start, end: s.end, break: s.breakMinutes, gross });
   });
+
+  async function downloadPdf() {
+    if (!session || result.errors.length > 0) return;
+    const nonLatin = LOCALE_META[locale].script !== "latin";
+    const tr = nonLatin
+      ? (key: string, vars?: Record<string, string | number>) => tServer("en", key, vars)
+      : (key: string, vars?: Record<string, string | number>) => t(key, vars);
+    const { buildPremiumPdfBytes, fetchLogoBytes } = await import("@/lib/tools/premium-pdf");
+    const bytes = await buildPremiumPdfBytes({
+      title: tr("wh.title"),
+      meta: [
+        ...(nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName })] : []),
+        `${tr("wh.date")}: ${date}`,
+      ],
+      sections: [
+        {
+          heading: tr("wh.title"),
+          lines: [
+            `${tr("wh.start")}: ${start}`,
+            `${tr("wh.end")}: ${end}`,
+            `${tr("tc.reportNextDay")}: ${endsNextDay ? tr("tc.reportYes") : tr("tc.reportNo")}`,
+            `${tr("wh.breakMinutes")}: ${breakMinutes}`,
+            ...(rate !== "" ? [`${tr("wh.rate")}: ${formatMoneyAscii(Math.round(Number(rate) * 100), "USD")}`] : []),
+          ],
+        },
+        {
+          heading: tr("wh.paidTime"),
+          emphasis: true,
+          lines: [
+            `${tr("wh.shiftLength")}: ${formatDuration(session.grossMinutes)}`,
+            `${tr("wh.paidTime")}: ${formatDuration(session.paidMinutes)} (${formatDecimalHours(session.paidMinutes)})`,
+            ...(session.segments.length > 1 ? [`${tr("wh.overnightSplit")}: ${session.segments.map(sg => `${sg.date}: ${formatDuration(sg.paidMinutes)} (${sg.breakMinutes}m)`).join("; ")}`] : []),
+            ...(rate !== "" ? [`${tr("wh.payShift")}: ${formatMoneyAscii(result.payCents, "USD")}`] : []),
+          ],
+        },
+      ],
+      createdWith: tr("common.createdWith"),
+      logoBytes: await fetchLogoBytes(),
+    });
+    const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "work-hours-result.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   return (
     <>
@@ -94,6 +144,7 @@ export default function WorkHoursClient() {
         )}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
+          <button type="button" className="button-indigo" disabled={!session || result.errors.length > 0} onClick={downloadPdf}>{t("common.downloadPdf")}</button>
           <button type="button" className="button-indigo-secondary" onClick={() => { setStart("09:00"); setEnd("17:30"); setEndsNextDay(false); setBreakMinutes("30"); }}>{t("wh.exampleDay")}</button>
           <button type="button" className="button-indigo-secondary" onClick={() => { setStart("22:00"); setEnd("06:00"); setEndsNextDay(true); setBreakMinutes("30"); }}>{t("wh.exampleNight")}</button>
         </div>

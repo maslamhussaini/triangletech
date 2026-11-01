@@ -10,6 +10,7 @@ import {
   dateOrdinal,
   formatDecimalHours,
   formatDuration,
+  formatMoney as formatMoneyAscii,
   formatTime,
   guessColumnMapping,
   isValidDateString,
@@ -23,7 +24,8 @@ import {
   type PeriodKind,
   type SessionInput,
 } from "@/lib/tools/time-card";
-import { buildPdfBlob, downloadBlob } from "@/lib/tools/simple-pdf";
+import { downloadBlob } from "@/lib/tools/simple-pdf";
+import { buildTimesheetReport } from "@/lib/tools/timesheet-report";
 import { useLanguage } from "@/lib/i18n/provider";
 import { LOCALE_META, defaultCurrencyForLocale } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
@@ -350,36 +352,123 @@ export default function TimeCardCalculatorClient() {
     downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "timesheet.csv");
   }
 
-  // PDF: the built-in PDF font is Latin-only (Helvetica). For Arabic,
-  // Urdu, Hindi, Chinese, and Japanese, the PDF is rendered in English
-  // with an explicit disclosure line — never broken glyphs — while
-  // browser Print renders the fully translated page correctly.
-  function pdfLinesFor(tr: (key: string, vars?: Record<string, string | number>) => string): string[] {
-    return [
-      `${tr("tc.period")}: ${result.periodStart} to ${result.periodEnd} (${period})`,
-      ...(employee ? [`${tr("tc.employee")}: ${employee}`] : []),
-      ...(business ? [`${tr("tc.business")}: ${business}`] : []),
-      ...(project ? [`${tr("tc.project")}: ${project}`] : []),
-      "",
-      `${tr("tc.timesheetHeading")}:`,
-      ...result.days.map(d => `${d.date}: ${formatDuration(d.paidMinutes)} (${formatDecimalHours(d.paidMinutes)} hours)`),
-      "",
-      `${tr("tc.summary")}:`,
-      ...result.sessions.map(s => `${s.session.date} ${s.session.start}-${s.session.end}${s.session.endsNextDay ? " (ends next day)" : ""}, break ${s.session.breakMinutes}m, paid ${formatDuration(s.paidMinutes)}`),
-      "",
-      `${tr("tc.periodTotal")}: ${formatDuration(result.totalMinutes)} (${formatDecimalHours(result.totalMinutes)} hours)`,
-      `${tr("tc.regular")}: ${formatDuration(result.regularMinutes)}`,
-      `${tr("tc.overtime")}: ${formatDuration(result.overtimeMinutes)}`,
-      `${tr("tc.pay")}: ${formatMoney(result.payCents, currency)}`,
-    ];
-  }
-
-  function downloadPdf() {
+  // PDF report: the built-in PDF font is Latin-only (Helvetica). For
+  // Arabic, Urdu, Hindi, Chinese, and Japanese, the report is rendered
+  // in English with an explicit disclosure line — never broken glyphs
+  // — while browser Print renders the fully translated page correctly.
+  // The report has one chronological session table (no duplicated
+  // day/session listings), daily totals, per-workweek totals for
+  // biweekly reports, and a pay summary whose parts add up exactly.
+  async function downloadPdf() {
     const nonLatin = LOCALE_META[locale].script !== "latin";
-    const lines = nonLatin
-      ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName }), "", ...pdfLinesFor((key) => tServer("en", key))]
-      : pdfLinesFor((key, vars) => t(key, vars));
-    downloadBlob(buildPdfBlob(nonLatin ? "Work Hours & Time Card" : t("tc.title"), lines), "timesheet.pdf");
+    const tr = nonLatin
+      ? (key: string, vars?: Record<string, string | number>) => tServer("en", key, vars)
+      : (key: string, vars?: Record<string, string | number>) => t(key, vars);
+    // Provider money follows the UI locale (Arabic-Indic digits in ar);
+    // the English fallback report needs ASCII figures.
+    const fmtMoney = nonLatin ? formatMoneyAscii : formatMoney;
+    // Dates stay in the report language for Latin scripts; the English
+    // fallback for non-Latin scripts keeps ISO dates (no shaped text).
+    const fmtDate = nonLatin ? (d: string) => d : formatDate;
+    const fmtClock = (hhmm: string) => {
+      const minutes = parseTimeToMinutes(hhmm);
+      if (minutes === null) return hhmm;
+      if (nonLatin) {
+        // ASCII only: the provider formatter follows the UI locale and
+        // would inject bidi marks / non-Latin digits into the PDF.
+        if (!hour12) return hhmm;
+        const h24 = Math.floor(minutes / 60);
+        const m = minutes % 60;
+        const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+        return `${h12}:${String(m).padStart(2, "0")} ${h24 < 12 ? "AM" : "PM"}`;
+      }
+      return formatTime(minutes, hour12);
+    };
+    const rate = hourlyRate === "" || Number.isNaN(Number(hourlyRate)) ? null : Number(hourlyRate);
+    const report = buildTimesheetReport(result, { hourlyRate: rate });
+    const meta = [
+      ...(nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName })] : []),
+      `${tr("tc.period")}: ${fmtDate(report.periodStart)} – ${fmtDate(report.periodEnd)} — ${period === "weekly" ? tr("tc.weekly") : tr("tc.biweekly")}`,
+      ...(employee ? [`${tr("tc.reportEmployee")}: ${employee}`] : []),
+      ...(business ? [`${tr("tc.reportBusiness")}: ${business}`] : []),
+      ...(project ? [`${tr("tc.reportProject")}: ${project}`] : []),
+    ];
+    const sections = [
+      {
+        heading: tr("tc.reportSessions"),
+        table: {
+          headers: [tr("tc.reportDate"), tr("tc.reportStart"), tr("tc.reportEnd"), tr("tc.reportNextDay"), tr("tc.reportBreakMin"), tr("tc.reportPaid")],
+          widths: [104, 80, 80, 80, 80, 80],
+          align: ["left", "left", "left", "left", "right", "right"] as ("left" | "right")[],
+          rows: report.sessions.map(s => [
+            fmtDate(s.date),
+            fmtClock(s.start),
+            fmtClock(s.end),
+            s.endsNextDay ? tr("tc.reportYes") : tr("tc.reportNo"),
+            String(s.breakMinutes),
+            formatDuration(s.paidMinutes),
+          ]),
+        },
+      },
+      {
+        heading: tr("tc.reportDailyTotals"),
+        table: {
+          headers: [tr("tc.reportDate"), tr("tc.reportPaid")],
+          widths: [252, 252],
+          align: ["left", "right"] as ("left" | "right")[],
+          rows: report.dailyTotals.map(d => [fmtDate(d.date), `${formatDuration(d.paidMinutes)} (${formatDecimalHours(d.paidMinutes)})`]),
+        },
+        lines: [tr("tc.reportDailyNote")],
+      },
+      ...(period === "biweekly"
+        ? [{
+            heading: tr("tc.reportWeekTotals"),
+            table: {
+              headers: [tr("tc.reportWeek"), tr("tc.reportTotalHours"), tr("tc.reportRegularHours"), tr("tc.reportOvertimeHours")],
+              widths: [168, 112, 112, 112],
+              align: ["left", "right", "right", "right"] as ("left" | "right")[],
+              rows: report.weeks.map((w, i) => [
+                `${tr("tc.reportWeek")} ${i + 1} (${fmtDate(w.startDate)} – ${fmtDate(w.endDate)})`,
+                formatDuration(w.totalMinutes),
+                formatDuration(w.regularMinutes),
+                formatDuration(w.overtimeMinutes),
+              ]),
+            },
+          }]
+        : []),
+      {
+        heading: tr("tc.reportPaySummary"),
+        emphasis: true,
+        lines: [
+          `${tr("tc.reportTotalHours")}: ${formatDuration(report.totalMinutes)} (${formatDecimalHours(report.totalMinutes)})`,
+          `${tr("tc.reportRegularHours")}: ${formatDuration(report.regularMinutes)} (${formatDecimalHours(report.regularMinutes)})`,
+          `${tr("tc.reportOvertimeHours")}: ${formatDuration(report.overtimeMinutes)} (${formatDecimalHours(report.overtimeMinutes)})`,
+          `${tr("tc.reportThreshold")}: ${tr("tc.reportThresholdValue", { hours: threshold })}`,
+          `${tr("tc.reportMultiplier")}: ${tr("tc.reportMultiplierValue", { value: multiplier })}`,
+          ...(rate !== null && report.grossPayCents !== null
+            ? [
+                `${tr("tc.reportRate")}: ${fmtMoney(Math.round(rate * 100), currency)}`,
+                `${tr("tc.reportRegularPay")}: ${fmtMoney(report.regularPayCents ?? 0, currency)}`,
+                `${tr("tc.reportOvertimePay")}: ${fmtMoney(report.overtimePayCents ?? 0, currency)}`,
+                `${tr("tc.pay")}: ${fmtMoney(report.grossPayCents, currency)}`,
+              ]
+            : []),
+          ...(report.outOfPeriodPaidMinutes > 0
+            ? [`${tr("tc.reportExcluded")}: ${tr("tc.reportExcludedValue", { duration: formatDuration(report.outOfPeriodPaidMinutes) })}`]
+            : []),
+        ],
+      },
+    ];
+    const { buildPremiumPdfBytes, fetchLogoBytes } = await import("@/lib/tools/premium-pdf");
+    const bytes = await buildPremiumPdfBytes({
+      title: nonLatin ? "Work Hours & Time Card" : t("tc.title"),
+      meta,
+      sections,
+      createdWith: tr("common.createdWith"),
+      disclaimer: tr("tc.reportDisclaimer"),
+      logoBytes: await fetchLogoBytes(),
+    });
+    downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), "timesheet.pdf");
   }
 
   function openInvoice() {
@@ -404,27 +493,45 @@ export default function TimeCardCalculatorClient() {
   const invoiceTax = invoiceSubtotal * (Number(taxPercent) || 0) / 100;
   const invoiceTotal = invoiceSubtotal + invoiceTax;
 
-  function downloadInvoicePdf() {
+  async function downloadInvoicePdf() {
     const nonLatin = LOCALE_META[locale].script !== "latin";
     const tr = nonLatin ? (key: string, vars?: Record<string, string | number>) => tServer("en", key, vars) : (key: string, vars?: Record<string, string | number>) => t(key, vars);
-    const lines: string[] = [
-      ...(nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName }), ""] : []),
+    const fmtMoney = nonLatin ? formatMoneyAscii : formatMoney;
+    const meta = [
+      ...(nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName })] : []),
       `${tr("tc.invoiceNumber")}: ${invoiceNumber}`,
       `${tr("tc.invoiceDate")}: ${invoiceDate}`,
       ...(seller ? [`${tr("tc.seller")}: ${seller}`] : []),
       ...(clientName ? [`${tr("tc.client")}: ${clientName}`] : []),
-      "",
-      `${tr("tc.description")}:`,
-      ...invoiceLines.map(l => `${l.description} — ${l.qty} x ${formatMoney(Math.round(l.rate * 100), currency)} = ${formatMoney(Math.round(l.qty * l.rate * 100), currency)}`),
-      "",
-      `Subtotal: ${formatMoney(Math.round(invoiceSubtotal * 100), currency)}`,
-      `${tr("tc.tax")}: ${formatMoney(Math.round(invoiceTax * 100), currency)}`,
-      `${tr("tc.totalDue")}: ${formatMoney(Math.round(invoiceTotal * 100), currency)}`,
-      "",
-      tr("tc.invoicePrivacyNote"),
-      t("common.poweredBy"),
     ];
-    downloadBlob(buildPdfBlob(`${tr("tc.invoiceNumber")} ${invoiceNumber}`, lines), `${invoiceNumber || "invoice"}.pdf`);
+    const itemCount = invoiceLines.length;
+    const { buildPremiumPdfBytes, fetchLogoBytes } = await import("@/lib/tools/premium-pdf");
+    const bytes = await buildPremiumPdfBytes({
+      title: invoiceNumber ? `${tr("tc.invoiceNumber")} ${invoiceNumber}` : tr("tc.invoiceTitle"),
+      meta,
+      sections: [
+        {
+          heading: tr("tc.invoiceTitle"),
+          table: {
+            headers: [tr("tc.description"), tr("tc.quantity"), tr("tc.rate"), tr("tc.amount")],
+            widths: [252, 60, 96, 96],
+            align: ["left", "right", "right", "right"] as ("left" | "right")[],
+            rows: [
+              ...invoiceLines.map(l => [l.description, String(l.qty), fmtMoney(Math.round(l.rate * 100), currency), fmtMoney(Math.round(l.qty * l.rate * 100), currency)]),
+              [tr("tc.subtotal"), "", "", fmtMoney(Math.round(invoiceSubtotal * 100), currency)],
+              [`${tr("tc.tax")} (${taxPercent || "0"}%)`, "", "", fmtMoney(Math.round(invoiceTax * 100), currency)],
+              [tr("tc.totalDue"), "", "", fmtMoney(Math.round(invoiceTotal * 100), currency)],
+            ],
+            subtotalRows: [itemCount],
+            totalRow: itemCount + 2,
+          },
+        },
+        { heading: tr("common.notes"), lines: [tr("tc.invoicePrivacyNote")] },
+      ],
+      createdWith: tr("common.createdWith"),
+      logoBytes: await fetchLogoBytes(),
+    });
+    downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), `${invoiceNumber || "invoice"}.pdf`);
   }
 
   const outOfPeriodSessions = sessions.filter(s => !periodDates.includes(s.date));

@@ -56,6 +56,48 @@ Scripts: `dev` / `build` / `start` / `lint`. Tests: Vitest (Phase 1+).
   scripts) — never broken glyphs, never a claim of full PDF support.
   Print renders the fully translated page via the browser. Never mark
   an untranslated tool complete: see `docs/tools-localization-inventory.md`.
+- PREMIUM OUTPUT STANDARD (permanent project rule, owner requirement 2026-11-01):
+  Every visual output of every current and future tool must carry
+  TriangleTech branding, implemented by the shared renderer in
+  `src/lib/tools/premium-pdf.ts` (pdf-lib, dynamic-imported so it stays
+  out of the initial page bundle):
+  - Official logo: the existing `public/triangletech-logo.png` asset only,
+    used unaltered and in proportion (never redrawn or replaced).
+    Brand spelling is always "TriangleTech"; the footer uses
+    "TriangleTech™" (never ® without verified registration) and the
+    website address triangletech.co, with a clickable link annotation
+    to https://triangletech.co/ wherever the format supports links.
+    Footer lockup: "Created with TriangleTech™ · triangletech.co"
+    (the "Created with" wording is translated; the brand name and URL
+    are never translated).
+  - Header: Indigo (#4F46E5) to violet (#7C5CFF) gradient band with the
+    logo tile and wordmark, report/tool title, period/project/document
+    reference, and an accent rule separating header from content.
+    Deep Indigo #312E81, light background #EEF0FF, dark text #1B1B4B,
+    white #FFFFFF. Footer on every page: logo tile + lockup + link +
+    "Page X of Y" + an optional short disclaimer, with adequate bottom
+    margin. Table headings repeat across pages; no overlap, clipped
+    rows, orphan headings, or excessive empty space.
+  - Tables: deep-Indigo header row, predominantly white/light rows
+    (subtle alternating fill, print-friendly), right-aligned numeric
+    columns, distinct subtotal and final-total treatments, clear unit
+    and currency labels. Hide empty optional fields and form-only
+    labels (such as "(optional)") from finished reports. Keep all
+    calculation details needed to understand the result.
+  - CSV and other machine-readable exports keep a valid, importable
+    schema: never append decorative/branding rows to the data. The
+    branded PDF report is the companion for branding.
+  - Report labels and footer wording go through the shared i18n
+    system; the brand name and URL stay fixed. PDF text is native
+    (selectable/searchable, vector tables, never a rasterized page).
+    Non-Latin PDF support is never claimed until shaping and glyph
+    rendering are actually verified (current state: English fallback
+    with an explicit disclosure, per the multilingual rule above).
+  - Export QA is visual: render and inspect a short report, a
+    multipage report, a biweekly report, a long landscaping report,
+    Spanish/German output, and the Arabic/Urdu fallback, on Letter and
+    A4. Never mark export QA PASS from a PDF signature or a successful
+    download alone.
 - The proposed estimator module location is `src/lib/tools/website-estimator.ts`.
   It does not exist yet; do not create it in documentation slices.
   `RULES_VERSION = "1.1.0"` is the approved planning specification version,

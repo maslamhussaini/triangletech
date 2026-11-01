@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { LOCALE_META } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { formatDuration } from "@/lib/tools/time-card";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export default function HoursToDecimalClient() {
-  const { t, formatNumber } = useLanguage();
+  const { t, locale, formatNumber } = useLanguage();
   const [hours, setHours] = useState("8");
   const [minutes, setMinutes] = useState("30");
   const [decimal, setDecimal] = useState("8.50");
@@ -18,6 +20,49 @@ export default function HoursToDecimalClient() {
   const backMinutes = Math.round((decimalValue - backHours) * 60);
 
   const tableRows = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+
+  async function downloadPdf() {
+    const nonLatin = LOCALE_META[locale].script !== "latin";
+    const tr = nonLatin
+      ? (key: string, vars?: Record<string, string | number>) => tServer("en", key, vars)
+      : (key: string, vars?: Record<string, string | number>) => t(key, vars);
+    const fmt = nonLatin ? (n: number, d = 2) => n.toFixed(d) : formatNumber;
+    const h = Number(hours) || 0;
+    const m = Number(minutes) || 0;
+    const { buildPremiumPdfBytes, fetchLogoBytes } = await import("@/lib/tools/premium-pdf");
+    const bytes = await buildPremiumPdfBytes({
+      title: tr("htd.title"),
+      meta: nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName })] : [],
+      sections: [
+        {
+          heading: tr("htd.hmTitle"),
+          emphasis: true,
+          lines: [
+            tr("htd.resultHM", { duration: formatDuration(totalMinutes), decimal: fmt(totalMinutes / 60, 2) }),
+            `${h} + ${m} / 60 = ${fmt(totalMinutes / 60, 2)}`,
+          ],
+        },
+        {
+          heading: tr("htd.decimalTitle"),
+          emphasis: true,
+          lines: [
+            tr("htd.resultBack", { decimal: fmt(decimalValue, 2), hours: backHours, minutes: backMinutes }),
+            `${fmt(decimalValue, 2)} = ${backHours}h ${backMinutes}m`,
+          ],
+        },
+      ],
+      createdWith: tr("common.createdWith"),
+      logoBytes: await fetchLogoBytes(),
+    });
+    const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "hours-to-decimal-result.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   return (
     <>
@@ -77,6 +122,10 @@ export default function HoursToDecimalClient() {
             </table>
           </div>
         </section>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 24 }}>
+          <button type="button" className="button-indigo" onClick={downloadPdf}>{t("common.downloadPdf")}</button>
+        </div>
       </section>
     </>
   );
