@@ -16,6 +16,7 @@ export function LanguageSelector() {
     <label style={{ display: "inline-flex", gap: 8, alignItems: "center", fontWeight: 600 }}>
       <span>{t("common.language")}:</span>
       <select
+        className="select-premium"
         aria-label={t("common.languageLabel")}
         value={locale}
         onChange={e => {
@@ -24,7 +25,7 @@ export function LanguageSelector() {
             setLocale(next as (typeof SUPPORTED_LOCALES)[number]);
           }
         }}
-        style={{ minHeight: 44, minWidth: 160, padding: "8px 10px", borderRadius: 8, border: "1px solid #C7D2FE", background: "#FFFFFF", color: "#1B1B4B", fontSize: 15 }}
+        style={{ minHeight: 44, minWidth: 160 }}
       >
         {SUPPORTED_LOCALES.map(code => (
           <option key={code} value={code}>
