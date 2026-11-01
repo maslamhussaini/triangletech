@@ -34,6 +34,9 @@ Scripts: `dev` / `build` / `start` / `lint`. Tests: Vitest (Phase 1+).
     services — require their own explicit authorization. A code or document
     approval is not a deployment approval.
 - No force-pushes.
+- MOAT STANDARD (permanent project rule, owner requirement 2026-11-02):
+  "Every new tool or significant feature proposal must include demand evidence, competitor alternatives, differentiation, copyability, retention, distribution, economics, and an explicit moat verdict. Hypotheses must not be presented as proven advantages."
+  See `MOAT.md` (audit 2026-11-02) and `docs/moat-research-2026-11-02.md`.
 - MULTILINGUAL STANDARD (permanent project rule, owner requirement 2026-11-01):
   "All current and future tools must support multiple languages through
   shared localization infrastructure, a manual language dropdown, automatic
