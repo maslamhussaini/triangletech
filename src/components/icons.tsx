@@ -23,6 +23,7 @@ export function Icon({ name, className = "" }: { name: string; className?: strin
     send: <path d="M4 12 20 4l-6 16-3-7-7-3Z" />,
     external: <><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><path d="M15 3h6v6M10 14 21 3" /></>,
     calculator: <><rect x="4" y="2.5" width="16" height="19" rx="2" /><path d="M7.5 6.5h9M7.5 11h.01M12 11h.01M16.5 11h.01M7.5 14.5h.01M12 14.5h.01M16.5 14.5v3.5M7.5 18h.01M12 18h.01" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
     percent: <><path d="M19 5 5 19" /><circle cx="7.5" cy="7.5" r="2.5" /><circle cx="16.5" cy="16.5" r="2.5" /></>,
     trending: <><path d="M3 17.5 9.5 11l4 4L21 7.5" /><path d="M15 7.5h6v6" /></>,
     tax: <><path d="M7 3h8l4 4v14H7Z" /><path d="M15 3v4h4" /><path d="M15.5 11.5 10 17" /><circle cx="10.6" cy="12.1" r="1.1" /><circle cx="14.9" cy="16.4" r="1.1" /></>,

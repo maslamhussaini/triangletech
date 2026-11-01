@@ -60,9 +60,17 @@ export const securityHeaders = [
   { key: "Content-Security-Policy-Report-Only", value: contentSecurityPolicy },
 ];
 
+/**
+ * QA-only noindex: set QA_NOINDEX=1 in a QA deployment's environment to add
+ * `X-Robots-Tag: noindex, nofollow` to every response. It is OFF by default,
+ * so the live production site is never noindexed by this code path.
+ */
+const qaNoindexHeaders =
+  process.env.QA_NOINDEX === "1" ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] : [];
+
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [{ source: "/:path*", headers: [...securityHeaders, ...qaNoindexHeaders] }];
   },
 };
 

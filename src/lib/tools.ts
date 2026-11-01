@@ -12,6 +12,7 @@
 
 export const toolCategories = [
   "Business & Profit",
+  "Work & Time",
   "Tax & Invoice",
   "Creator Economy",
   "Affiliate & E-commerce",
@@ -67,6 +68,33 @@ export const tools: Tool[] = [
     status: "live",
     featured: true,
     icon: "wallet",
+  },
+  {
+    slug: "time-card-calculator",
+    name: "Work Hours & Time Card Calculator",
+    shortDescription: "Build a weekly or biweekly timesheet with multiple sessions, overnight shifts, unpaid breaks, overtime estimates, CSV/XLSX import, and PDF/CSV export. No signup, nothing uploaded.",
+    category: "Work & Time",
+    status: "live",
+    featured: true,
+    icon: "clock",
+  },
+  {
+    slug: "hours-to-decimal",
+    name: "Hours to Decimal Converter",
+    shortDescription: "Convert hours and minutes to decimal hours and back, with a conversion table. 30 minutes = 0.50 hours.",
+    category: "Work & Time",
+    status: "live",
+    featured: false,
+    icon: "clock",
+  },
+  {
+    slug: "work-hours-calculator",
+    name: "Work Hours Calculator",
+    shortDescription: "How long is one shift? Duration, unpaid break, decimal hours, and explicit overnight support for a single shift.",
+    category: "Work & Time",
+    status: "live",
+    featured: false,
+    icon: "clock",
   },
   {
     slug: "pakistan-sales-tax-calculator",
