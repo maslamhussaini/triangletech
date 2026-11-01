@@ -9,8 +9,9 @@ import {
 } from "@/lib/tools/landscaping";
 import { buildPdfBlob, downloadBlob } from "@/lib/tools/simple-pdf";
 import { useLanguage } from "@/lib/i18n/provider";
+import { getDictionary, translate } from "@/lib/i18n/dictionaries";
 import {
-  DEFAULT_LOCALE, LOCALE_META, LOCALE_STORAGE_KEY, defaultCurrencyForLocale, detectLocaleFromLanguages, isLocale,
+  DEFAULT_LOCALE, LOCALE_META, LOCALE_STORAGE_KEY, defaultCurrencyForLocale, detectLocaleFromLanguages, formatLocaleNumber, isLocale, parseLocalizedNumber as parseShared,
   type Locale,
 } from "@/lib/i18n/locales";
 
@@ -83,10 +84,16 @@ export default function LandscapingCalculator({ material }: { material: Material
   // below keep the existing t(locale, ...) / formatNumber(locale, ...) /
   // parseLocalizedNumber(..., locale) call sites working against the
   // provider's current locale.
-  const { locale, t: translate, formatNumber: formatLocale, parseNumber } = useLanguage();
-  const t = useCallback((...args: [Locale, string, Record<string, string | number>?]) => translate(args[1], args[2]), [translate]);
-  const formatNumber = useCallback((...args: [Locale, number, number?]) => formatLocale(args[1], args[2] ?? 2), [formatLocale]);
-  const parseLocalizedNumber = useCallback((s: string, _locale: Locale) => { void _locale; const v = parseNumber(s); return v === null ? undefined : v; }, [parseNumber]);
+  // The provider owns the current locale, but export code passes an
+  // explicit locale (English for non-Latin PDFs), so these adapters must
+  // honour the locale argument — they translate/format/parse with it
+  // directly against the shared dictionaries, not the provider's locale.
+  // (An earlier version ignored the argument and broke the PDF fallback:
+  // Arabic titles rendered as "?????" instead of English.)
+  const { locale } = useLanguage();
+  const t = useCallback((l: Locale, key: string, vars?: Record<string, string | number>) => translate(l, getDictionary(l), getDictionary("en"), key, vars), []);
+  const formatNumber = useCallback((l: Locale, n: number, d = 2) => formatLocaleNumber(l, n, d), []);
+  const parseLocalizedNumber = useCallback((s: string, l: Locale) => { const v = parseShared(s, l); return v === null ? undefined : v; }, []);
   const [mounted, setMounted] = useState(false);
   const [system, setSystem] = useState<UnitSystem>("imperial");
   const [areas, setAreas] = useState<Draft[]>([]);
