@@ -3369,3 +3369,506 @@ button.card-premium:focus-visible {
 .lead-success h3:focus {
   outline: none;
 }
+
+/* ============================================================================
+   Image Compressor to Target KB (opt-in .image-compressor-* classes only;
+   composed with the existing indigo primitives — no existing rule modified).
+   ========================================================================== */
+
+.image-compressor .glass-panel { padding: 26px; }
+.image-compressor-panel { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.image-compressor-privacy {
+  font-size: 14px; line-height: 1.65; color: var(--text-secondary);
+  background: var(--brand-soft); border: 1px solid var(--border-brand);
+  border-radius: var(--radius-md); padding: 14px 16px;
+}
+.image-compressor-privacy strong { color: var(--brand-strong); }
+
+.image-compressor-dropzone {
+  position: relative;
+  border: 2px dashed var(--border-brand);
+  border-radius: var(--radius-lg);
+  background: var(--surface-elevated);
+  padding: 30px 22px;
+  text-align: center;
+  transition: border-color var(--dur-base) var(--ease-out-soft), background-color var(--dur-base) var(--ease-out-soft);
+}
+.image-compressor-dropzone:hover { border-color: var(--brand); }
+.image-compressor-dropzone.is-dragging { border-color: var(--brand); background: var(--brand-soft); }
+.image-compressor-dropzone:focus-within { box-shadow: var(--focus-ring); border-color: var(--brand); }
+.image-compressor-dropzone-label { display: block; cursor: pointer; }
+.image-compressor-dropzone-title { display: block; font-size: 17px; font-weight: 700; color: var(--text-primary); overflow-wrap: anywhere; }
+.image-compressor-dropzone-note { display: block; font-size: 13px; color: var(--text-secondary); margin-top: 6px; line-height: 1.6; }
+/* Keep the real file input keyboard-focusable but visually hidden; the
+   dropzone shows the focus ring via :focus-within above. */
+.image-compressor-input {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.image-compressor-dropzone .helper-premium { margin-top: 10px; }
+
+.image-compressor-controls { display: grid; grid-template-columns: 1fr; gap: 22px; }
+@media (min-width: 800px) {
+  .image-compressor-controls { grid-template-columns: 1fr 1fr; }
+}
+.image-compressor-custom { margin-top: 14px; max-width: 220px; }
+
+.image-compressor-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.image-compressor-status { min-height: 1.5em; font-size: 14px; font-weight: 600; color: var(--brand-strong); }
+
+.image-compressor-previews { display: grid; grid-template-columns: 1fr; gap: 18px; }
+@media (min-width: 800px) {
+  .image-compressor-previews { grid-template-columns: 1fr 1fr; }
+}
+.image-compressor-preview { margin: 0; min-width: 0; }
+.image-compressor-preview figcaption { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; overflow-wrap: anywhere; }
+.image-compressor-preview img {
+  display: block; width: 100%; max-height: 420px; object-fit: contain;
+  border: 1px solid var(--border-soft); border-radius: var(--radius-md);
+  background:
+    repeating-conic-gradient(#eef0f6 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+}
+
+.image-compressor-result { display: flex; flex-direction: column; gap: 16px; }
+.image-compressor-stats {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+  margin: 0; padding: 0;
+}
+@media (min-width: 800px) {
+  .image-compressor-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.image-compressor-stats dt { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.image-compressor-stats dd { margin: 6px 0 0; font-size: 17px; font-weight: 700; color: var(--text-primary); overflow-wrap: anywhere; }
+
+.image-compressor-met, .image-compressor-missed {
+  border-radius: var(--radius-sm); padding: 12px 14px;
+  font-size: 14px; font-weight: 600; line-height: 1.6;
+}
+.image-compressor-met { border: 1px solid var(--success); color: var(--success); background: #eefaf4; }
+.image-compressor-missed { border: 1px solid var(--danger); color: var(--danger); background: var(--danger-soft); }
+
+/* Server-rendered guidance + FAQ below the tool. */
+.image-compressor-content { padding-top: 0; }
+.image-compressor-content h2 { font-size: 24px; margin: 38px 0 14px; }
+.image-compressor-content h2:first-child { margin-top: 0; }
+.image-compressor-steps, .image-compressor-notes {
+  display: flex; flex-direction: column; gap: 9px;
+  max-width: 72ch; padding-left: 22px;
+}
+.image-compressor-steps li, .image-compressor-notes li {
+  font-size: 15px; line-height: 1.7; color: var(--text-secondary);
+}
+/* Same AA fix as .us-faq: FAQ answers use --text-secondary, not legacy --muted. */
+.image-compressor-faq details > p { color: var(--text-secondary); }
+.image-compressor-faq .faq-number, .image-compressor-faq .faq-plus { color: var(--brand); }
+
+/* Reserved for a future, separately approved ad unit. Renders nothing today. */
+.image-compressor-ad-region { display: none; }
+
+/* ============================================================================
+   Rental Property Investment Calculator (opt-in .rental-calc-* classes only;
+   composed with the existing indigo primitives — no existing rule modified).
+   Field rules mirror the Pakistan calculator's scoped fix: the generic
+   .field input shorthand is 12px/42px, too small for financial entry on
+   phones, so this tool's controls are 16px/48px within its own scope.
+   ========================================================================== */
+
+.rental-calc, .rental-calc * { min-width: 0; }
+.rental-calc .finder-grid, .rental-calc .finder-panel { min-width: 0; }
+
+.rental-calc-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.rental-calc-privacy {
+  font-size: 14px; line-height: 1.65; color: var(--text-secondary);
+  background: var(--brand-soft); border: 1px solid var(--border-brand);
+  border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 28px;
+}
+.rental-calc-privacy strong { color: var(--brand-strong); }
+
+.rental-calc-panel-title { font-size: 20px; margin-bottom: 6px; }
+.rental-calc-panel-note { margin-bottom: 20px; }
+.rental-calc-block-title { font-size: 17px; margin-bottom: 10px; }
+.rental-calc-sub-title { font-size: 14px; margin: 20px 0 10px; color: var(--text-primary); }
+
+.rental-calc .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.rental-calc .field > label, .rental-calc .label-premium {
+  display: block; margin: 0 0 1px; color: var(--text-primary);
+  font-size: 14px; font-weight: 600; line-height: 1.4;
+}
+.rental-calc .field input.input-premium,
+.rental-calc .field select.select-premium {
+  display: block; width: 100%; min-width: 0;
+  height: 48px; min-height: 48px; padding: 12px 14px;
+  border: 1px solid #7F8DA7; border-radius: var(--radius-sm);
+  background-color: #FFFFFF; color: var(--text-primary);
+  font-family: inherit; font-size: 16px; font-weight: 500; line-height: 1.4;
+  outline: none;
+  transition: border-color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.rental-calc .field input.input-premium:hover:not(:disabled),
+.rental-calc .field select.select-premium:hover:not(:disabled) { border-color: var(--brand); }
+.rental-calc .field input.input-premium:focus,
+.rental-calc .field select.select-premium:focus,
+.rental-calc .field input.input-premium:focus-visible,
+.rental-calc .field select.select-premium:focus-visible {
+  border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+}
+.rental-calc .field input.input-premium::placeholder { color: #667085; opacity: 1; }
+/* Keep the $ / % affix slot readable on top of the scoped control sizing. */
+.rental-calc .field .input-affix > .input-premium { padding-left: 58px; }
+.rental-calc .helper-premium { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+
+/* Advanced disclosure */
+.rental-calc-advanced { margin-top: 24px; border-top: 1px solid var(--border-soft); padding-top: 20px; }
+.rental-calc-advanced-toggle {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  width: 100%; min-height: 48px; padding: 12px 14px; text-align: left; cursor: pointer;
+  background: var(--brand-soft); border: 1px solid var(--border-brand);
+  border-radius: var(--radius-md); color: var(--brand-strong);
+  font-family: inherit; font-size: 15px; font-weight: 700; line-height: 1.45;
+}
+.rental-calc-advanced-toggle:hover { border-color: var(--brand); }
+.rental-calc-advanced-toggle:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.rental-calc-advanced-note {
+  display: block; margin-top: 3px; font-size: 13px; font-weight: 500; color: var(--text-secondary);
+}
+.rental-calc-advanced-chevron { font-size: 20px; font-weight: 700; color: var(--brand); line-height: 1.2; }
+
+/* Due diligence checklist */
+.rental-calc-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rental-calc-check {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+  padding: 10px 12px; border-radius: var(--radius-sm);
+}
+.rental-calc-check:hover { background: var(--brand-soft); }
+.rental-calc-check:focus-within { box-shadow: var(--focus-ring); }
+.rental-calc-check input[type="checkbox"] {
+  flex-shrink: 0; width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); cursor: pointer;
+}
+.rental-calc-check-title { display: block; font-size: 14px; font-weight: 700; color: var(--text-primary); line-height: 1.4; }
+.rental-calc-check-note { display: block; font-size: 13px; color: var(--text-secondary); line-height: 1.55; margin-top: 2px; }
+
+/* Results column */
+.rental-calc-results { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+@media (min-width: 800px) {
+  .rental-calc-results { position: sticky; top: 24px; }
+}
+.rental-calc-chip {
+  display: inline-block; margin-top: 10px; padding: 7px 12px; border-radius: 99px;
+  font-size: 13px; font-weight: 700; line-height: 1.4; background: #FFFFFF; color: var(--brand-strong);
+}
+.rental-calc-chip--positive { background: #E6F7EE; color: #0B5C39; }
+.rental-calc-chip--negative { background: var(--danger-soft); color: var(--danger); }
+.rental-calc-chip--neutral { background: #FFF4E0; color: #8A5A00; }
+
+.rental-calc-validation {
+  border: 2px solid var(--danger); background: var(--danger-soft); color: var(--danger);
+  border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; line-height: 1.6;
+}
+.rental-calc-validation p { margin: 6px 0 0; color: var(--danger); }
+.rental-calc-validation ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.rental-calc .field input.input-premium[aria-invalid="true"] {
+  border-color: var(--danger); box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.18);
+}
+
+.rental-calc-warnings {
+  border: 1px solid var(--danger); background: var(--danger-soft); color: var(--danger);
+  border-radius: var(--radius-md); padding: 14px 16px; font-size: 14px; line-height: 1.6;
+}
+.rental-calc-warnings ul { margin: 8px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+
+.rental-calc-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 480px) {
+  .rental-calc-metrics { grid-template-columns: 1fr; }
+}
+
+/* Charts — bars are decorative; every value is also present as text. */
+.rental-calc-chart { margin: 0; }
+.rental-calc-chart figcaption { margin-bottom: 14px; }
+.rental-calc-bars { display: flex; flex-direction: column; gap: 10px; }
+.rental-calc-bar-row {
+  display: grid; grid-template-columns: 128px 1fr 76px; gap: 10px; align-items: center;
+}
+.rental-calc-bar-label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); line-height: 1.35; }
+.rental-calc-bar-track {
+  display: block; height: 10px; border-radius: 99px; background: var(--border-soft); overflow: hidden;
+}
+.rental-calc-bar-fill { display: block; height: 100%; border-radius: 99px; transition: width var(--dur-slow) var(--ease-out-soft); }
+.rental-calc-bar-fill--brand { background: var(--brand); }
+.rental-calc-bar-fill--muted { background: #98A2BC; }
+.rental-calc-bar-fill--dark { background: var(--brand-strong); }
+.rental-calc-bar-fill--success { background: var(--success); }
+.rental-calc-bar-fill--danger { background: var(--danger); }
+.rental-calc-bar-value { font-size: 13px; font-weight: 700; color: var(--text-primary); text-align: right; }
+@media (max-width: 480px) {
+  .rental-calc-bar-row { grid-template-columns: 104px 1fr 68px; gap: 8px; }
+  .rental-calc-bar-label { font-size: 11.5px; }
+  .rental-calc-bar-value { font-size: 12px; }
+}
+
+/* Scenario diverging bars around a zero centre line */
+.rental-calc-scenarios { display: flex; flex-direction: column; gap: 22px; margin-top: 16px; }
+.rental-calc-scenario-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.rental-calc-scenario-label { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.rental-calc-scenario-value { font-size: 16px; font-weight: 700; }
+.rental-calc-diverge {
+  position: relative; height: 12px; margin: 8px 0;
+  background: var(--border-soft); border-radius: 99px;
+}
+.rental-calc-diverge-center {
+  position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px;
+  background: var(--border-strong); transform: translateX(-50%);
+}
+.rental-calc-diverge-bar { position: absolute; top: 0; height: 100%; }
+.rental-calc-diverge-bar--positive { background: var(--success); border-radius: 0 99px 99px 0; }
+.rental-calc-diverge-bar--negative { background: var(--danger); border-radius: 99px 0 0 99px; }
+.rental-calc-scenario-meta { font-size: 13px; font-weight: 600; color: var(--text-secondary); line-height: 1.55; margin-bottom: 4px; }
+
+/* Server-rendered guidance + FAQ below the tool */
+.rental-calc-content { padding-top: 0; }
+.rental-calc-content h2 { font-size: 24px; margin: 38px 0 14px; }
+.rental-calc-content h2:first-child { margin-top: 0; }
+.rental-calc-content h3 { font-size: 18px; margin: 26px 0 10px; }
+.rental-calc-content p { font-size: 15px; line-height: 1.75; color: var(--text-secondary); max-width: 74ch; margin-bottom: 14px; }
+.rental-calc-steps, .rental-calc-notes {
+  display: flex; flex-direction: column; gap: 9px;
+  max-width: 74ch; padding-left: 22px; margin-bottom: 8px;
+}
+.rental-calc-steps li, .rental-calc-notes li { font-size: 15px; line-height: 1.7; color: var(--text-secondary); }
+.rental-calc-notes strong, .rental-calc-content p strong { color: var(--text-primary); }
+/* Same AA fix as .us-faq: FAQ answers use --text-secondary, not legacy --muted. */
+.rental-calc-faq details > p { color: var(--text-secondary); }
+.rental-calc-faq .faq-number, .rental-calc-faq .faq-plus { color: var(--brand); }
+.rental-calc-related { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.rental-calc-related li { font-size: 15px; line-height: 1.6; color: var(--text-secondary); }
+.rental-calc-related a { font-weight: 700; color: var(--brand); margin-right: 8px; }
+.rental-calc-disclaimer { font-size: 13.5px !important; border-top: 1px solid var(--border-soft); padding-top: 16px; }
+
+/* Reserved for a future, separately approved ad unit. Renders nothing today;
+   AdSense is not active. Keep ads out of the form and results above. */
+.rental-calc-ad-region { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rental-calc-bar-fill { transition: none; }
+}
+
+/* ============================================================================
+   Airbnb Booking Profit Calculator (opt-in .airbnb-calc-* classes; the layout
+   and result primitives are shared with the rental calculator's scoped block
+   above — bars, metric cards, chips and the validation banner come from
+   .rental-calc-*. Only field sizing, the exclusions list and the
+   server-rendered content are specific to this tool.)
+   ========================================================================== */
+
+.airbnb-calc, .airbnb-calc * { min-width: 0; }
+.airbnb-calc .field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.airbnb-calc .field > label, .airbnb-calc .label-premium {
+  display: block; margin: 0 0 1px; color: var(--text-primary);
+  font-size: 14px; font-weight: 600; line-height: 1.4;
+}
+.airbnb-calc .field input.input-premium {
+  display: block; width: 100%; min-width: 0;
+  height: 48px; min-height: 48px; padding: 12px 14px;
+  border: 1px solid #7F8DA7; border-radius: var(--radius-sm);
+  background-color: #FFFFFF; color: var(--text-primary);
+  font-family: inherit; font-size: 16px; font-weight: 500; line-height: 1.4;
+  outline: none;
+  transition: border-color var(--dur-base) var(--ease-out-soft), box-shadow var(--dur-base) var(--ease-out-soft);
+}
+.airbnb-calc .field input.input-premium:hover:not(:disabled) { border-color: var(--brand); }
+.airbnb-calc .field input.input-premium:focus,
+.airbnb-calc .field input.input-premium:focus-visible {
+  border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
+}
+.airbnb-calc .field input.input-premium::placeholder { color: #667085; opacity: 1; }
+.airbnb-calc .field .input-affix > .input-premium { padding-left: 58px; }
+.airbnb-calc .field input.input-premium[aria-invalid="true"] {
+  border-color: var(--danger); box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.18);
+}
+.airbnb-calc .helper-premium { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+
+.airbnb-calc-exclusions {
+  list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;
+}
+.airbnb-calc-exclusions li { font-size: 14px; line-height: 1.65; color: var(--text-secondary); }
+.airbnb-calc-exclusions strong { color: var(--text-primary); }
+.airbnb-calc-exclusions a { color: var(--brand); font-weight: 600; }
+
+/* Server-rendered guidance + FAQ below the tool */
+.airbnb-calc-content { padding-top: 0; }
+.airbnb-calc-content h2 { font-size: 24px; margin: 38px 0 14px; }
+.airbnb-calc-content h2:first-child { margin-top: 0; }
+.airbnb-calc-content h3 { font-size: 18px; margin: 26px 0 10px; }
+.airbnb-calc-content p { font-size: 15px; line-height: 1.75; color: var(--text-secondary); max-width: 74ch; margin-bottom: 14px; }
+.airbnb-calc-notes {
+  display: flex; flex-direction: column; gap: 9px;
+  max-width: 74ch; padding-left: 22px; margin-bottom: 8px;
+}
+.airbnb-calc-notes li { font-size: 15px; line-height: 1.7; color: var(--text-secondary); }
+.airbnb-calc-notes strong, .airbnb-calc-content p strong { color: var(--text-primary); }
+.airbnb-calc-faq details > p { color: var(--text-secondary); }
+.airbnb-calc-faq .faq-number, .airbnb-calc-faq .faq-plus { color: var(--brand); }
+.airbnb-calc-related { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.airbnb-calc-related li { font-size: 15px; line-height: 1.6; color: var(--text-secondary); }
+.airbnb-calc-related a { font-weight: 700; color: var(--brand); margin-right: 8px; }
+.airbnb-calc-disclaimer { font-size: 13.5px !important; border-top: 1px solid var(--border-soft); padding-top: 16px; }
+
+/* Reserved for a future, separately approved ad unit. Renders nothing today;
+   AdSense is not active. */
+.airbnb-calc-ad-region { display: none; }
+
+/* ============================================================================
+   Rental calculator — select polish (owner UAT feedback, 2026-10-23).
+   The shared .select-premium chevron (two 5px gradient bars) renders as a
+   faint smudge at production sizes, so the Loan term control does not read
+   as a dropdown, and the native option list falls back to unbranded OS
+   colours. Scoped to .rental-calc per the additive rule: a crisp SVG
+   chevron at a legible size, brand-tinted option highlighting where the
+   browser honours it, and an explicit light colour scheme so OS dark
+   modes can never tint the controls.
+   ========================================================================== */
+.rental-calc { color-scheme: light; }
+
+.rental-calc .select-premium {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234A5573' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 14px center;
+  background-size: 18px 18px;
+  background-repeat: no-repeat;
+}
+.rental-calc .select-premium:hover:not(:disabled),
+.rental-calc .select-premium:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%234F46E5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.rental-calc .select-premium:disabled {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239AA1B8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+/* The open option list is browser-drawn, but Chromium and Firefox honour
+   option colours: white rows, primary text, and a soft brand tint for the
+   selected row instead of the default OS blue block. */
+.rental-calc .select-premium option {
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  font-size: 16px;
+}
+.rental-calc .select-premium option:checked {
+  background-color: var(--brand-soft);
+  color: var(--text-primary);
+}
+
+/* ============================================================================
+   Free QR Code Generator (opt-in .qr-gen-* classes only;
+   composed with the existing indigo primitives — no existing rule modified).
+   ========================================================================== */
+
+.qr-gen, .qr-gen * { min-width: 0; }
+.qr-gen { color-scheme: light; }
+.qr-gen-privacy {
+  font-size: 14px; line-height: 1.65; color: var(--text-secondary);
+  background: var(--brand-soft); border: 1px solid var(--border-brand);
+  border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 24px;
+}
+.qr-gen-privacy strong { color: var(--brand-strong); }
+
+.qr-gen-layout { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+@media (min-width: 960px) {
+  .qr-gen-layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); }
+  .qr-gen-preview-col { position: sticky; top: 24px; }
+}
+.qr-gen-panel, .qr-gen-preview-panel { padding: 26px; }
+.qr-gen-panel-title { font-size: 20px; margin-bottom: 14px; }
+.qr-gen-fields { display: flex; flex-direction: column; gap: 16px; }
+.qr-gen-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.qr-gen .field input.input-premium,
+.qr-gen .field select.select-premium,
+.qr-gen .field textarea.input-premium {
+  font-size: 16px; min-height: 48px; width: 100%;
+}
+.qr-gen .field textarea.input-premium { min-height: 96px; padding-top: 12px; resize: vertical; }
+.qr-gen .helper-premium { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+.qr-gen .error-premium { margin: 0; color: var(--danger); font-size: 13px; line-height: 1.55; font-weight: 600; }
+
+.qr-gen-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 560px) { .qr-gen-types { grid-template-columns: 1fr 1fr 1fr; } }
+.qr-gen-type {
+  display: flex; flex-direction: column; gap: 3px; text-align: left;
+  min-height: 56px; padding: 12px 14px; cursor: pointer;
+  border: 1.5px solid var(--border-soft); border-radius: var(--radius-md);
+  background: var(--surface-elevated); color: var(--text-primary);
+  transition: border-color var(--dur-fast) var(--ease-out-soft), background-color var(--dur-fast) var(--ease-out-soft);
+}
+.qr-gen-type:hover { border-color: var(--brand); }
+.qr-gen-type:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+.qr-gen-type.is-active { border-color: var(--brand); background: var(--brand-soft); }
+.qr-gen-type-label { font-size: 15px; font-weight: 700; line-height: 1.3; }
+.qr-gen-type-hint { font-size: 12.5px; color: var(--text-secondary); line-height: 1.45; }
+
+.qr-gen-note {
+  border: 1px solid var(--border-brand); background: var(--brand-soft); color: var(--text-primary);
+  border-radius: var(--radius-sm); padding: 11px 13px; font-size: 13.5px; line-height: 1.6; margin-top: 14px;
+}
+.qr-gen-error {
+  border: 1px solid var(--danger); background: var(--danger-soft); color: var(--danger);
+  border-radius: var(--radius-sm); padding: 11px 13px; font-size: 13.5px; line-height: 1.6; font-weight: 600; margin-top: 12px;
+}
+
+.qr-gen-check {
+  display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+  border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 13px 14px;
+}
+.qr-gen-check:hover { background: var(--brand-soft); }
+.qr-gen-check:focus-within { box-shadow: var(--focus-ring); }
+.qr-gen-check input[type="checkbox"] { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); flex: none; }
+.qr-gen-check-title { display: block; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.qr-gen-check-note { display: block; font-size: 13px; color: var(--text-secondary); line-height: 1.55; margin-top: 2px; }
+
+.qr-gen-color-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.qr-gen-color { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.qr-gen-color input[type="color"] {
+  width: 56px; height: 48px; padding: 4px; cursor: pointer;
+  border: 1.5px solid var(--border-soft); border-radius: var(--radius-sm); background: var(--surface-elevated);
+}
+.qr-gen-color input[type="color"]:focus-visible { box-shadow: var(--focus-ring); outline: none; }
+
+.qr-gen-preview {
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-soft); border-radius: var(--radius-md);
+  background: #FFFFFF; padding: 18px; min-height: 300px;
+}
+.qr-gen-preview img { display: block; width: 100%; max-width: 320px; height: auto; aspect-ratio: 1; }
+.qr-gen-empty { text-align: center; color: var(--text-secondary); font-size: 14.5px; line-height: 1.65; max-width: 34ch; }
+.qr-gen-empty strong { color: var(--text-primary); }
+
+.qr-gen-payload { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.qr-gen-payload-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.qr-gen-payload-code {
+  display: block; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; white-space: pre-wrap;
+  background: var(--brand-soft); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 11px 13px;
+  color: var(--text-primary); max-height: 160px; overflow-y: auto;
+}
+
+.qr-gen-downloads { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.qr-gen-downloads .button-indigo, .qr-gen-downloads .button-indigo-secondary {
+  display: flex; align-items: center; justify-content: center; text-align: center; min-height: 48px; width: 100%;
+}
+.qr-gen-downloads .is-disabled { opacity: 0.45; pointer-events: none; }
+.qr-gen-download-note { margin-top: 14px; }
+
+/* Server-rendered guidance + FAQ below the tool. */
+.qr-gen-content { padding-top: 0; }
+.qr-gen-content h2 { font-size: 24px; margin: 38px 0 14px; }
+.qr-gen-content h2:first-child { margin-top: 0; }
+.qr-gen-content p { font-size: 15px; line-height: 1.7; color: var(--text-secondary); max-width: 72ch; }
+.qr-gen-steps, .qr-gen-notes { display: flex; flex-direction: column; gap: 9px; max-width: 72ch; padding-left: 22px; }
+.qr-gen-steps li, .qr-gen-notes li { font-size: 15px; line-height: 1.7; color: var(--text-secondary); }
+.qr-gen-faq details > p { color: var(--text-secondary); }
+.qr-gen-faq .faq-number, .qr-gen-faq .faq-plus { color: var(--brand); }
+.qr-gen-related { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.qr-gen-related li { display: flex; flex-direction: column; gap: 2px; font-size: 15px; }
+.qr-gen-related span { color: var(--text-secondary); line-height: 1.6; }
+
+/* Reserved for a future, separately approved ad unit. Renders nothing today. */
+.qr-gen-ad-region { display: none; }

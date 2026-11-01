@@ -30,8 +30,8 @@ export default function Tools() {
     ],
   };
 
-  // No calculator route exists yet, so every item points at its in-page anchor
-  // rather than a URL that would 404.
+  // Live tools link to their real route; tools that are not live yet point at
+  // their in-page anchor rather than a URL that would 404.
   const collection = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -48,7 +48,7 @@ export default function Tools() {
         position: index + 1,
         name: tool.name,
         description: `${tool.shortDescription} (${toolStatusLabels[tool.status]})`,
-        url: `${business.url}/tools#${tool.slug}`,
+        url: tool.status === "live" ? `${business.url}/tools/${tool.slug}` : `${business.url}/tools#${tool.slug}`,
       })),
     },
   };
@@ -84,7 +84,7 @@ export default function Tools() {
     </section>
 
     <div className="container tools-main" id="tool-directory">
-      <p className="tools-section-note">Grouped by what you are trying to work out. Nothing here is live yet — each card shows where it stands.</p>
+      <p className="tools-section-note">Grouped by what you are trying to work out. Tools marked Available Now are ready to use — the rest are in development, and each card shows where it stands.</p>
 
       {groups.map(group => (
         <section key={group.category} className="tools-group" aria-labelledby={`group-${slugify(group.category)}`}>

@@ -123,6 +123,39 @@ has been authorized.
   `npx tsc --noEmit` clean; `npm run build` passes (40/40 pages); secrets scan
   of tree and full history clean.
 - Gaps confirmed: no security headers, no cookie-consent banner, no test script.
+- 2026-10-23: Free QR Code Generator built (owner brief titled "Tool #3") at
+  `/tools/qr-code-generator`, local only on `feature/usa-growth-phase1`, NOT
+  committed/pushed. Pure payload/validation/contrast logic in
+  `src/lib/tools/qr-code.ts`; encoding via `qrcode` 1.5.4 (MIT) wrapped in
+  `src/lib/tools/qr-generation.ts` (dev-only decode deps jsqr/pngjs). Six types
+  (URL, text, Wi-Fi with escaped payloads + open/hidden, email, phone, vCard
+  3.0 escaped), PNG 512/1024/2048 + SVG downloads, EC L/M/Q/H, 4-module quiet
+  zone, contrast safeguard (inverted or <3:1 blocked, 3–4.5:1 warned), exact
+  payload printed in UI, static-code explanation, hidden future ad region,
+  registry entry (Image & Media, `qr` icon) + sitemap entry. Verified:
+  266/266 tests (37 new QR: 32 payload/generation + 5 jsQR independent-decode),
+  tsc clean, lint 0 errors / 5 pre-existing warnings, build 46/46 (route
+  static), git diff --check clean, local prod HTTP 200 with unique
+  title/canonical. Real-browser QA (Chromium CDP rig,
+  `qa-evidence/qr-generator/`): 17/17 PASS locally AND 17/17 on the hosted QA
+  deployment, 0 console errors — live preview/download PNGs decoded with jsQR
+  back to the exact URL, Wi-Fi and vCard payloads; validation, live update,
+  colour+EC-H decode, contrast block, reset, desktop + 390px + 440px all
+  PASS; Tab trail reaches every tool control; synthetic Enter activation
+  NOT TESTED (CDP rig limitation; controls are native elements). Physical
+  phone scanning NOT TESTED. Vercel Preview (owner-authorized, isolated
+  project `triangletech-qr-qa`, prj_CdrLWxWZS4W1RNnOvrknhI6PTsZp, deployed
+  from an isolated copy — repo never linked, no secrets uploaded): preview
+  deployment dpl_7EHxDkNYEJRAxEZU8kbjckm4qX3W READY at
+  https://triangletech-qr-134cofypo-aslams-projects-6ad7cbd6.vercel.app —
+  target=preview, X-Robots-Tag: noindex verified (anonymous + authenticated
+  200), Deployment Protection (Vercel Authentication) ON so the preview URL
+  needs a Vercel sign-in. First deploy of the new project was auto-assigned
+  as the QA project's own production target (platform behaviour; no --prod
+  was run), so https://triangletech-qr-qa.vercel.app also serves the same
+  build publicly as the QA alias — it carries no noindex. triangletech.co
+  untouched (route 404 there, verified). Evidence:
+  `qa-evidence/qr-generator/vercel-preview.md`.
 
 ## Decisions
 - All Phase 1 implementation work happens on `feature/usa-growth-phase1`
@@ -236,6 +269,70 @@ Finding F2: the privacy policy does not state the internal 30-day
 deletion standard or 12-month purge period (B2 legal review). Full
 report: workspace research `phase1-qa/p1.10-qa-report.md`, including the
 16-item release-blocker inventory. No production code changed in P1.10.
+Free Tools track (separate from Phase 1): on 2026-10-23 the owner
+authorized a second free tool — **Rental Property Investment
+Calculator** ("Should I Buy This Rental Property?") at
+`/tools/rental-property-investment-calculator`, built LOCAL ONLY on
+`feature/usa-growth-phase1` on top of the still-uncommitted
+image-compressor work — NOT committed, pushed or deployed. Pure engine
+`src/lib/tools/rental-property.ts`: standard amortisation; NOI strictly
+excludes debt service; cash invested = down payment + closing +
+furnishing only; platform/management fees on rental revenue only;
+cleaning modelled per stay; break-even occupancy solves per-night
+contribution against fixed costs + debt service and may exceed 100%
+(surfaced as a warning, never hidden); scenarios move only nightly
+rate (±10%) and occupancy (±10 points); assessment is preliminary,
+never a buy/pass recommendation. Verified: 203/203 tests (33 new,
+including a fully hand-worked canonical case and the standard
+$300k/6%/30yr = $1,798.65 payment), tsc clean, lint 0 errors / 5
+pre-existing warnings, build passes with the route static; local
+production-server smoke check returned 200 with SSR figures matching
+hand calculation for the illustrative defaults (gross $50,839/yr, NOI
+$24,287/yr, cash flow $254/mo, CoC 3.3%), sitemap and /tools registry
+include the tool, zero AdSense references (empty hidden ad region
+only, not activated). Client-side only: no APIs, auth, database or
+scraping. The two older calculator routes
+(product-cost-profit, pakistan-sales-tax) were at that point still
+missing from the sitemap — pre-existing gap, untouched in that slice.
+Free Tools FAST BUILD SPRINT (owner-commissioned 2026-10-23; standing
+goal 12–15 USA-focused tools per development day where feasible, one
+named tool per owner prompt, no new tool without the owner naming it):
+(1) Rental calculator silent-clamp defect FIXED — `validateRentalInputs`
+computes field errors on the raw as-entered values (percentages 0–100,
+non-negative amounts, available nights 0–365, loan-term sanity,
+combined platform+management >100%); the engine still calculates at the
+nearest valid limit but `RentalResult.validationErrors` travels with
+every result, the UI stores values exactly as typed, flags fields
+(aria-invalid + inline error), and shows a provisional-results banner;
+defaults and the canonical case validate clean. (2) Rental labels
+audited — annual/monthly periods consistent across cards, chart, copy
+summary and scenarios; break-even behaviour re-verified by tests.
+(3) The stale /tools "Nothing here is live yet" copy and the two
+missing sitemap routes were found ALREADY FIXED in the uncommitted
+tree at sprint start (not by this sprint's author); verified accurate
+against the registry and locked in with a new sitemap regression test:
+every registry-live tool must appear exactly once in the sitemap, and
+no non-live tool may appear. (4) Tool #3 BUILT — **Airbnb Booking
+Profit Calculator** at `/tools/airbnb-booking-profit-calculator`:
+per-booking contribution only (never labelled total profit); fees on
+gross booking revenue (accommodation + guest cleaning fee + additional
+charges), fee base labelled everywhere, no percentage presented as an
+official Airbnb rate; pass-through taxes excluded. Mandatory fixture
+verified exactly in engine AND live UI: $150×3 + $75 → gross $525,
+platform $15.75, management $105, contribution $329.25 ($109.75/night).
+Gates: 225/225 tests (22 new: 6 rental validation, 2 sitemap, 14
+Airbnb), tsc clean, lint 0 errors / 5 pre-existing warnings, build
+45/45 with all five tool routes static, diff-check clean. REAL BROWSER
+QA (Chromium 152 via the CDP Fetch-bridge rig, evidence in gitignored
+`qa-evidence/free-tools-sprint/`): 16/16 scenarios PASS, 0 console
+errors — rental validation banner + field error + clearing, Airbnb
+fixture + live recalculation ($444.75 at 4 nights) + validation, Image
+Compressor with a real generated 1600×1200 PNG fixture (1,586,701
+bytes) canvas-encoded to 88.5 KB against a 100 KB target ("Target met",
+quality 92%), /tools copy + 5 live cards, no horizontal overflow at
+1440px or 390px on any tool. Still NOT TESTED: Safari, real mobile
+file-picker and drag-and-drop upload, screen readers. All sprint work
+remains LOCAL ONLY — not committed, pushed or deployed.
 
 ## Next exact action
 Submit the P1.11 evidence for ChatGPT's independent review, then

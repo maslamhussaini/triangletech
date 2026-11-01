@@ -29,6 +29,8 @@ export function Icon({ name, className = "" }: { name: string; className?: strin
     creator: <><rect x="7" y="2.5" width="10" height="19" rx="2" /><path d="M11 18.5h2" /><path d="m10.5 8 4 2.5-4 2.5Z" /></>,
     affiliate: <><path d="M4 5h2l2.2 9.2a2 2 0 0 0 2 1.5h6.2a2 2 0 0 0 2-1.5L20 8H7" /><circle cx="10.5" cy="19.5" r="1.3" /><circle cx="17" cy="19.5" r="1.3" /></>,
     wallet: <><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v2.5" /><rect x="4" y="7.5" width="16" height="12" rx="2" /><path d="M16 13.5h2" /></>,
+    image: <><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="m5 19 4.5-4.5 3 3L17 13l2 2" /></>,
+    qr: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM21 14v.01M14 21v.01M18 18h3v3h-3z" /></>,
   };
   return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] ?? paths.custom}</svg>;
 }

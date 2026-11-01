@@ -15,6 +15,7 @@ export const toolCategories = [
   "Tax & Invoice",
   "Creator Economy",
   "Affiliate & E-commerce",
+  "Image & Media",
 ] as const;
 
 export type ToolCategory = (typeof toolCategories)[number];
@@ -48,6 +49,24 @@ export const tools: Tool[] = [
     status: "live",
     featured: true,
     icon: "calculator",
+  },
+  {
+    slug: "rental-property-investment-calculator",
+    name: "Rental Property Investment Calculator",
+    shortDescription: "Should you buy this rental property? Mortgage, revenue, NOI, cash flow, break-even occupancy and cash-on-cash for short-term rentals.",
+    category: "Business & Profit",
+    status: "live",
+    featured: true,
+    icon: "building",
+  },
+  {
+    slug: "airbnb-booking-profit-calculator",
+    name: "Airbnb Booking Profit Calculator",
+    shortDescription: "What one Airbnb booking really contributes after platform and management fees, cleaning and supplies — per booking and per night.",
+    category: "Business & Profit",
+    status: "live",
+    featured: true,
+    icon: "wallet",
   },
   {
     slug: "pakistan-sales-tax-calculator",
@@ -84,6 +103,24 @@ export const tools: Tool[] = [
     status: "coming-soon",
     featured: false,
     icon: "affiliate",
+  },
+  {
+    slug: "qr-code-generator",
+    name: "Free QR Code Generator",
+    shortDescription: "Create scannable QR codes for websites, Wi-Fi, email, phone, contacts and text. PNG and SVG downloads, no signup, nothing uploaded.",
+    category: "Image & Media",
+    status: "live",
+    featured: true,
+    icon: "qr",
+  },
+  {
+    slug: "image-compressor",
+    name: "Image Compressor to Target KB",
+    shortDescription: "Compress JPG, PNG or WebP images to a target size in KB, entirely in your browser. No uploads.",
+    category: "Image & Media",
+    status: "live",
+    featured: true,
+    icon: "image",
   },
 ];
 
