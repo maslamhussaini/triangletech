@@ -148,3 +148,30 @@ describe("CSV and import", () => {
     expect(result.sessions[0].breakMinutes).toBe(30);
   });
 });
+
+describe("break allocation across a workweek boundary", () => {
+  it("warns when an overnight break crosses a workweek boundary", () => {
+    // Week starts Monday 2026-10-26; Sunday 2026-11-01 22:00 -> Monday 2026-11-02 06:00 crosses the week boundary.
+    const r = calculateTimesheet({
+      period: "weekly",
+      weekStart: "2026-10-26",
+      overtimeThresholdHours: 40,
+      overtimeMultiplier: 1.5,
+      hourlyRate: null,
+      sessions: [{ id: "s1", date: "2026-11-01", start: "22:00", end: "06:00", endsNextDay: true, breakMinutes: 60 }],
+    });
+    expect(r.errors).toEqual([]);
+    expect(r.warnings.map(w => w.code)).toContain("break-allocation-overtime");
+  });
+  it("does not warn for an overnight break inside one workweek", () => {
+    const r = calculateTimesheet({
+      period: "weekly",
+      weekStart: "2026-10-26",
+      overtimeThresholdHours: 40,
+      overtimeMultiplier: 1.5,
+      hourlyRate: null,
+      sessions: [{ id: "s1", date: "2026-10-27", start: "22:00", end: "06:00", endsNextDay: true, breakMinutes: 60 }],
+    });
+    expect(r.warnings.map(w => w.code)).not.toContain("break-allocation-overtime");
+  });
+});

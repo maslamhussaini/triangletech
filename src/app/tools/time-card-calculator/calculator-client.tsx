@@ -451,6 +451,21 @@ export default function TimeCardCalculatorClient() {
           <p role="status" style={{ background: "#EEF0FF", border: "1px solid #C7D2FE", padding: "12px 16px", borderRadius: 8 }}>{storageNotice}</p>
         )}
 
+        {result.warnings.length > 0 && (
+          <div role="alert" style={{ background: "#FFFBEB", border: "1px solid #FDE68A", padding: "12px 16px", borderRadius: 8, marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>{t("tc.warningsTitle")}</h2>
+            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+              {result.warnings.map((w, i) => {
+                if (w.code === "break-allocation-overtime") {
+                  const sess = result.sessions.find(s => s.session.id === w.sessionId)?.session;
+                  return <li key={i}>{sess ? t("tc.warnBreakAllocationOvertime", { date: sess.date, break: sess.breakMinutes }) : w.message}</li>;
+                }
+                return <li key={i}>{w.message}</li>;
+              })}
+            </ul>
+          </div>
+        )}
+
         {result.errors.length > 0 && (
           <div role="alert" aria-labelledby="tc-errors-heading" style={{ background: "#FEF2F2", border: "1px solid #FECACA", padding: "12px 16px", borderRadius: 8, marginBottom: 16 }}>
             <h2 id="tc-errors-heading" style={{ fontSize: 16, margin: "0 0 8px" }}>{t("tc.errorsTitle", { count: result.errors.length }, result.errors.length)}</h2>
@@ -858,6 +873,7 @@ export default function TimeCardCalculatorClient() {
             <li>{t("tc.howDecimal")}</li>
             <li>{t("tc.howBreaks")}</li>
             <li>{t("tc.howOvernight")}</li>
+            <li>{t("tc.howBreakAllocation")}</li>
             <li>{t("tc.howWeekly")}</li>
             <li>{t("tc.howOvertime")}</li>
             <li>{t("tc.howGross")}</li>

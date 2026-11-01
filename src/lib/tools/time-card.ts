@@ -13,7 +13,13 @@
  *   midnight segments in proportion to each segment's length (integer
  *   minutes, remainder carried to the earliest segments). The allocation is
  *   reported per segment in the result, so it is an explicit rule, not a
- *   silent guess about where the break was taken.
+ *   silent guess about where the break was taken. ASSUMPTION LIMIT: when
+ *   that split crosses a workweek boundary, it can change weekly overtime;
+ *   the engine therefore emits a "break-allocation-overtime" warning and
+ *   the UI shows it above the results. An exact result in that case
+ *   requires splitting the shift at midnight into two sessions with each
+ *   part's actual break minutes — there is no per-segment break input,
+ *   so the split session is the explicit-allocation mechanism.
  * - Weekly overtime is evaluated separately for each workweek. A biweekly
  *   period never uses a single 80-hour threshold.
  * - Money: rate is converted to whole cents, then
@@ -396,6 +402,21 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
       last.paidMinutes -= diff;
     }
     sessionResults.push({ session: item.session, grossMinutes: item.gross, paidMinutes: item.gross - item.session.breakMinutes, segments });
+    // Explicit-allocation requirement: when an overnight session's break
+    // allocation crosses a workweek boundary, the assumed proportional
+    // split can change weekly overtime, so the result must not be
+    // presented as exact. Warn visibly; the exact route is to split the
+    // shift at midnight into two sessions with each part's real break.
+    if (item.session.breakMinutes > 0 && segments.length > 1) {
+      const weekIndexes = new Set(segments.map(seg => Math.floor((dateOrdinal(seg.date) - periodStartOrdinal) / 7)));
+      if (weekIndexes.size > 1) {
+        warnings.push({
+          sessionId: item.session.id,
+          code: "break-allocation-overtime",
+          message: `Overnight break allocation is assumed, not exact: the ${item.session.breakMinutes}m unpaid break on the ${item.session.date} shift crosses a workweek boundary and was split across midnight in proportion to each day's length. That split can change weekly overtime. For an exact result, split the shift at midnight into two sessions and enter each part's actual break minutes.`,
+        });
+      }
+    }
   }
 
   const days: DayResult[] = [];

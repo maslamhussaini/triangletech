@@ -328,6 +328,9 @@ export const en: Dictionary = {
   "ls.disclaimer": "This tool estimates quantities from the figures you enter. It does not verify supplier prices, product quality, or suitability for a specific site.",
   "ls.relatedTitle": "Related tools",
   "ls.privacy": "Privacy: all calculations run in your browser. No login, no backend, and no paid API is used for the core calculation.",
+  "tc.warningsTitle": "Warnings — check before using these totals",
+  "tc.warnBreakAllocationOvertime": "Overnight break allocation is assumed, not exact: the {break}m unpaid break on the {date} shift crosses a workweek boundary, so it was split across midnight in proportion to each day's length. That split can change weekly overtime. For an exact result, split the shift at midnight into two sessions and enter each part's actual break minutes.",
+  "tc.howBreakAllocation": "Break allocation across midnight is an assumption, not a measurement: an unpaid break on an overnight shift is split in proportion to each day's length, and the split is shown per segment. If the shift crosses a workweek boundary, that assumed split can change weekly overtime — for an exact result, split the shift at midnight into two sessions and enter each part's actual break minutes.",
 };
 
 export const dictionaries: Partial<Record<Locale, Dictionary>> = { en };
@@ -619,6 +622,9 @@ dictionaries.es = {
   "ls.disclaimer": "Esta herramienta estima cantidades a partir de las cifras que introduces. No verifica precios de proveedores, calidad del producto ni idoneidad para un sitio concreto.",
   "ls.relatedTitle": "Herramientas relacionadas",
   "ls.privacy": "Privacidad: todos los cálculos se ejecutan en tu navegador. No hay inicio de sesión, ni servidor, ni API de pago para el cálculo principal.",
+  "tc.warningsTitle": "Advertencias — revíselas antes de usar estos totales",
+  "tc.warnBreakAllocationOvertime": "La asignación del descanso nocturno es supuesta, no exacta: el descanso no pagado de {break} min del turno del {date} cruza un límite de semana laboral, por lo que se dividió a medianoche en proporción a la duración de cada día. Esa división puede cambiar las horas extra semanales. Para un resultado exacto, divida el turno a medianoche en dos turnos e ingrese los minutos reales de descanso de cada parte.",
+  "tc.howBreakAllocation": "La asignación de descansos a través de la medianoche es una suposición, no una medición: un descanso no pagado en un turno nocturno se divide en proporción a la duración de cada día y la división se muestra por segmento. Si el turno cruza un límite de semana laboral, esa división supuesta puede cambiar las horas extra semanales; para un resultado exacto, divida el turno a medianoche en dos turnos e ingrese los minutos reales de descanso de cada parte.",
 };
 
 dictionaries.fr = {
@@ -898,6 +904,9 @@ dictionaries.fr = {
   "ls.disclaimer": "Cet outil estime des quantités à partir des chiffres que vous saisissez. Il ne vérifie pas les prix des fournisseurs, la qualité du produit ni l'adéquation à un site précis.",
   "ls.relatedTitle": "Outils connexes",
   "ls.privacy": "Confidentialité : tous les calculs s'exécutent dans votre navigateur. Aucune connexion, aucun serveur et aucune API payante ne sont utilisés pour le calcul principal.",
+  "tc.warningsTitle": "Avertissements — vérifiez-les avant d'utiliser ces totaux",
+  "tc.warnBreakAllocationOvertime": "La répartition de la pause de nuit est supposée, pas exacte : la pause non payée de {break} min du poste du {date} franchit une limite de semaine de travail, elle a donc été répartie à minuit en proportion de la durée de chaque jour. Cette répartition peut modifier les heures supplémentaires hebdomadaires. Pour un résultat exact, divisez le poste à minuit en deux postes et saisissez les minutes de pause réelles de chaque partie.",
+  "tc.howBreakAllocation": "La répartition des pauses à travers minuit est une hypothèse, pas une mesure : une pause non payée d'un poste de nuit est répartie en proportion de la durée de chaque jour, et la répartition est affichée par segment. Si le poste franchit une limite de semaine de travail, cette répartition supposée peut modifier les heures supplémentaires hebdomadaires ; pour un résultat exact, divisez le poste à minuit en deux postes et saisissez les minutes de pause réelles de chaque partie.",
 };
 
 dictionaries.de = {
@@ -1177,6 +1186,9 @@ dictionaries.de = {
   "ls.disclaimer": "Dieses Tool schätzt Mengen aus den von Ihnen eingegebenen Zahlen. Es prüft weder Lieferantenpreise noch Produktqualität noch Eignung für einen bestimmten Standort.",
   "ls.relatedTitle": "Verwandte Tools",
   "ls.privacy": "Datenschutz: Alle Berechnungen laufen in Ihrem Browser. Keine Anmeldung, kein Backend und keine kostenpflichtige API werden für die Kernberechnung verwendet.",
+  "tc.warningsTitle": "Warnungen — prüfen Sie diese, bevor Sie diese Summen verwenden",
+  "tc.warnBreakAllocationOvertime": "Die Zuordnung der nächtlichen Pause ist eine Annahme, keine exakte Angabe: Die unbezahlte Pause von {break} Min in der Schicht vom {date} überschreitet eine Arbeitswochengrenze und wurde daher um Mitternacht anteilig zur Länge jedes Tages aufgeteilt. Diese Aufteilung kann die wöchentlichen Überstunden verändern. Für ein exaktes Ergebnis teilen Sie die Schicht um Mitternacht in zwei Schichten und geben Sie die tatsächlichen Pausenminuten jedes Teils ein.",
+  "tc.howBreakAllocation": "Die Aufteilung von Pausen über Mitternacht ist eine Annahme, keine Messung: Eine unbezahlte Pause einer Nachtschicht wird anteilig zur Länge jedes Tages aufgeteilt, und die Aufteilung wird je Segment angezeigt. Überschreitet die Schicht eine Arbeitswochengrenze, kann diese angenommene Aufteilung die wöchentlichen Überstunden verändern; für ein exaktes Ergebnis teilen Sie die Schicht um Mitternacht in zwei Schichten und geben Sie die tatsächlichen Pausenminuten jedes Teils ein.",
 };
 
 dictionaries.pt = {
@@ -1456,6 +1468,9 @@ dictionaries.pt = {
   "ls.disclaimer": "Esta ferramenta estima quantidades a partir dos valores que insere. Não verifica preços de fornecedores, qualidade do produto nem adequação a um local específico.",
   "ls.relatedTitle": "Ferramentas relacionadas",
   "ls.privacy": "Privacidade: todos os cálculos são executados no seu navegador. Não há início de sessão, servidor ou API paga para o cálculo principal.",
+  "tc.warningsTitle": "Avisos — verifique-os antes de usar estes totais",
+  "tc.warnBreakAllocationOvertime": "A alocação da pausa noturna é presumida, não exata: a pausa não remunerada de {break} min do turno de {date} cruza um limite de semana de trabalho, por isso foi dividida à meia-noite em proporção à duração de cada dia. Essa divisão pode alterar as horas extras semanais. Para um resultado exato, divida o turno à meia-noite em dois turnos e insira os minutos reais de pausa de cada parte.",
+  "tc.howBreakAllocation": "A alocação de pausas através da meia-noite é uma suposição, não uma medição: uma pausa não remunerada de um turno noturno é dividida em proporção à duração de cada dia, e a divisão é mostrada por segmento. Se o turno cruzar um limite de semana de trabalho, essa divisão presumida pode alterar as horas extras semanais; para um resultado exato, divida o turno à meia-noite em dois turnos e insira os minutos reais de pausa de cada parte.",
 };
 
 dictionaries.ar = {
@@ -1735,6 +1750,9 @@ dictionaries.ar = {
   "ls.disclaimer": "تقدّر هذه الأداة الكميات من الأرقام التي تدخلها. وهي لا تتحقق من أسعار المورّدين أو جودة المنتج أو ملاءمته لموقع معين.",
   "ls.relatedTitle": "أدوات ذات صلة",
   "ls.privacy": "الخصوصية: كل الحسابات تعمل في متصفحك. لا تسجيل دخول ولا خادم ولا واجهة مدفوعة تُستخدم للحساب الأساسي.",
+  "tc.warningsTitle": "تحذيرات — تحقق منها قبل استخدام هذه المجاميع",
+  "tc.warnBreakAllocationOvertime": "توزيع استراحة الليل افتراضي وليس دقيقاً: استراحة غير مدفوعة مدتها {break} دقيقة في مناوبة {date} تتجاوز حد أسبوع العمل، لذلك قُسّمت عند منتصف الليل بنسبة طول كل يوم. قد يغيّر هذا التقسيم ساعات العمل الإضافية الأسبوعية. للحصول على نتيجة دقيقة، قسّم المناوبة عند منتصف الليل إلى مناوبتين وأدخل دقائق الاستراحة الفعلية لكل جزء.",
+  "tc.howBreakAllocation": "توزيع الاستراحات عبر منتصف الليل افتراض وليس قياساً: استراحة غير مدفوعة في مناوبة ليلية تُقسَّم بنسبة طول كل يوم، ويُعرض التقسيم لكل مقطع. إذا تجاوزت المناوبة حد أسبوع العمل، فقد يغيّر هذا التقسيم المفترض ساعات العمل الإضافية الأسبوعية؛ للحصول على نتيجة دقيقة، قسّم المناوبة عند منتصف الليل إلى مناوبتين وأدخل دقائق الاستراحة الفعلية لكل جزء.",
 };
 
 dictionaries.ur = {
@@ -2014,6 +2032,9 @@ dictionaries.ur = {
   "ls.disclaimer": "یہ ٹول آپ کی درج کردہ اقدار سے مقداریں تخمینہ لگاتا ہے۔ یہ سپلائر قیمتوں، مصنوعات کے معیار یا کسی مخصوص جگہ کی موزونیت کی تصدیق نہیں کرتا۔",
   "ls.relatedTitle": "متعلقہ ٹولز",
   "ls.privacy": "رازداری: تمام حسابات آپ کے براؤزر میں چلتے ہیں۔ بنیادی حساب کے لیے کوئی لاگ ان، بیک اینڈ یا ادا شدہ API استعمال نہیں ہوتا۔",
+  "tc.warningsTitle": "انتباہات — ان مجموعوں کو استعمال کرنے سے پہلے ان کی جانچ کریں",
+  "tc.warnBreakAllocationOvertime": "رات کی وقفے کی تقسیم مفروضہ ہے، درست نہیں: {date} کی شفٹ میں {break} منٹ کا بلا معاوضہ وقفہ ہفتہ وار کام کی حد سے گزرتا ہے، اس لیے اسے آدھی رات کو ہر دن کی لمبائی کے تناسب سے تقسیم کیا گیا۔ یہ تقسیم ہفتہ وار اوور ٹائم بدل سکتی ہے۔ درست نتیجے کے لیے شفٹ کو آدھی رات کو دو شفٹوں میں تقسیم کریں اور ہر حصے کے اصل وقفے کے منٹ درج کریں۔",
+  "tc.howBreakAllocation": "آدھی رات کے پار وقفوں کی تقسیم ایک مفروضہ ہے، پیمائش نہیں: رات کی شفٹ میں بلا معاوضہ وقفہ ہر دن کی لمبائی کے تناسب سے تقسیم کیا جاتا ہے، اور تقسیم ہر حصے کے لیے دکھائی جاتی ہے۔ اگر شفٹ ہفتہ وار کام کی حد سے گزر جائے تو یہ مفروضہ تقسیم ہفتہ وار اوور ٹائم بدل سکتی ہے؛ درست نتیجے کے لیے شفٹ کو آدھی رات کو دو شفٹوں میں تقسیم کریں اور ہر حصے کے اصل وقفے کے منٹ درج کریں۔",
 };
 
 dictionaries.hi = {
@@ -2293,6 +2314,9 @@ dictionaries.hi = {
   "ls.disclaimer": "यह टूल आपके दर्ज किए गए आंकड़ों से मात्राओं का अनुमान लगाता है। यह आपूर्तिकर्ता कीमतों, उत्पाद गुणवत्ता या किसी विशिष्ट स्थल की उपयुक्तता की पुष्टि नहीं करता।",
   "ls.relatedTitle": "संबंधित टूल",
   "ls.privacy": "गोपनीयता: सभी गणनाएँ आपके ब्राउज़र में चलती हैं। मुख्य गणना के लिए कोई लॉगिन, बैकएंड या सशुल्क API उपयोग नहीं होता।",
+  "tc.warningsTitle": "चेतावनियाँ — इन योगों का उपयोग करने से पहले इन्हें जाँच लें",
+  "tc.warnBreakAllocationOvertime": "रात की छुट्टी का आवंटन अनुमानित है, सटीक नहीं: {date} की शिफ्ट में {break} मिनट का अवैतनिक ब्रेक कार्य सप्ताह की सीमा को पार करता है, इसलिए इसे आधी रात को प्रत्येक दिन की लंबाई के अनुपात में विभाजित किया गया। यह विभाजन साप्ताहिक ओवरटाइम बदल सकता है। सटीक परिणाम के लिए, शिफ्ट को आधी रात को दो शिफ्टों में विभाजित करें और प्रत्येक भाग के वास्तविक ब्रेक मिनट दर्ज करें।",
+  "tc.howBreakAllocation": "आधी रात के पार ब्रेक का आवंटन एक अनुमान है, माप नहीं: रात की शिफ्ट में अवैतनिक ब्रेक प्रत्येक दिन की लंबाई के अनुपात में विभाजित किया जाता है, और विभाजन प्रति खंड दिखाया जाता है। यदि शिफ्ट कार्य सप्ताह की सीमा पार करती है, तो यह अनुमानित विभाजन साप्ताहिक ओवरटाइम बदल सकता है; सटीक परिणाम के लिए, शिफ्ट को आधी रात को दो शिफ्टों में विभाजित करें और प्रत्येक भाग के वास्तविक ब्रेक मिनट दर्ज करें।",
 };
 
 dictionaries.zh = {
@@ -2572,6 +2596,9 @@ dictionaries.zh = {
   "ls.disclaimer": "此工具根据您输入的数字估算数量。它不核实供应商价格、产品质量或对特定场地的适用性。",
   "ls.relatedTitle": "相关工具",
   "ls.privacy": "隐私：所有计算均在您的浏览器中运行。核心计算不使用登录、后端或付费 API。",
+  "tc.warningsTitle": "警告 — 在使用这些总计之前请先检查",
+  "tc.warnBreakAllocationOvertime": "夜间休息分配是假设值，并非精确值：{date} 班次中 {break} 分钟的无薪休息跨越了工作周边界，因此按每天时长的比例在午夜进行了拆分。该拆分可能会改变每周加班时间。如需精确结果，请在午夜将该班次拆分为两个班次，并分别输入各部分的实际休息分钟数。",
+  "tc.howBreakAllocation": "跨午夜的休息分配是一种假设，并非实测值：夜班中的无薪休息按每天时长的比例拆分，且按段显示拆分结果。如果该班次跨越工作周边界，这种假设拆分可能会改变每周加班时间；如需精确结果，请在午夜将该班次拆分为两个班次，并分别输入各部分的实际休息分钟数。",
 };
 
 dictionaries.ja = {
@@ -2851,6 +2878,9 @@ dictionaries.ja = {
   "ls.disclaimer": "このツールは、入力された数値から数量を推定します。仕入先の価格、製品品質、特定の場所への適合性は検証しません。",
   "ls.relatedTitle": "関連ツール",
   "ls.privacy": "プライバシー：すべての計算はブラウザ内で行われます。基本計算にログイン、バックエンド、有料APIは使用されません。",
+  "tc.warningsTitle": "警告 — これらの合計を使用する前に確認してください",
+  "tc.warnBreakAllocationOvertime": "夜間の休憩配分は仮定であり、正確なものではありません。{date} のシフトにおける {break} 分の無給休憩は勤務週の境界をまたいでいるため、各日の長さに比例して深夜に分割されました。この分割により週の残業時間が変わる可能性があります。正確な結果を得るには、シフトを深夜で2つに分割し、各部分の実際の休憩分数を入力してください。",
+  "tc.howBreakAllocation": "深夜をまたぐ休憩の配分は仮定であり、実測ではありません。夜勤の無給休憩は各日の長さに比例して分割され、分割はセグメントごとに表示されます。シフトが勤務週の境界をまたぐ場合、この仮定の分割により週の残業時間が変わる可能性があります。正確な結果を得るには、シフトを深夜で2つに分割し、各部分の実際の休憩分数を入力してください。",
 };
 
 import { errorDictionaries } from "./error-dictionaries";
