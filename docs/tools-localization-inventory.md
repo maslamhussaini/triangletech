@@ -200,3 +200,49 @@ modules, and re-run the coverage test so a missing key fails loudly.
 - Translations are initial translations written for these deliveries;
   they have not been reviewed by native speakers. English fallback
   covers any key found missing in future edits.
+
+## Phase 2 — combined integration (2026-11-02): dropdown fix + premium PDFs + user company branding
+
+- Dictionary: 378 keys, 0 missing in all 10 locales (coverage test
+  enforces this). New keys: `common.pageOf` ("Page {page} of {total}",
+  translated in all 10 locales, incl. de "Seite {page} von {total}",
+  es/pt "Página {page} de {total}", fr "Page {page} sur {total}",
+  ar/ur/hi/zh/ja translated forms) and `rb.*` (14 Report branding
+  keys: title, companyName, companyNamePlaceholder, logoLabel,
+  chooseLogo, removeLogo, preview, saveOnDevice, sessionNote,
+  clearSaved, invalidType, tooLarge, unreadable, latinPdfNote).
+  Translations are in-session authored, NOT native-reviewed (same
+  caveat as all other keys).
+- Landscaping units fix: the PDF area cell, plain-text export lines,
+  and the area/depth table headers now use the user-selected unit
+  (`ft²`/`m²`, `in`/`cm`) instead of a hardcoded `m²` area label.
+  Previously an imperial session rendered "11,15 m²" beside a
+  "3,00 in" depth. CSV schemas unchanged.
+- German heading fragmentation fixed in the shared renderer:
+  hyphen-aware segmentation (hyphen stays on the preceding segment),
+  header font shrink 10 → 9 → 8.5 pt, no hard-split stranding a
+  1-character fragment. Verified: "Material-Zwischensumme" renders as
+  "Material-" / "Zwischensumme", never "Material-Zwi / schensumm / e".
+- Summary emphasis bands: geometry fixed so the band spans the full
+  wrapped content with consistent padding (previously the band top
+  cut through the first line's glyphs). Short pay summaries are kept
+  together on one page when they fit a fresh page.
+- Non-Latin PDF limitation RETAINED: ar/ur/hi/zh/ja PDFs still fall
+  back to English with the explicit disclosure line, including for
+  company names (a non-Latin company name sanitizes to "?" in the
+  PDF header; the `rb.latinPdfNote` hint says so, and browser Print
+  renders the name fully). SVG/WebP logos are rejected by design
+  (PNG/JPEG only).
+- Full suite at this pass: 344 tests, typecheck clean, lint 0 errors.
+  Browser QA (raw CDP, local prod build): 23/23 checks pass, 0 console
+  errors — dropdown white controls + SVG chevrons, units relabeling,
+  branded header/footer in all four branding states (name+logo,
+  name-only, logo-only, neither), long names, invalid SVG rejection,
+  biweekly multipage with branded continuation header, DE headings /
+  units / page text, ES page text, AR RTL + English fallback, Print
+  header parity, footer link annotation (exactly 1 /Link annot, URI
+  https://triangletech.co/, rect [196.4, 42, 255.1, 54] in the footer
+  zone of a 612×792 page). Footer-link click in a real PDF viewer:
+  NOT TESTED — this Chromium build's viewer loads its UI but never
+  paints pages (verified visually headless and under Xvfb), so no
+  click coordinate exists; the annotation itself is verified exactly.

@@ -56,23 +56,45 @@ Scripts: `dev` / `build` / `start` / `lint`. Tests: Vitest (Phase 1+).
   scripts) — never broken glyphs, never a claim of full PDF support.
   Print renders the fully translated page via the browser. Never mark
   an untranslated tool complete: see `docs/tools-localization-inventory.md`.
-- PREMIUM OUTPUT STANDARD (permanent project rule, owner requirement 2026-11-01):
+- PREMIUM OUTPUT STANDARD (permanent project rule, owner requirement 2026-11-01;
+  header rule corrected 2026-11-02: the header carries the USER's company
+  branding, never TriangleTech):
   Every visual output of every current and future tool must carry
-  TriangleTech branding, implemented by the shared renderer in
+  branding, implemented by the shared renderer in
   `src/lib/tools/premium-pdf.ts` (pdf-lib, dynamic-imported so it stays
   out of the initial page bundle):
-  - Official logo: the existing `public/triangletech-logo.png` asset only,
-    used unaltered and in proportion (never redrawn or replaced).
-    Brand spelling is always "TriangleTech"; the footer uses
-    "TriangleTech™" (never ® without verified registration) and the
-    website address triangletech.co, with a clickable link annotation
-    to https://triangletech.co/ wherever the format supports links.
-    Footer lockup: "Created with TriangleTech™ · triangletech.co"
-    (the "Created with" wording is translated; the brand name and URL
-    are never translated).
-  - Header: Indigo (#4F46E5) to violet (#7C5CFF) gradient band with the
-    logo tile and wordmark, report/tool title, period/project/document
-    reference, and an accent rule separating header from content.
+  - Footer (platform attribution, unchanged): the existing
+    `public/triangletech-logo.png` asset only, used unaltered and in
+    proportion (never redrawn or replaced). Brand spelling is always
+    "TriangleTech"; the footer uses "TriangleTech™" (never ® without
+    verified registration) and the website address triangletech.co,
+    with a clickable link annotation to https://triangletech.co/
+    wherever the format supports links. Footer lockup:
+    "Created with TriangleTech™ · triangletech.co" (the "Created with"
+    wording is translated; the brand name and URL are never
+    translated). "Page X of Y" is translated through the shared i18n
+    system (`common.pageOf`).
+  - Header (user company branding, owner correction 2026-11-02): the
+    Indigo (#4F46E5) to violet (#7C5CFF) gradient band carries the
+    user's company name and/or uploaded company logo, plus the
+    report/tool title, period/project/document reference, and an
+    accent rule separating header from content. Reusable "Report
+    branding" fields (Company name, Logo upload, Remove logo, Preview)
+    sit above each tool's export controls. The company name is
+    rendered as text, never as HTML; logo proportions are preserved;
+    only PNG/JPEG up to 2 MB are accepted, with a visible error
+    otherwise. Name-only or logo-only input is shown cleanly; with
+    neither, the header shows the report title alone — TriangleTech
+    is NEVER substituted into the header. A compact company-branded
+    header (logo + `name · title`, or title alone) repeats on
+    continuation pages. Logos are processed locally in the browser;
+    branding is saved on the device only when the user ticks the
+    opt-in, and can be cleared. The same branding applies to PDF and
+    browser Print, without changing calculations or CSV schemas.
+    Header text auto-fits (size steps, then wrapping with ellipsis)
+    so long company names never clip; table headings use hyphen-aware
+    wrapping and shrink 10 → 9 → 8.5 pt so long localized words
+    (e.g. German compounds) never shatter into isolated fragments.
     Deep Indigo #312E81, light background #EEF0FF, dark text #1B1B4B,
     white #FFFFFF. Footer on every page: logo tile + lockup + link +
     "Page X of Y" + an optional short disclaimer, with adequate bottom
