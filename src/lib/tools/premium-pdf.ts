@@ -5,17 +5,29 @@
  * invoice, landscaping report, companion result sheets), so every
  * visual document carries the same brand treatment:
  *
- * - Header: Indigo-to-violet gradient band with the official
- *   TriangleTech logo tile (public/triangletech-logo.png, used
- *   unaltered and in proportion) and the TriangleTech™ wordmark,
- *   then the report title, meta lines, and an accent rule.
+ * - Header: Indigo-to-violet gradient band with the USER's company
+ *   branding when supplied (company name as plain text and/or logo
+ *   tile, proportions preserved) and the report title, meta lines,
+ *   and an accent rule. When neither a name nor a logo is supplied
+ *   the header carries the report title alone — TriangleTech is
+ *   never substituted into the header. Continuation pages repeat a
+ *   compact company-branded header (logo + company name + report
+ *   title, or the title alone).
  * - Tables: deep-indigo header row, white / very-light alternating
  *   rows, light borders, right-aligned numeric columns, distinct
- *   subtotal and final-total treatments.
- * - Footer on every page: logo tile + "Created with TriangleTech™ ·
- *   triangletech.co" with a clickable link annotation to
- *   https://triangletech.co/, an optional short disclaimer, and
- *   "Page X of Y".
+ *   subtotal and final-total treatments. Header cells break at
+ *   hyphens before hard-splitting words, and shrink (10 -> 9 ->
+ *   8.5pt) before splitting, so long German compounds never end
+ *   in isolated single-letter fragments.
+ * - Summary (emphasis) sections get one light-Indigo band behind
+ *   the complete section with consistent padding, and a short
+ *   emphasis-only section is kept together on one page when it
+ *   fits on a fresh page.
+ * - Footer on every page: the official TriangleTech logo tile +
+ *   "Created with TriangleTech™ · triangletech.co" with a clickable
+ *   link annotation to https://triangletech.co/, an optional short
+ *   disclaimer, and a localized "Page X of Y" (callers pass the
+ *   translated template; the renderer substitutes the numbers).
  * - Tables keep their headings when they span pages; headings never
  *   sit orphaned at a page bottom.
  *
@@ -24,9 +36,11 @@
  * covers Latin-1 only: for Arabic, Urdu, Hindi, Chinese, and Japanese
  * callers must render the English fallback with an explicit disclosure
  * (see the callers) — non-Latin PDF support is NOT claimed here.
- * The logo is passed in as bytes by the caller (fetched from the
- * site's own public asset); when bytes are unavailable the report
- * still carries the wordmark, URL, and link, but no logo tile.
+ * This also applies to a user-supplied company name: non-Latin names
+ * are sanitized to "?" in PDFs (browser Print renders them fully).
+ * The footer logo is passed in as bytes by the caller (fetched from
+ * the site's own public asset); when bytes are unavailable the footer
+ * still carries the lockup text, URL, and link, but no logo tile.
  *
  * Callers must dynamic-import this module (e.g. inside the download
  * handler) so pdf-lib stays out of the initial page bundle.
@@ -54,6 +68,11 @@ export type PremiumSection = {
   emphasis?: boolean;
 };
 
+export type CompanyLogo = {
+  bytes: Uint8Array;
+  kind: "png" | "jpg";
+};
+
 export type PremiumPdfOptions = {
   title: string;
   /** Lines under the title (period, project, document reference). */
@@ -64,8 +83,14 @@ export type PremiumPdfOptions = {
   /** Optional short disclaimer, rendered in the footer. */
   disclaimer?: string;
   pageSize?: "letter" | "a4";
-  /** Official logo PNG bytes (public/triangletech-logo.png). */
+  /** Official TriangleTech logo PNG bytes, for the FOOTER attribution. */
   logoBytes?: Uint8Array;
+  /** Translated "Page {page} of {total}" template; defaults to English. */
+  pageOfTemplate?: string;
+  /** User's company name for the HEADER (plain text, trimmed). Empty = absent. */
+  companyName?: string;
+  /** User's company logo for the HEADER (proportions preserved). */
+  companyLogo?: CompanyLogo;
 };
 
 export const BRAND_URL = "https://triangletech.co/";
@@ -107,34 +132,67 @@ export function sanitizePdfText(text: string): string {
     .join("");
 }
 
-function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
-  const words = text.split(" ");
+/**
+ * Wrap text to a width. Compound words break at hyphens first
+ * ("Material-Zwischensumme" -> "Material-" / "Zwischensumme"), so a
+ * long heading never shatters into character fragments; only a single
+ * unbreakable token longer than the line is hard-split, and never so
+ * that a lone trailing character is left on its own line.
+ */
+function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): { lines: string[]; hardSplit: boolean } {
+  let hardSplit = false;
   const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (font.widthOfTextAtSize(candidate, size) <= maxWidth || !current) {
-      current = candidate;
-    } else {
-      lines.push(current);
-      current = word;
+  // Split a word into hyphen segments, keeping the hyphen on the
+  // segment that precedes the break ("Material-", "Zwischensumme").
+  const segmentsFor = (word: string): string[] =>
+    word.split(/(?<=-)/).filter(s => s.length > 0);
+  const hardSplitToken = (token: string): string[] => {
+    const out: string[] = [];
+    let rest = token;
+    while (font.widthOfTextAtSize(rest, size) > maxWidth && rest.length > 1) {
+      hardSplit = true;
+      let cut = rest.length;
+      while (cut > 1 && font.widthOfTextAtSize(rest.slice(0, cut), size) > maxWidth) cut -= 1;
+      // Never strand a single trailing character on the next line.
+      if (rest.length - cut === 1 && cut > 1) cut -= 1;
+      out.push(rest.slice(0, cut));
+      rest = rest.slice(cut);
     }
-    while (font.widthOfTextAtSize(current, size) > maxWidth && current.length > 1) {
-      // Hard-split an overlong word.
-      let cut = current.length;
-      while (cut > 1 && font.widthOfTextAtSize(current.slice(0, cut), size) > maxWidth) cut -= 1;
-      lines.push(current.slice(0, cut));
-      current = current.slice(cut);
+    if (rest) out.push(rest);
+    return out;
+  };
+  let current = "";
+  for (const word of text.split(" ")) {
+    const segments = segmentsFor(word);
+    for (let j = 0; j < segments.length; j++) {
+      const segment = segments[j];
+      // Continuation segments (j > 0) join directly onto the previous
+      // segment; first segments are space-separated from other words.
+      const separator = j > 0 ? "" : current ? " " : "";
+      const candidate = current + separator + segment;
+      if (font.widthOfTextAtSize(candidate, size) <= maxWidth || !current) {
+        current = candidate;
+      } else {
+        if (current) lines.push(current);
+        if (font.widthOfTextAtSize(segment, size) <= maxWidth) {
+          current = segment;
+        } else {
+          const pieces = hardSplitToken(segment);
+          for (let i = 0; i < pieces.length - 1; i++) lines.push(pieces[i]);
+          current = pieces[pieces.length - 1];
+        }
+      }
     }
   }
   if (current) lines.push(current);
-  return lines.length > 0 ? lines : [""];
+  if (lines.length === 0) lines.push("");
+  return { lines, hardSplit };
 }
 
 type Block =
   | { kind: "heading"; text: string; height: number }
   | { kind: "line"; text: string; height: number; emphasis: boolean }
-  | { kind: "tableHeader"; headers: string[][]; widths: number[]; align: ("left" | "right")[]; height: number }
+  | { kind: "tableHeader"; headers: string[][]; widths: number[]; align: ("left" | "right")[]; height: number; size: number }
   | { kind: "tableRow"; cells: string[][]; widths: number[]; align: ("left" | "right")[]; height: number; style: "normal" | "subtotal" | "total"; rowIndex: number };
 
 export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uint8Array> {
@@ -150,6 +208,7 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     lines: s.lines?.map(clean),
     table: s.table ? cleanTable(s.table) : undefined,
   }));
+  const companyName = (opts.companyName ?? "").trim();
   opts = {
     ...opts,
     title: clean(opts.title),
@@ -157,6 +216,8 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     sections: cleanSections,
     createdWith: clean(opts.createdWith),
     disclaimer: opts.disclaimer ? clean(opts.disclaimer) : undefined,
+    companyName: clean(companyName),
+    pageOfTemplate: opts.pageOfTemplate ? clean(opts.pageOfTemplate) : "Page {page} of {total}",
   };
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -166,10 +227,21 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     try {
       logo = await doc.embedPng(opts.logoBytes);
     } catch {
-      logo = null; // Wordmark + URL still brand the document.
+      logo = null; // Footer lockup text + URL still brand the document.
     }
   }
-
+  // User company logo for the header (proportions preserved); a bad
+  // file degrades to the company name alone, never a crash.
+  let companyLogo: PDFImage | null = null;
+  if (opts.companyLogo) {
+    try {
+      companyLogo = opts.companyLogo.kind === "jpg"
+        ? await doc.embedJpg(opts.companyLogo.bytes)
+        : await doc.embedPng(opts.companyLogo.bytes);
+    } catch {
+      companyLogo = null;
+    }
+  }
   const pageW = opts.pageSize === "a4" ? 595.28 : 612;
   const pageH = opts.pageSize === "a4" ? 841.89 : 792;
   const margin = 48;
@@ -178,7 +250,7 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
   const contentBottom = footerTop + 8;
   // Meta lines wrap at the content width so a long project name or
   // disclosure can never overflow the page edge.
-  const wrappedMeta = opts.meta.flatMap(m => wrapText(m, font, 11, contentW));
+  const wrappedMeta = opts.meta.flatMap(m => wrapText(m, font, 11, contentW).lines);
 
   // ---- Pagination (heights in points) ----
   const pages: Block[][] = [];
@@ -198,11 +270,23 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     remaining -= b.height;
   };
   startPage(true);
+  // Height available for content on a fresh continuation page.
+  const freshRemaining = (pageH - 64) - contentBottom;
   for (const section of opts.sections) {
     if (remaining < 24 + 40) startPage(false);
+    // Keep a short summary (emphasis lines, no table) together: if
+    // it fits on a fresh page but not in the space left, move the
+    // whole section rather than splitting the pay summary.
+    if (section.emphasis && !section.table && section.lines) {
+      const totalH = 26 + section.lines.reduce(
+        (sum, line) => sum + wrapText(line, font, 11, contentW - 16).lines.length * 15,
+        0,
+      );
+      if (totalH > remaining && totalH <= freshRemaining) startPage(false);
+    }
     push({ kind: "heading", text: section.heading, height: 26 });
     for (const line of section.lines ?? []) {
-      for (const wrapped of wrapText(line, font, 11, contentW - 16)) {
+      for (const wrapped of wrapText(line, font, 11, contentW - 16).lines) {
         need(15);
         push({ kind: "line", text: wrapped, height: 15, emphasis: !!section.emphasis });
       }
@@ -214,13 +298,25 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
       const align = table.headers.map((_, i) => table.align?.[i] ?? "left");
       // Header text wraps like cell text; the header row grows so long
       // headings (e.g. "Purchased (after rounding)") never overlap.
-      const headerLines = table.headers.map((h, i) => wrapText(h, bold, 10, widths[i] - 12));
-      const headerHeight = Math.max(1, ...headerLines.map(l => l.length)) * 13 + 8;
-      const header: Block = { kind: "tableHeader", headers: headerLines, widths, align, height: headerHeight };
+      // Long compounds shrink (10 -> 9 -> 8.5pt) before any word is
+      // hard-split, so German headings never end in fragments.
+      let headerSize = 10;
+      let headerLines = table.headers.map((h, i) => wrapText(h, bold, 10, widths[i] - 12));
+      if (headerLines.some(c => c.hardSplit)) {
+        for (const size of [9, 8.5]) {
+          const attempt = table.headers.map((h, i) => wrapText(h, bold, size, widths[i] - 12));
+          headerSize = size;
+          headerLines = attempt;
+          if (!attempt.some(c => c.hardSplit)) break;
+        }
+      }
+      const headerLineHeight = headerSize + 3;
+      const headerHeight = Math.max(1, ...headerLines.map(l => l.lines.length)) * headerLineHeight + 8;
+      const header: Block = { kind: "tableHeader", headers: headerLines.map(c => c.lines), widths, align, height: headerHeight, size: headerSize };
       need(header.height);
       push(header);
       table.rows.forEach((row, rowIndex) => {
-        const cells = row.map((cell, i) => wrapText(cell, font, 10, widths[i] - 12));
+        const cells = row.map((cell, i) => wrapText(cell, font, 10, widths[i] - 12).lines);
         const lines = Math.max(1, ...cells.map(c => c.length));
         const height = lines * 13 + 8;
         const style = rowIndex === table.totalRow ? "total" : (table.subtotalRows?.includes(rowIndex) ? "subtotal" : "normal");
@@ -265,10 +361,12 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     } else {
       pdfPage.node.set(PDFName.of("Annots"), doc.context.obj([doc.context.register(annot)]));
     }
-    const pageText = `Page ${index + 1} of ${pageCount}`;
+    const pageText = (opts.pageOfTemplate ?? "Page {page} of {total}")
+      .split("{page}").join(String(index + 1))
+      .split("{total}").join(String(pageCount));
     pdfPage.drawText(pageText, { x: pageW - margin - font.widthOfTextAtSize(pageText, 9), y, size: 9, font, color: MUTED });
     if (opts.disclaimer) {
-      for (const [li, dline] of wrapText(opts.disclaimer, font, 8.5, contentW).slice(0, 2).entries()) {
+      for (const [li, dline] of wrapText(opts.disclaimer, font, 8.5, contentW).lines.slice(0, 2).entries()) {
         pdfPage.drawText(dline, { x: margin, y: 30 - li * 11, size: 8.5, font, color: MUTED });
       }
     }
@@ -278,7 +376,11 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
     const pdfPage = doc.addPage([pageW, pageH]);
     let y: number;
     if (pageIndex === 0) {
-      // Gradient brand band (vector strips, Indigo -> Violet).
+      // Gradient brand band (vector strips, Indigo -> Violet). The
+      // band carries the USER's company branding: logo tile and/or
+      // company name as plain text. With neither, the band stays an
+      // empty gradient and the report title below stands alone —
+      // TriangleTech is never substituted into the header.
       const bandH = 64;
       const bandY = pageH - bandH;
       const strips = 64;
@@ -293,13 +395,42 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
         });
       }
       let brandX = margin;
-      if (logo) {
+      if (companyLogo) {
         const h = 40;
-        const w = h * (logo.width / logo.height);
-        pdfPage.drawImage(logo, { x: margin, y: bandY + 12, width: w, height: h });
+        const w = h * (companyLogo.width / companyLogo.height);
+        pdfPage.drawImage(companyLogo, { x: margin, y: bandY + 12, width: w, height: h });
         brandX = margin + w + 12;
       }
-      pdfPage.drawText("TriangleTech™", { x: brandX, y: bandY + 26, size: 17, font: bold, color: rgb(1, 1, 1) });
+      if (opts.companyName) {
+        const avail = pageW - margin - brandX;
+        // Fit the name: prefer one line, shrinking 17 -> 15 -> 13pt;
+        // otherwise wrap at 12pt into at most two band lines.
+        let nameLines: string[] = [];
+        let nameSize = 12;
+        for (const size of [17, 15, 13]) {
+          const wrapped = wrapText(opts.companyName, bold, size, avail);
+          if (wrapped.lines.length === 1) {
+            nameLines = wrapped.lines;
+            nameSize = size;
+            break;
+          }
+        }
+        if (nameLines.length === 0) {
+          const wrapped = wrapText(opts.companyName, bold, 12, avail).lines;
+          nameLines = wrapped.slice(0, 2);
+          if (wrapped.length > 2) {
+            let trimmed = nameLines[1];
+            while (trimmed.length > 0 && bold.widthOfTextAtSize(`${trimmed}…`, 12) > avail) trimmed = trimmed.slice(0, -1);
+            nameLines[1] = `${trimmed}…`;
+          }
+        }
+        if (nameLines.length === 1) {
+          pdfPage.drawText(nameLines[0], { x: brandX, y: bandY + 26, size: nameSize, font: bold, color: rgb(1, 1, 1) });
+        } else {
+          pdfPage.drawText(nameLines[0], { x: brandX, y: bandY + 40, size: 12, font: bold, color: rgb(1, 1, 1) });
+          pdfPage.drawText(nameLines[1], { x: brandX, y: bandY + 20, size: 12, font: bold, color: rgb(1, 1, 1) });
+        }
+      }
       y = bandY - 28;
       pdfPage.drawText(opts.title, { x: margin, y, size: 20, font: bold, color: DARK_TEXT });
       y -= 22;
@@ -311,7 +442,28 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
       pdfPage.drawLine({ start: { x: margin, y: y + 6 }, end: { x: pageW - margin, y: y + 6 }, thickness: 1.2, color: INDIGO });
       y -= 10;
     } else {
-      pdfPage.drawText("TriangleTech™", { x: margin, y: pageH - 48, size: 10, font: bold, color: INDIGO });
+      // Compact company-branded continuation header: logo + company
+      // name + report title, or the title alone when no company
+      // branding is supplied. Never TriangleTech in the header.
+      let contX = margin;
+      if (companyLogo) {
+        const h = 16;
+        const w = h * (companyLogo.width / companyLogo.height);
+        pdfPage.drawImage(companyLogo, { x: margin, y: pageH - 52, width: w, height: h });
+        contX = margin + w + 8;
+      }
+      const contText = opts.companyName ? `${opts.companyName} · ${opts.title}` : opts.title;
+      let contSize = 10;
+      let contDrawn = contText;
+      if (bold.widthOfTextAtSize(contDrawn, contSize) > pageW - margin - contX) {
+        contSize = 9;
+        if (bold.widthOfTextAtSize(contDrawn, contSize) > pageW - margin - contX) {
+          let trimmed = contDrawn;
+          while (trimmed.length > 0 && bold.widthOfTextAtSize(`${trimmed}…`, contSize) > pageW - margin - contX) trimmed = trimmed.slice(0, -1);
+          contDrawn = `${trimmed}…`;
+        }
+      }
+      pdfPage.drawText(contDrawn, { x: contX, y: pageH - 48, size: contSize, font: bold, color: INDIGO });
       pdfPage.drawLine({ start: { x: margin, y: pageH - 56 }, end: { x: pageW - margin, y: pageH - 56 }, thickness: 0.8, color: BORDER });
       y = pageH - 72;
     }
@@ -323,9 +475,14 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
       let cursor = y;
       let runStart: number | null = null;
       let runEnd = 0;
+      // Band geometry: the first line's glyphs rise ~8pt above its
+      // baseline and the last line's descenders fall ~3pt below its
+      // baseline, so the band runs from 10pt above the first baseline
+      // to 5pt below the last baseline — padding on all sides, never
+      // cutting through the first or last line.
       const flushRun = () => {
         if (runStart !== null) {
-          pdfPage.drawRectangle({ x: margin, y: runEnd - 2, width: contentW, height: runStart - runEnd + 4, color: LIGHT_BG });
+          pdfPage.drawRectangle({ x: margin, y: runEnd + 10, width: contentW, height: runStart - runEnd, color: LIGHT_BG });
         }
         runStart = null;
       };
@@ -366,9 +523,9 @@ export async function buildPremiumPdfBytes(opts: PremiumPdfOptions): Promise<Uin
         block.headers.forEach((headerCellLines, i) => {
           const w = block.widths[i];
           headerCellLines.forEach((headerLine, li) => {
-            const textW = bold.widthOfTextAtSize(headerLine, 10);
+            const textW = bold.widthOfTextAtSize(headerLine, block.size);
             const tx = block.align[i] === "right" ? x + w - 6 - textW : x + 6;
-            pdfPage.drawText(headerLine, { x: tx, y: top - 12 - li * 13, size: 10, font: bold, color: rgb(1, 1, 1) });
+            pdfPage.drawText(headerLine, { x: tx, y: top - (block.size + 2) - li * (block.size + 3), size: block.size, font: bold, color: rgb(1, 1, 1) });
           });
           x += w;
         });

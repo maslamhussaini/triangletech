@@ -8,6 +8,8 @@ import {
   validateArea, type AreaInput, type MaterialKind, type Shape, type UnitSystem, type ValidationCode,
 } from "@/lib/tools/landscaping";
 import { downloadBlob } from "@/lib/tools/simple-pdf";
+import { ReportBrandingFields, useReportBranding } from "@/components/tools/report-branding";
+import { dataUrlToCompanyLogo } from "@/lib/tools/report-branding";
 import { useLanguage } from "@/lib/i18n/provider";
 import { getDictionary, translate } from "@/lib/i18n/dictionaries";
 import {
@@ -93,6 +95,7 @@ export default function LandscapingCalculator({ material }: { material: Material
   // (An earlier version ignored the argument and broke the PDF fallback:
   // Arabic titles rendered as "?????" instead of English.)
   const { locale } = useLanguage();
+  const { branding } = useReportBranding();
   const t = useCallback((l: Locale, key: string, vars?: Record<string, string | number>) => translate(l, getDictionary(l), getDictionary("en"), key, vars), []);
   const formatNumber = useCallback((l: Locale, n: number, d = 2) => formatLocaleNumber(l, n, d), []);
   const parseLocalizedNumber = useCallback((s: string, l: Locale) => { const v = parseShared(s, l); return v === null ? undefined : v; }, []);
@@ -254,7 +257,10 @@ export default function LandscapingCalculator({ material }: { material: Material
     lines.push(`${L("ls.areas")}:`);
     validAreas.forEach(a => {
       const am = areaM2(a);
-      lines.push(`- ${a.name || L("ls.area")}: ${am !== undefined ? fmt(am, 2) : ""} m², ${L("ls.depth")} ${a.depthM !== undefined ? fmt(metersToDisplayDepth(a.depthM, system), 2) : ""} ${depUnit}${a.group ? ` [${a.group}]` : ""}`);
+      // Preserve the user's selected unit system: the stored area is
+      // always m², but the report shows the display unit the user
+      // worked in, explicitly labeled.
+      lines.push(`- ${a.name || L("ls.area")}: ${am !== undefined ? fmt(metersToDisplayArea(am, system), 2) : ""} ${areaUnit}, ${L("ls.depth")} ${a.depthM !== undefined ? fmt(metersToDisplayDepth(a.depthM, system), 2) : ""} ${depUnit}${a.group ? ` [${a.group}]` : ""}`);
     });
     lines.push("");
     lines.push(`${L("ls.baseVolume")}: ${fmt(totals.baseFt3, 2)} ft³ = ${fmt(totals.baseYd3, 4)} yd³ = ${fmt(totals.baseM3, 3)} m³`);
@@ -298,7 +304,7 @@ export default function LandscapingCalculator({ material }: { material: Material
       return [
         a.name || L("ls.area"),
         L(`ls.${a.shape}`),
-        am !== undefined ? `${fmtPdf(am, 2)} m²` : "",
+        am !== undefined ? `${fmtPdf(metersToDisplayArea(am, system), 2)} ${areaUnit}` : "",
         a.depthM !== undefined ? `${fmtPdf(metersToDisplayDepth(a.depthM, system), 2)} ${depUnit}` : "",
         a.group || "",
       ];
@@ -329,14 +335,20 @@ export default function LandscapingCalculator({ material }: { material: Material
         dateLine,
       ],
       sections: [
-        { heading: L("ls.areas"), table: { headers: [L("ls.area"), L("ls.shape"), `${L("ls.area")} (m²)`, L("ls.depth"), L("ls.reportGroup")], widths: [140, 100, 100, 84, 80], align: ["left", "left", "right", "right", "left"] as ("left" | "right")[], rows: areaRows } },
+        { heading: L("ls.areas"), table: { headers: [L("ls.area"), L("ls.shape"), `${L("ls.area")} (${areaUnit})`, `${L("ls.depth")} (${depUnit})`, L("ls.reportGroup")], widths: [140, 100, 100, 84, 80], align: ["left", "left", "right", "right", "left"] as ("left" | "right")[], rows: areaRows } },
         { heading: L("ls.assumptions"), lines: assumptionLines },
-        { heading: L("ls.cost"), table: { headers: [L("ls.scenario"), L("ls.required"), L("ls.purchased"), L("ls.subtotal"), L("ls.delivery"), L("ls.taxAmount"), L("ls.total")], widths: [66, 72, 72, 72, 72, 60, 90], align: ["left", "right", "right", "right", "right", "right", "right"] as ("left" | "right")[], rows: scenarioRows } },
+        // Scenario widths are balanced so long German compounds fit:
+        // "Material-Zwischensumme" breaks cleanly at its hyphen into
+        // "Material-" / "Zwischensumme" instead of shattering.
+        { heading: L("ls.cost"), table: { headers: [L("ls.scenario"), L("ls.required"), L("ls.purchased"), L("ls.subtotal"), L("ls.delivery"), L("ls.taxAmount"), L("ls.total")], widths: [60, 62, 62, 96, 72, 52, 100], align: ["left", "right", "right", "right", "right", "right", "right"] as ("left" | "right")[], rows: scenarioRows } },
         { heading: L("ls.shoppingList"), lines: shoppingLines },
         { heading: L("common.notes"), lines: [L("ls.requiredVsPurchased"), L("ls.disclaimer"), ...(((scenarios.bagged && scenarios.bagged.total === undefined) || bk.total === undefined) ? [L("ls.noPriceNote")] : [])] },
       ],
       createdWith: L("common.createdWith"),
       logoBytes: await fetchLogoBytes(),
+      pageOfTemplate: L("common.pageOf"),
+      companyName: branding.companyName,
+      companyLogo: dataUrlToCompanyLogo(branding.logoDataUrl, branding.logoMime) ?? undefined,
     });
     downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), `${material}-calculator.pdf`);
   };
@@ -566,7 +578,10 @@ export default function LandscapingCalculator({ material }: { material: Material
       )}
 
       <h2 style={{ marginTop: 24 }}>{t(locale, "ls.shoppingList")}</h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <div style={{ marginTop: 24 }}>
+        <ReportBrandingFields />
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
         <button type="button" className="button-indigo" onClick={downloadPdf} disabled={!hasResults} style={{ minHeight: 44 }}>{t(locale, "common.downloadPdf")}</button>
         <button type="button" className="button-indigo-secondary" onClick={downloadCsv} disabled={!hasResults} style={{ minHeight: 44 }}>{t(locale, "common.downloadCsv")}</button>
         <button type="button" className="button-indigo-secondary" onClick={copyResults} disabled={!hasResults} style={{ minHeight: 44 }}>{t(locale, "common.copy")}</button>
