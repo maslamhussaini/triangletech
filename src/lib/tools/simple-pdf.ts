@@ -8,8 +8,34 @@
  * print-to-PDF instruction.
  */
 
+/**
+ * Helvetica in a standard PDF uses WinAnsiEncoding, which covers Latin-1
+ * plus a few punctuation marks (smart quotes, dashes, €). Those are
+ * emitted as octal escapes so Spanish/French/German/Portuguese accents
+ * survive. Anything outside WinAnsi (Arabic, Urdu, Devanagari, CJK)
+ * cannot be represented in this font and is replaced with "?" — which
+ * is why the time-card PDF falls back to English for those locales
+ * with an explicit disclosure line, instead of producing broken text.
+ */
+const WINANSI_EXTRA: Record<string, number> = {
+  "€": 0x80, "‚": 0x82, "ƒ": 0x83, "„": 0x84, "…": 0x85, "†": 0x86, "‡": 0x87,
+  "ˆ": 0x88, "‰": 0x89, "Š": 0x8a, "‹": 0x8b, "Œ": 0x8c, "Ž": 0x8e,
+  "‘": 0x91, "’": 0x92, "“": 0x93, "”": 0x94, "•": 0x95, "–": 0x96, "—": 0x97,
+  "˜": 0x98, "™": 0x99, "š": 0x9a, "›": 0x9b, "œ": 0x9c, "ž": 0x9e, "Ÿ": 0x9f,
+};
+
 function escapePdfText(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)").replace(/[^\x20-\x7e]/g, "?");
+  let out = "";
+  for (const ch of text) {
+    if (ch === "\\") out += "\\\\";
+    else if (ch === "(") out += "\\(";
+    else if (ch === ")") out += "\\)";
+    else if (ch >= " " && ch <= "~") out += ch;
+    else if (ch.charCodeAt(0) >= 0xa0 && ch.charCodeAt(0) <= 0xff) out += `\\${ch.charCodeAt(0).toString(8).padStart(3, "0")}`;
+    else if (ch in WINANSI_EXTRA) out += `\\${WINANSI_EXTRA[ch].toString(8).padStart(3, "0")}`;
+    else out += "?";
+  }
+  return out;
 }
 
 function wrapLine(line: string, maxChars = 96): string[] {

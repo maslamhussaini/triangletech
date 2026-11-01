@@ -10,6 +10,14 @@ describe("simple PDF writer", () => {
     expect(text).toContain("Estimated gross pay");
     expect(text).toContain("%%EOF");
   });
+  it("preserves Latin-1 accents (Spanish/French/German) instead of replacing them with ?", () => {
+    const bytes = buildPdfBytes("Calculadora de horas", ["Período: 2026-11-02", "Salário bruto estimado"]);
+    const text = new TextDecoder("latin1").decode(bytes);
+    // í in WinAnsi is 0xED -> octal \355; á is 0xE1 -> \341
+    expect(text).toContain("\\355");
+    expect(text).toContain("\\341");
+    expect(text).not.toContain("Per?odo");
+  });
   it("wraps long lines instead of dropping them", () => {
     const longLine = "A ".repeat(200).trim();
     const bytes = buildPdfBytes("Test", [longLine]);

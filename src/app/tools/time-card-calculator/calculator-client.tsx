@@ -10,7 +10,6 @@ import {
   dateOrdinal,
   formatDecimalHours,
   formatDuration,
-  formatMoney,
   formatTime,
   guessColumnMapping,
   isValidDateString,
@@ -25,20 +24,19 @@ import {
   type SessionInput,
 } from "@/lib/tools/time-card";
 import { buildPdfBlob, downloadBlob } from "@/lib/tools/simple-pdf";
+import { useLanguage } from "@/lib/i18n/provider";
+import { LOCALE_META, defaultCurrencyForLocale } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 
 const STORAGE_KEY = "triangletech-time-card-v1";
 const CURRENCIES = ["USD", "EUR", "GBP", "CAD", "AUD", "PKR"] as const;
 
 function mondayOf(date: Date): string {
-  const day = date.getDay(); // 0 = Sunday
+  const day = date.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(date);
   monday.setDate(date.getDate() + diff);
   return monday.toISOString().slice(0, 10);
-}
-
-function prettyDate(date: string): string {
-  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 function newId(counter: React.MutableRefObject<number>): string {
@@ -49,7 +47,9 @@ function newId(counter: React.MutableRefObject<number>): string {
 type InvoiceLine = { id: string; description: string; qty: number; rate: number };
 
 export default function TimeCardCalculatorClient() {
+  const { locale, t, formatDate, formatMoney } = useLanguage();
   const idCounter = useRef(0);
+  const currencyUserSet = useRef(false);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [period, setPeriod] = useState<PeriodKind>("weekly");
   const [sessions, setSessions] = useState<SessionInput[]>([]);
@@ -68,7 +68,6 @@ export default function TimeCardCalculatorClient() {
   const [duplicateDate, setDuplicateDate] = useState("");
   const [loaded, setLoaded] = useState(false);
 
-  // Import wizard state
   const [importStep, setImportStep] = useState<"idle" | "map" | "preview">("idle");
   const [importFileName, setImportFileName] = useState("");
   const [importRawRows, setImportRawRows] = useState<unknown[][]>([]);
@@ -78,7 +77,6 @@ export default function TimeCardCalculatorClient() {
   const [importEmployee, setImportEmployee] = useState("");
   const [importError, setImportError] = useState("");
 
-  // Invoice state
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [seller, setSeller] = useState("");
   const [clientName, setClientName] = useState("");
@@ -111,7 +109,22 @@ export default function TimeCardCalculatorClient() {
   const thresholdError = threshold === "" || Number.isNaN(Number(threshold)) || Number(threshold) <= 0 || Number(threshold) > 168;
   const multiplierError = multiplier === "" || Number.isNaN(Number(multiplier)) || Number(multiplier) < 1 || Number(multiplier) > 5;
 
-  // Restore saved data once, on first load.
+  // Translate a calculation error by its code, using the session it refers to.
+  function translateError(e: { code?: string; message: string; sessionId?: string }): string {
+    if (!e.code) return e.message;
+    const s = sessions.find(x => x.id === e.sessionId);
+    const startMin = s ? parseTimeToMinutes(s.start) ?? 0 : 0;
+    const endMin = s ? parseTimeToMinutes(s.end) ?? 0 : 0;
+    const gross = s ? endMin - startMin + (s.endsNextDay ? 1440 : 0) : 0;
+    return t(`tc.err.${e.code}`, {
+      date: s?.date ?? "",
+      start: s?.start ?? "",
+      end: s?.end ?? "",
+      break: s?.breakMinutes ?? 0,
+      gross,
+    });
+  }
+
   useEffect(() => {
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -126,21 +139,34 @@ export default function TimeCardCalculatorClient() {
           setProject(parsed.project ?? "");
           setHourlyRate(parsed.hourlyRate === null || parsed.hourlyRate === undefined ? "" : String(parsed.hourlyRate));
           setCurrency(parsed.currency ?? "USD");
+          currencyUserSet.current = true;
           setThreshold(String(parsed.overtimeThresholdHours));
           setMultiplier(String(parsed.overtimeMultiplier));
           setRemember(true);
-          setStorageNotice("Restored your saved timesheet from this device.");
+          setStorageNotice(t("tc.savedRestored"));
         } else {
-          setStorageNotice("Saved timesheet data on this device was corrupted or from an incompatible version, so it was not restored. Nothing was deleted.");
+          setStorageNotice(t("tc.savedCorrupt"));
         }
       }
     } catch {
-      setStorageNotice("Saved timesheet data on this device could not be read, so it was not restored.");
+      setStorageNotice(t("tc.savedUnreadable"));
     }
     setLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Save only when the user explicitly chose "Remember on this device".
+  // Country/language currency default for a FRESH, EMPTY form only.
+  // Never runs once data exists or the user has chosen a currency, so a
+  // language switch never silently changes currency, units, or results.
+  useEffect(() => {
+    if (!loaded || sessions.length > 0 || hourlyRate !== "" || currencyUserSet.current) return;
+    try {
+      setCurrency(defaultCurrencyForLocale(locale, navigator.language));
+    } catch {
+      /* keep USD */
+    }
+  }, [loaded, locale, sessions.length, hourlyRate]);
+
   useEffect(() => {
     if (!loaded || !remember) return;
     try {
@@ -161,8 +187,9 @@ export default function TimeCardCalculatorClient() {
         })
       );
     } catch {
-      setStorageNotice("Could not save on this device (storage may be full or blocked). Your timesheet still works in this tab.");
+      setStorageNotice(t("tc.savedFull"));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, remember, weekStart, period, sessions, employee, business, project, hourlyRate, currency, threshold, multiplier]);
 
   function updateSession(id: string, patch: Partial<SessionInput>) {
@@ -239,13 +266,13 @@ export default function TimeCardCalculatorClient() {
     }
     setRemember(false);
     setSessions([]);
-    setStorageNotice("Saved timesheet data on this device has been deleted.");
+    setStorageNotice(t("tc.savedDeleted"));
   }
 
   async function handleImportFile(file: File) {
     setImportError("");
     if (file.size > 5 * 1024 * 1024) {
-      setImportError("File is larger than 5 MB. Split it and try again.");
+      setImportError(t("tc.import.fileTooLarge"));
       return;
     }
     try {
@@ -253,7 +280,7 @@ export default function TimeCardCalculatorClient() {
         const text = await file.text();
         const rows = parseCsvText(text);
         if (rows.length < 2) {
-          setImportError("CSV file needs a header row and at least one data row.");
+          setImportError(t("tc.import.csvNeedsRows"));
           return;
         }
         setImportRawRows(rows);
@@ -266,12 +293,12 @@ export default function TimeCardCalculatorClient() {
         const workbook = XLSX.read(buffer, { type: "array", cellDates: false });
         const sheetName = workbook.SheetNames[0];
         if (!sheetName) {
-          setImportError("Spreadsheet has no sheets.");
+          setImportError(t("tc.import.noSheets"));
           return;
         }
         const rows = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName], { header: 1, raw: true, defval: "" });
         if (rows.length < 2) {
-          setImportError("Spreadsheet needs a header row and at least one data row.");
+          setImportError(t("tc.import.sheetNeedsRows"));
           return;
         }
         setImportRawRows(rows);
@@ -279,10 +306,10 @@ export default function TimeCardCalculatorClient() {
         setImportFileName(file.name);
         setImportStep("map");
       } else {
-        setImportError("Only .csv and .xlsx files are supported.");
+        setImportError(t("tc.import.unsupported"));
       }
     } catch {
-      setImportError("Could not read that file. Check it is a valid CSV or XLSX file and try again.");
+      setImportError(t("tc.import.unreadable"));
     }
   }
 
@@ -311,7 +338,11 @@ export default function TimeCardCalculatorClient() {
     setImportStep("idle");
     setImportRawRows([]);
     setImportEmployee("");
-    setStorageNotice(`Imported ${toImport.length} valid session(s) from ${importFileName}. ${importParsed.rows.filter(r => r.session === null).length} row(s) had errors and were not imported.`);
+    setStorageNotice(t("tc.importedNotice", {
+      count: toImport.length,
+      file: importFileName,
+      errors: importParsed.rows.filter(r => r.session === null).length,
+    }));
   }
 
   function downloadCsv() {
@@ -319,41 +350,49 @@ export default function TimeCardCalculatorClient() {
     downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), "timesheet.csv");
   }
 
-  function downloadPdf() {
-    const lines: string[] = [
-      `Period: ${result.periodStart} to ${result.periodEnd} (${period})`,
-      ...(employee ? [`Employee: ${employee}`] : []),
-      ...(business ? [`Business: ${business}`] : []),
-      ...(project ? [`Project: ${project}`] : []),
+  // PDF: the built-in PDF font is Latin-only (Helvetica). For Arabic,
+  // Urdu, Hindi, Chinese, and Japanese, the PDF is rendered in English
+  // with an explicit disclosure line — never broken glyphs — while
+  // browser Print renders the fully translated page correctly.
+  function pdfLinesFor(tr: (key: string, vars?: Record<string, string | number>) => string): string[] {
+    return [
+      `${tr("tc.period")}: ${result.periodStart} to ${result.periodEnd} (${period})`,
+      ...(employee ? [`${tr("tc.employee")}: ${employee}`] : []),
+      ...(business ? [`${tr("tc.business")}: ${business}`] : []),
+      ...(project ? [`${tr("tc.project")}: ${project}`] : []),
       "",
-      "Daily totals:",
+      `${tr("tc.timesheetHeading")}:`,
       ...result.days.map(d => `${d.date}: ${formatDuration(d.paidMinutes)} (${formatDecimalHours(d.paidMinutes)} hours)`),
       "",
-      "Sessions:",
+      `${tr("tc.summary")}:`,
       ...result.sessions.map(s => `${s.session.date} ${s.session.start}-${s.session.end}${s.session.endsNextDay ? " (ends next day)" : ""}, break ${s.session.breakMinutes}m, paid ${formatDuration(s.paidMinutes)}`),
       "",
-      `Total: ${formatDuration(result.totalMinutes)} (${formatDecimalHours(result.totalMinutes)} hours)`,
-      `Regular: ${formatDuration(result.regularMinutes)}`,
-      `Overtime: ${formatDuration(result.overtimeMinutes)}`,
-      `Estimated gross pay: ${formatMoney(result.payCents, currency)}`,
-      "",
-      "Estimated gross pay only. No tax, payroll, or labor-law compliance is claimed.",
-      "Overtime uses the configurable threshold and multiplier above, evaluated separately for each workweek.",
+      `${tr("tc.periodTotal")}: ${formatDuration(result.totalMinutes)} (${formatDecimalHours(result.totalMinutes)} hours)`,
+      `${tr("tc.regular")}: ${formatDuration(result.regularMinutes)}`,
+      `${tr("tc.overtime")}: ${formatDuration(result.overtimeMinutes)}`,
+      `${tr("tc.pay")}: ${formatMoney(result.payCents, currency)}`,
     ];
-    downloadBlob(buildPdfBlob("Work Hours & Time Card", lines), "timesheet.pdf");
+  }
+
+  function downloadPdf() {
+    const nonLatin = LOCALE_META[locale].script !== "latin";
+    const lines = nonLatin
+      ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName }), "", ...pdfLinesFor((key) => tServer("en", key))]
+      : pdfLinesFor((key, vars) => t(key, vars));
+    downloadBlob(buildPdfBlob(nonLatin ? "Work Hours & Time Card" : t("tc.title"), lines), "timesheet.pdf");
   }
 
   function openInvoice() {
     const rate = hourlyRate === "" ? 0 : Number(hourlyRate);
     const lines: InvoiceLine[] = [];
     if (result.regularMinutes > 0) {
-      lines.push({ id: "regular", description: `Regular hours (${result.periodStart} to ${result.periodEnd})`, qty: Number(formatDecimalHours(result.regularMinutes)), rate });
+      lines.push({ id: "regular", description: `${t("tc.regular")} (${result.periodStart} to ${result.periodEnd})`, qty: Number(formatDecimalHours(result.regularMinutes)), rate });
     }
     if (result.overtimeMinutes > 0) {
-      lines.push({ id: "overtime", description: `Overtime hours (${result.periodStart} to ${result.periodEnd})`, qty: Number(formatDecimalHours(result.overtimeMinutes)), rate: rate * Number(multiplier) });
+      lines.push({ id: "overtime", description: `${t("tc.overtime")} (${result.periodStart} to ${result.periodEnd})`, qty: Number(formatDecimalHours(result.overtimeMinutes)), rate: rate * Number(multiplier) });
     }
     if (lines.length === 0) {
-      lines.push({ id: "hours", description: "Hours worked", qty: 0, rate });
+      lines.push({ id: "hours", description: t("tc.total"), qty: 0, rate });
     }
     setInvoiceLines(lines);
     setInvoiceNumber(`INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`);
@@ -366,38 +405,47 @@ export default function TimeCardCalculatorClient() {
   const invoiceTotal = invoiceSubtotal + invoiceTax;
 
   function downloadInvoicePdf() {
+    const nonLatin = LOCALE_META[locale].script !== "latin";
+    const tr = nonLatin ? (key: string, vars?: Record<string, string | number>) => tServer("en", key, vars) : (key: string, vars?: Record<string, string | number>) => t(key, vars);
     const lines: string[] = [
-      `Invoice: ${invoiceNumber}`,
-      `Date: ${invoiceDate}`,
-      ...(seller ? [`From: ${seller}`] : []),
-      ...(clientName ? [`Bill to: ${clientName}`] : []),
+      ...(nonLatin ? [tServer("en", "tc.pdfNonLatinNote", { script: LOCALE_META[locale].scriptName }), ""] : []),
+      `${tr("tc.invoiceNumber")}: ${invoiceNumber}`,
+      `${tr("tc.invoiceDate")}: ${invoiceDate}`,
+      ...(seller ? [`${tr("tc.seller")}: ${seller}`] : []),
+      ...(clientName ? [`${tr("tc.client")}: ${clientName}`] : []),
       "",
-      "Line items:",
+      `${tr("tc.description")}:`,
       ...invoiceLines.map(l => `${l.description} — ${l.qty} x ${formatMoney(Math.round(l.rate * 100), currency)} = ${formatMoney(Math.round(l.qty * l.rate * 100), currency)}`),
       "",
       `Subtotal: ${formatMoney(Math.round(invoiceSubtotal * 100), currency)}`,
-      `Tax (${taxPercent}%): ${formatMoney(Math.round(invoiceTax * 100), currency)}`,
-      `Total due: ${formatMoney(Math.round(invoiceTotal * 100), currency)}`,
+      `${tr("tc.tax")}: ${formatMoney(Math.round(invoiceTax * 100), currency)}`,
+      `${tr("tc.totalDue")}: ${formatMoney(Math.round(invoiceTotal * 100), currency)}`,
       "",
-      "Freelancer billing invoice created from a time card. This is not a payroll document.",
-      "Powered by TriangleTech",
+      tr("tc.invoicePrivacyNote"),
+      t("common.poweredBy"),
     ];
-    downloadBlob(buildPdfBlob(`Invoice ${invoiceNumber}`, lines), `${invoiceNumber || "invoice"}.pdf`);
+    downloadBlob(buildPdfBlob(`${tr("tc.invoiceNumber")} ${invoiceNumber}`, lines), `${invoiceNumber || "invoice"}.pdf`);
   }
 
   const outOfPeriodSessions = sessions.filter(s => !periodDates.includes(s.date));
   const requiredFields = ["date", "start", "end"] as const;
+  const mapFieldLabel: Record<string, string> = {
+    date: t("tc.mapDate"),
+    start: t("tc.mapStart"),
+    end: t("tc.mapEnd"),
+    break: t("tc.mapBreak"),
+    nextDay: t("tc.mapNextDay"),
+    employee: t("tc.mapEmployee"),
+    project: t("tc.mapProject"),
+  };
 
   return (
     <>
       <ScrollReveal />
       <section className="container" style={{ paddingTop: 32, paddingBottom: 32 }}>
         <p className="eyebrow-indigo">FREE WORK TOOL</p>
-        <h1 style={{ fontSize: 34, lineHeight: 1.2, margin: "8px 0" }}>Work Hours &amp; Time Card Calculator</h1>
-        <p style={{ maxWidth: 720, color: "#475569", lineHeight: 1.6 }}>
-          Enter a timesheet, check the hours, and estimate gross pay. Overtime is a configurable estimate only:
-          it is not tax, payroll, or labor-law advice, and no state-specific rules are applied.
-        </p>
+        <h1 style={{ fontSize: 34, lineHeight: 1.2, margin: "8px 0" }}>{t("tc.title")}</h1>
+        <p style={{ maxWidth: 720, color: "#475569", lineHeight: 1.6 }}>{t("tc.subtitle")}</p>
 
         {storageNotice && (
           <p role="status" style={{ background: "#EEF0FF", border: "1px solid #C7D2FE", padding: "12px 16px", borderRadius: 8 }}>{storageNotice}</p>
@@ -405,97 +453,95 @@ export default function TimeCardCalculatorClient() {
 
         {result.errors.length > 0 && (
           <div role="alert" aria-labelledby="tc-errors-heading" style={{ background: "#FEF2F2", border: "1px solid #FECACA", padding: "12px 16px", borderRadius: 8, marginBottom: 16 }}>
-            <h2 id="tc-errors-heading" style={{ fontSize: 16, margin: "0 0 8px" }}>Please fix {result.errors.length} problem{result.errors.length === 1 ? "" : "s"} before using these totals</h2>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              {result.errors.map((e, i) => <li key={i}>{e.message}</li>)}
+            <h2 id="tc-errors-heading" style={{ fontSize: 16, margin: "0 0 8px" }}>{t("tc.errorsTitle", { count: result.errors.length }, result.errors.length)}</h2>
+            <ul style={{ margin: 0, paddingInlineStart: 20 }}>
+              {result.errors.map((e, i) => <li key={i}>{translateError(e)}</li>)}
             </ul>
           </div>
         )}
 
         <section aria-labelledby="tc-period-heading" style={{ marginBottom: 24 }}>
-          <h2 id="tc-period-heading" style={{ fontSize: 20 }}>Period</h2>
+          <h2 id="tc-period-heading" style={{ fontSize: 20 }}>{t("tc.period")}</h2>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "end" }}>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-week-start">Week-start date</label>
+              <label className="label-premium" htmlFor="tc-week-start">{t("tc.weekStart")}</label>
               <input id="tc-week-start" className="input-premium" type="date" value={weekStart} onChange={e => setWeekStart(e.target.value)} />
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-period">Period</label>
+              <label className="label-premium" htmlFor="tc-period">{t("tc.period")}</label>
               <select id="tc-period" className="input-premium" value={period} onChange={e => setPeriod(e.target.value as PeriodKind)}>
-                <option value="weekly">Weekly (7 days)</option>
-                <option value="biweekly">Biweekly (14 days, overtime per week)</option>
+                <option value="weekly">{t("tc.weekly")}</option>
+                <option value="biweekly">{t("tc.biweekly")}</option>
               </select>
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-hour-format">Time display</label>
+              <label className="label-premium" htmlFor="tc-hour-format">{t("tc.timeDisplay")}</label>
               <select id="tc-hour-format" className="input-premium" value={hour12 ? "12" : "24"} onChange={e => setHour12(e.target.value === "12")}>
-                <option value="12">12-hour (e.g. 9:00 AM)</option>
-                <option value="24">24-hour (e.g. 09:00)</option>
+                <option value="12">{t("tc.time12")}</option>
+                <option value="24">{t("tc.time24")}</option>
               </select>
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 16 }}>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-employee">Employee / freelancer name (optional)</label>
-              <input id="tc-employee" className="input-premium" type="text" value={employee} onChange={e => setEmployee(e.target.value)} placeholder="e.g. Alex Rivera" autoComplete="off" />
+              <label className="label-premium" htmlFor="tc-employee">{t("tc.employee")}</label>
+              <input id="tc-employee" className="input-premium" type="text" value={employee} onChange={e => setEmployee(e.target.value)} placeholder={t("tc.employeePlaceholder")} autoComplete="off" />
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-business">Business name (optional)</label>
-              <input id="tc-business" className="input-premium" type="text" value={business} onChange={e => setBusiness(e.target.value)} placeholder="e.g. Rivera Design" autoComplete="off" />
+              <label className="label-premium" htmlFor="tc-business">{t("tc.business")}</label>
+              <input id="tc-business" className="input-premium" type="text" value={business} onChange={e => setBusiness(e.target.value)} placeholder={t("tc.businessPlaceholder")} autoComplete="off" />
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-project">Project (optional)</label>
-              <input id="tc-project" className="input-premium" type="text" value={project} onChange={e => setProject(e.target.value)} placeholder="e.g. Website support" autoComplete="off" />
+              <label className="label-premium" htmlFor="tc-project">{t("tc.project")}</label>
+              <input id="tc-project" className="input-premium" type="text" value={project} onChange={e => setProject(e.target.value)} placeholder={t("tc.projectPlaceholder")} autoComplete="off" />
             </div>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
-            <button type="button" className="button-indigo" onClick={loadExample}>Load example data</button>
+            <button type="button" className="button-indigo" onClick={loadExample}>{t("tc.loadExample")}</button>
             {confirmReset ? (
               <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-                <span>Delete all entries?</span>
-                <button type="button" className="button-indigo" onClick={doReset}>Yes, reset</button>
-                <button type="button" className="button-indigo-secondary" onClick={() => setConfirmReset(false)}>Keep entries</button>
+                <span>{t("tc.resetConfirm")}</span>
+                <button type="button" className="button-indigo" onClick={doReset}>{t("tc.resetYes")}</button>
+                <button type="button" className="button-indigo-secondary" onClick={() => setConfirmReset(false)}>{t("tc.resetKeep")}</button>
               </span>
             ) : (
-              <button type="button" className="button-indigo-secondary" onClick={() => (sessions.length > 0 ? setConfirmReset(true) : doReset())}>Reset</button>
+              <button type="button" className="button-indigo-secondary" onClick={() => (sessions.length > 0 ? setConfirmReset(true) : doReset())}>{t("tc.reset")}</button>
             )}
           </div>
         </section>
 
         <details style={{ marginBottom: 24, border: "1px solid #E2E8F0", borderRadius: 8, padding: "12px 16px" }}>
-          <summary style={{ cursor: "pointer", fontWeight: 700 }}>Advanced: pay and overtime settings</summary>
-          <p style={{ color: "#475569" }}>Overtime is evaluated separately for each workweek, even in a biweekly period. There is no single 80-hour biweekly threshold.</p>
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>{t("tc.advanced")}</summary>
+          <p style={{ color: "#475569" }}>{t("tc.advancedNote")}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-rate">Hourly rate (optional)</label>
+              <label className="label-premium" htmlFor="tc-rate">{t("tc.hourlyRate")}</label>
               <input id="tc-rate" className="input-premium" type="number" inputMode="decimal" min="0" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} aria-invalid={rateError || undefined} aria-describedby={rateError ? "tc-rate-error" : undefined} />
-              {rateError && <p id="tc-rate-error" style={{ color: "#B91C1C" }}>Hourly rate cannot be negative.</p>}
+              {rateError && <p id="tc-rate-error" style={{ color: "#B91C1C" }}>{t("tc.rateError")}</p>}
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-currency">Currency</label>
-              <select id="tc-currency" className="input-premium" value={currency} onChange={e => setCurrency(e.target.value)}>
+              <label className="label-premium" htmlFor="tc-currency">{t("tc.currency")}</label>
+              <select id="tc-currency" className="input-premium" value={currency} onChange={e => { currencyUserSet.current = true; setCurrency(e.target.value); }}>
                 {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-threshold">Weekly overtime threshold (hours)</label>
+              <label className="label-premium" htmlFor="tc-threshold">{t("tc.threshold")}</label>
               <input id="tc-threshold" className="input-premium" type="number" inputMode="decimal" min="1" max="168" step="0.5" value={threshold} onChange={e => setThreshold(e.target.value)} aria-invalid={thresholdError || undefined} />
-              {thresholdError && <p style={{ color: "#B91C1C" }}>Threshold must be more than 0 and no more than 168 hours.</p>}
+              {thresholdError && <p style={{ color: "#B91C1C" }}>{t("tc.thresholdError")}</p>}
             </div>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-multiplier">Overtime multiplier</label>
+              <label className="label-premium" htmlFor="tc-multiplier">{t("tc.multiplier")}</label>
               <input id="tc-multiplier" className="input-premium" type="number" inputMode="decimal" min="1" max="5" step="0.25" value={multiplier} onChange={e => setMultiplier(e.target.value)} aria-invalid={multiplierError || undefined} />
-              {multiplierError && <p style={{ color: "#B91C1C" }}>Multiplier must be at least 1 and no more than 5.</p>}
+              {multiplierError && <p style={{ color: "#B91C1C" }}>{t("tc.multiplierError")}</p>}
             </div>
           </div>
         </details>
 
         <section aria-labelledby="tc-days-heading">
-          <h2 id="tc-days-heading" style={{ fontSize: 20 }}>Timesheet — {period === "weekly" ? "one week" : "two weeks"}</h2>
+          <h2 id="tc-days-heading" style={{ fontSize: 20 }}>{t("tc.timesheetHeading")} — {period === "weekly" ? t("tc.weekly") : t("tc.biweekly")}</h2>
           {sessions.length === 0 && (
-            <p style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "16px", borderRadius: 8 }}>
-              No sessions yet. Add a session to a day below, load the example, or import a CSV/XLSX file.
-            </p>
+            <p style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", padding: "16px", borderRadius: 8 }}>{t("tc.noSessions")}</p>
           )}
           <div style={{ display: "grid", gap: 16 }}>
             {periodDates.map(date => {
@@ -505,27 +551,27 @@ export default function TimeCardCalculatorClient() {
               return (
                 <article key={date} style={{ border: "1px solid #E2E8F0", borderRadius: 12, padding: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-                    <h3 style={{ fontSize: 17, margin: 0 }}>{prettyDate(date)} <span style={{ color: "#64748B", fontWeight: 400 }}>({date})</span></h3>
-                    <strong>Day total: {formatDuration(dayTotal)} ({formatDecimalHours(dayTotal)} h)</strong>
+                    <h3 style={{ fontSize: 17, margin: 0 }}>{formatDate(date)} <span style={{ color: "#64748B", fontWeight: 400 }}>({date})</span></h3>
+                    <strong>{t("tc.dayTotal")}: {formatDuration(dayTotal)} ({formatDecimalHours(dayTotal)} h)</strong>
                   </div>
-                  {daySessions.length === 0 && <p style={{ color: "#64748B" }}>No sessions this day.</p>}
+                  {daySessions.length === 0 && <p style={{ color: "#64748B" }}>{t("tc.noSessionsDay")}</p>}
                   <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
                     {daySessions.map(s => (
                       <div key={s.id} style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end", background: "#F8FAFC", padding: 12, borderRadius: 8 }}>
                         <div className="field">
-                          <label className="label-premium" htmlFor={`start-${s.id}`}>Start</label>
+                          <label className="label-premium" htmlFor={`start-${s.id}`}>{t("tc.start")}</label>
                           <input id={`start-${s.id}`} className="input-premium" type="time" value={s.start} onChange={e => updateSession(s.id, { start: e.target.value })} />
                         </div>
                         <div className="field">
-                          <label className="label-premium" htmlFor={`end-${s.id}`}>End</label>
+                          <label className="label-premium" htmlFor={`end-${s.id}`}>{t("tc.end")}</label>
                           <input id={`end-${s.id}`} className="input-premium" type="time" value={s.end} onChange={e => updateSession(s.id, { end: e.target.value })} />
                         </div>
                         <label style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44 }}>
                           <input type="checkbox" checked={s.endsNextDay} onChange={e => updateSession(s.id, { endsNextDay: e.target.checked })} />
-                          Ends next day
+                          {t("tc.endsNextDay")}
                         </label>
                         <div className="field">
-                          <label className="label-premium" htmlFor={`break-${s.id}`}>Unpaid break (minutes)</label>
+                          <label className="label-premium" htmlFor={`break-${s.id}`}>{t("tc.breakMinutes")}</label>
                           <input id={`break-${s.id}`} className="input-premium" type="number" inputMode="numeric" min="0" step="1" value={s.breakMinutes} onChange={e => updateSession(s.id, { breakMinutes: e.target.value === "" ? 0 : Number(e.target.value) })} />
                         </div>
                         <span style={{ color: "#475569" }}>
@@ -533,26 +579,26 @@ export default function TimeCardCalculatorClient() {
                             ? `${formatTime(parseTimeToMinutes(s.start)!, true)} – ${formatTime(parseTimeToMinutes(s.end)!, true)}${s.endsNextDay ? " next day" : ""}`
                             : ""}
                         </span>
-                        <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>Remove session</button>
+                        <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>{t("tc.removeSession")}</button>
                       </div>
                     ))}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                    <button type="button" className="button-indigo-secondary" onClick={() => addSession(date)}>Add session</button>
+                    <button type="button" className="button-indigo-secondary" onClick={() => addSession(date)}>{t("tc.addSession")}</button>
                     {daySessions.length > 0 && (
                       <span style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                        <span>Copy this day to:</span>
+                        <span>{t("tc.copyTo")}</span>
                         {periodDates.filter(d => d !== date).map(d => (
                           <label key={d} style={{ display: "flex", gap: 4, alignItems: "center" }}>
                             <input
                               type="checkbox"
                               checked={targets.includes(d)}
-                              onChange={e => setCopyTargets(prev => ({ ...prev, [date]: e.target.checked ? [...targets, d] : targets.filter(t => t !== d) }))}
+                              onChange={e => setCopyTargets(prev => ({ ...prev, [date]: e.target.checked ? [...targets, d] : targets.filter(x => x !== d) }))}
                             />
                             {d}
                           </label>
                         ))}
-                        <button type="button" className="button-indigo-secondary" disabled={targets.length === 0} onClick={() => copyDay(date)}>Copy schedule (replaces those days)</button>
+                        <button type="button" className="button-indigo-secondary" disabled={targets.length === 0} onClick={() => copyDay(date)}>{t("tc.copySchedule")}</button>
                       </span>
                     )}
                   </div>
@@ -562,100 +608,104 @@ export default function TimeCardCalculatorClient() {
           </div>
           {outOfPeriodSessions.length > 0 && (
             <div style={{ marginTop: 16, background: "#FFFBEB", border: "1px solid #FDE68A", padding: 12, borderRadius: 8 }}>
-              <strong>Sessions outside this period</strong>
-              <p>These sessions are kept but excluded from the totals above. Move the week-start date or delete them to include them.</p>
+              <strong>{t("tc.outsideTitle")}</strong>
+              <p>{t("tc.outsideNote")}</p>
               <ul>
                 {outOfPeriodSessions.map(s => (
-                  <li key={s.id}>{s.date} {s.start}–{s.end} <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>Remove</button></li>
+                  <li key={s.id}>{s.date} {s.start}–{s.end} <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>{t("tc.remove")}</button></li>
                 ))}
               </ul>
             </div>
           )}
-          {result.outOfPeriodDetails.length > 0 && (
+          {result.outOfPeriodSegments.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 16 }}>Minutes outside the period</h3>
-              <ul>{result.outOfPeriodDetails.map((d, i) => <li key={i}>{d}</li>)}</ul>
+              <h3 style={{ fontSize: 16 }}>{t("tc.outsideMinutesTitle")}</h3>
+              <ul>{result.outOfPeriodSegments.map((d, i) => (
+                <li key={i}>{t("tc.outsideDetail", {
+                  paid: formatDuration(d.paidMinutes),
+                  sessionDate: d.sessionDate,
+                  segmentDate: d.segmentDate,
+                  period: t(period === "weekly" ? "tc.periodWord.weekly" : "tc.periodWord.biweekly"),
+                  periodStart: result.periodStart,
+                })}</li>
+              ))}</ul>
             </div>
           )}
         </section>
 
         <section aria-labelledby="tc-summary-heading" style={{ marginTop: 32 }}>
-          <h2 id="tc-summary-heading" style={{ fontSize: 20 }}>Summary</h2>
+          <h2 id="tc-summary-heading" style={{ fontSize: 20 }}>{t("tc.summary")}</h2>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
               <thead>
-                <tr><th style={{ textAlign: "left", borderBottom: "2px solid #E2E8F0", padding: 8 }}>Week</th><th style={{ textAlign: "right", borderBottom: "2px solid #E2E8F0", padding: 8 }}>Total</th><th style={{ textAlign: "right", borderBottom: "2px solid #E2E8F0", padding: 8 }}>Regular</th><th style={{ textAlign: "right", borderBottom: "2px solid #E2E8F0", padding: 8 }}>Overtime</th><th style={{ textAlign: "right", borderBottom: "2px solid #E2E8F0", padding: 8 }}>Estimated gross pay</th></tr>
+                <tr><th style={{ textAlign: "start", borderBottom: "2px solid #E2E8F0", padding: 8 }}>{t("tc.week")}</th><th style={{ textAlign: "end", borderBottom: "2px solid #E2E8F0", padding: 8 }}>{t("tc.total")}</th><th style={{ textAlign: "end", borderBottom: "2px solid #E2E8F0", padding: 8 }}>{t("tc.regular")}</th><th style={{ textAlign: "end", borderBottom: "2px solid #E2E8F0", padding: 8 }}>{t("tc.overtime")}</th><th style={{ textAlign: "end", borderBottom: "2px solid #E2E8F0", padding: 8 }}>{t("tc.pay")}</th></tr>
               </thead>
               <tbody>
                 {result.weeks.map(w => (
                   <tr key={w.index}>
-                    <td style={{ padding: 8, borderBottom: "1px solid #F1F5F9" }}>Week {w.index + 1} ({w.startDate} to {w.endDate})</td>
-                    <td style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.totalMinutes)} ({formatDecimalHours(w.totalMinutes)} h)</td>
-                    <td style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.regularMinutes)}</td>
-                    <td style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.overtimeMinutes)}</td>
-                    <td style={{ textAlign: "right", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatMoney(w.payCents, currency)}</td>
+                    <td style={{ padding: 8, borderBottom: "1px solid #F1F5F9" }}>{t("tc.week")} {w.index + 1} ({w.startDate} to {w.endDate})</td>
+                    <td style={{ textAlign: "end", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.totalMinutes)} ({formatDecimalHours(w.totalMinutes)} h)</td>
+                    <td style={{ textAlign: "end", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.regularMinutes)}</td>
+                    <td style={{ textAlign: "end", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatDuration(w.overtimeMinutes)}</td>
+                    <td style={{ textAlign: "end", padding: 8, borderBottom: "1px solid #F1F5F9" }}>{formatMoney(w.payCents, currency)}</td>
                   </tr>
                 ))}
                 <tr>
-                  <td style={{ padding: 8, fontWeight: 700 }}>Period total</td>
-                  <td style={{ textAlign: "right", padding: 8, fontWeight: 700 }}>{formatDuration(result.totalMinutes)} ({formatDecimalHours(result.totalMinutes)} h)</td>
-                  <td style={{ textAlign: "right", padding: 8, fontWeight: 700 }}>{formatDuration(result.regularMinutes)}</td>
-                  <td style={{ textAlign: "right", padding: 8, fontWeight: 700 }}>{formatDuration(result.overtimeMinutes)}</td>
-                  <td style={{ textAlign: "right", padding: 8, fontWeight: 700 }}>{formatMoney(result.payCents, currency)}</td>
+                  <td style={{ padding: 8, fontWeight: 700 }}>{t("tc.periodTotal")}</td>
+                  <td style={{ textAlign: "end", padding: 8, fontWeight: 700 }}>{formatDuration(result.totalMinutes)} ({formatDecimalHours(result.totalMinutes)} h)</td>
+                  <td style={{ textAlign: "end", padding: 8, fontWeight: 700 }}>{formatDuration(result.regularMinutes)}</td>
+                  <td style={{ textAlign: "end", padding: 8, fontWeight: 700 }}>{formatDuration(result.overtimeMinutes)}</td>
+                  <td style={{ textAlign: "end", padding: 8, fontWeight: 700 }}>{formatMoney(result.payCents, currency)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p style={{ color: "#475569" }}>
-            Formula: paid minutes = shift minutes minus unpaid break minutes, split at midnight. Regular hours are the first {threshold} hours
-            in each workweek; the rest are overtime at {multiplier}×. Pay is rounded to the nearest cent after adding regular and overtime pay.
-            This is estimated gross pay before any tax or deductions — it is not take-home pay.
-          </p>
+          <p style={{ color: "#475569" }}>{t("tc.formulaNote", { threshold, multiplier })}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-            <button type="button" className="button-indigo" onClick={() => window.print()}>Print</button>
-            <button type="button" className="button-indigo" onClick={downloadPdf}>Download PDF</button>
-            <button type="button" className="button-indigo" onClick={downloadCsv}>Download CSV</button>
-            <button type="button" className="button-indigo-secondary" onClick={openInvoice} disabled={result.totalMinutes === 0}>Create invoice from these hours</button>
+            <button type="button" className="button-indigo" onClick={() => window.print()}>{t("common.print")}</button>
+            <button type="button" className="button-indigo" onClick={downloadPdf}>{t("tc.downloadPdf")}</button>
+            <button type="button" className="button-indigo" onClick={downloadCsv}>{t("tc.downloadCsv")}</button>
+            <button type="button" className="button-indigo-secondary" onClick={openInvoice} disabled={result.totalMinutes === 0}>{t("tc.createInvoice")}</button>
           </div>
         </section>
 
         <section aria-labelledby="tc-import-heading" style={{ marginTop: 32, border: "1px solid #E2E8F0", borderRadius: 12, padding: 16 }}>
-          <h2 id="tc-import-heading" style={{ fontSize: 20 }}>Import a timesheet (CSV / XLSX)</h2>
-          <p style={{ color: "#475569" }}>Upload → map columns → validate and preview → confirm. Files are parsed in your browser; nothing is uploaded to a server, and spreadsheet formulas are never executed — only stored values are read.</p>
+          <h2 id="tc-import-heading" style={{ fontSize: 20 }}>{t("tc.importTitle")}</h2>
+          <p style={{ color: "#475569" }}>{t("tc.importNote")}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center" }}>
             <label className="button-indigo-secondary" style={{ cursor: "pointer" }}>
-              Choose CSV or XLSX file
+              {t("tc.chooseFile")}
               <input type="file" accept=".csv,.xlsx,.xls" style={{ display: "none" }} onChange={e => { const f = e.target.files?.[0]; if (f) void handleImportFile(f); e.target.value = ""; }} />
             </label>
-            <button type="button" className="button-indigo-secondary" onClick={() => downloadBlob(new Blob([buildSampleCsv()], { type: "text/csv;charset=utf-8" }), "time-card-sample.csv")}>Download sample template</button>
-            <span>Limit: 5 MB, 2,000 rows. One employee per calculator.</span>
+            <button type="button" className="button-indigo-secondary" onClick={() => downloadBlob(new Blob([buildSampleCsv()], { type: "text/csv;charset=utf-8" }), "time-card-sample.csv")}>{t("tc.sampleTemplate")}</button>
+            <span>{t("tc.importLimits")}</span>
           </div>
           {importError && <p role="alert" style={{ color: "#B91C1C" }}>{importError}</p>}
           {importStep === "map" && importRawRows.length > 0 && (
             <div style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 16 }}>Step 2 — Map columns ({importFileName})</h3>
-              <p>Detected headers: {importRawRows[0].map(v => String(v ?? "")).join(" · ")}</p>
+              <h3 style={{ fontSize: 16 }}>{t("tc.mapTitle")} ({importFileName})</h3>
+              <p>{importRawRows[0].map(v => String(v ?? "")).join(" · ")}</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
                 {requiredFields.map(field => (
                   <div className="field" key={field}>
-                    <label className="label-premium" htmlFor={`map-${field}`}>{field === "date" ? "Date" : field === "start" ? "Start time" : "End time"}</label>
+                    <label className="label-premium" htmlFor={`map-${field}`}>{mapFieldLabel[field]}</label>
                     <select id={`map-${field}`} className="input-premium" value={importMapping[field] ?? -1} onChange={e => setImportMapping(prev => ({ ...prev, [field]: Number(e.target.value) }))}>
-                      <option value={-1}>— not mapped —</option>
+                      <option value={-1}>{t("tc.notMapped")}</option>
                       {importRawRows[0].map((h, i) => <option key={i} value={i}>{String(h ?? "") || `Column ${i + 1}`}</option>)}
                     </select>
                   </div>
                 ))}
                 {(["break", "nextDay", "employee", "project"] as const).map(field => (
                   <div className="field" key={field}>
-                    <label className="label-premium" htmlFor={`map-${field}`}>{field === "break" ? "Unpaid break (minutes)" : field === "nextDay" ? "Ends next day" : field === "employee" ? "Employee" : "Project"}</label>
+                    <label className="label-premium" htmlFor={`map-${field}`}>{mapFieldLabel[field]}</label>
                     <select id={`map-${field}`} className="input-premium" value={importMapping[field] ?? -1} onChange={e => setImportMapping(prev => ({ ...prev, [field]: Number(e.target.value) }))}>
-                      <option value={-1}>— not mapped —</option>
+                      <option value={-1}>{t("tc.notMapped")}</option>
                       {importRawRows[0].map((h, i) => <option key={i} value={i}>{String(h ?? "") || `Column ${i + 1}`}</option>)}
                     </select>
                   </div>
                 ))}
                 <div className="field">
-                  <label className="label-premium" htmlFor="import-date-format">Date format (for ambiguous dates)</label>
+                  <label className="label-premium" htmlFor="import-date-format">{t("tc.dateFormatLabel")}</label>
                   <select id="import-date-format" className="input-premium" value={importDateFormat} onChange={e => setImportDateFormat(e.target.value as DateFormat)}>
                     <option value="YYYY-MM-DD">YYYY-MM-DD (2026-11-02)</option>
                     <option value="MM/DD/YYYY">MM/DD/YYYY (11/02/2026)</option>
@@ -663,28 +713,25 @@ export default function TimeCardCalculatorClient() {
                   </select>
                 </div>
               </div>
-              <button type="button" className="button-indigo" style={{ marginTop: 12 }} disabled={importMapping.date === undefined || importMapping.start === undefined || importMapping.end === undefined} onClick={() => setImportStep("preview")}>Preview and validate</button>
-              {importParsed && importParsed.rows.length > 0 && (
-                <p style={{ color: "#475569" }}>Preview: {importParsed.rows[0].session ? `${importParsed.rows[0].session.date} ${importParsed.rows[0].session.start}–${importParsed.rows[0].session.end}` : "first row has errors — see preview step"} (interpreted with the format above).</p>
-              )}
+              <button type="button" className="button-indigo" style={{ marginTop: 12 }} disabled={importMapping.date === undefined || importMapping.start === undefined || importMapping.end === undefined} onClick={() => setImportStep("preview")}>{t("tc.previewValidate")}</button>
             </div>
           )}
           {importStep === "preview" && importParsed && (
             <div style={{ marginTop: 16 }}>
-              <h3 style={{ fontSize: 16 }}>Step 3 — Validate and preview</h3>
-              <p>{importValidRows.length} valid row(s). {importParsed.rows.filter(r => r.session === null).length} row(s) have errors and will not be imported. {importParsed.warnings.length > 0 ? `${importParsed.warnings.length} warning(s).` : ""}</p>
+              <h3 style={{ fontSize: 16 }}>{t("tc.previewTitle")}</h3>
+              <p>{t("tc.previewValid", { count: importValidRows.length }, importValidRows.length)} {t("tc.previewErrors", { count: importParsed.rows.filter(r => r.session === null).length })}</p>
               {importParsed.employees.length > 1 && (
                 <div className="field">
-                  <label className="label-premium" htmlFor="import-employee">This file contains more than one employee — choose one to import</label>
+                  <label className="label-premium" htmlFor="import-employee">{t("tc.chooseEmployee")}</label>
                   <select id="import-employee" className="input-premium" value={importEmployee} onChange={e => setImportEmployee(e.target.value)}>
-                    <option value="">— choose an employee —</option>
+                    <option value="">—</option>
                     {importParsed.employees.map(name => <option key={name} value={name}>{name}</option>)}
                   </select>
                 </div>
               )}
               <div style={{ overflowX: "auto", maxHeight: 320, overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
-                  <thead><tr><th style={{ textAlign: "left", padding: 8 }}>Row</th><th style={{ textAlign: "left", padding: 8 }}>Date</th><th style={{ textAlign: "left", padding: 8 }}>Start–End</th><th style={{ textAlign: "left", padding: 8 }}>Break</th><th style={{ textAlign: "left", padding: 8 }}>Status</th></tr></thead>
+                  <thead><tr><th style={{ textAlign: "start", padding: 8 }}>Row</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapDate")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapStart")}–{t("tc.mapEnd")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapBreak")}</th><th style={{ textAlign: "start", padding: 8 }}>Status</th></tr></thead>
                   <tbody>
                     {importParsed.rows.slice(0, 100).map(r => (
                       <tr key={r.rowNumber}>
@@ -692,46 +739,68 @@ export default function TimeCardCalculatorClient() {
                         <td style={{ padding: 8 }}>{r.session?.date ?? "—"}</td>
                         <td style={{ padding: 8 }}>{r.session ? `${r.session.start}–${r.session.end}${r.session.endsNextDay ? " (next day)" : ""}` : "—"}</td>
                         <td style={{ padding: 8 }}>{r.session?.breakMinutes ?? "—"}</td>
-                        <td style={{ padding: 8 }}>{r.errors.length > 0 ? `Error: ${r.errors.join("; ")}` : r.warnings.length > 0 ? `Warning: ${r.warnings.join("; ")}` : "OK"}</td>
+                        <td style={{ padding: 8 }}>
+                          {r.errors.length > 0
+                            ? r.errors.map((m, i) => {
+                                const code = r.errorCodes?.[i];
+                                if (!code) return m;
+                                const s = r.session;
+                                return t(`tc.err.${code}`, {
+                                  value: r.errorDetails?.[i] ?? "",
+                                  format: importDateFormat,
+                                  date: s?.date ?? "",
+                                  start: s?.start ?? "",
+                                  end: s?.end ?? "",
+                                  break: s?.breakMinutes ?? 0,
+                                  gross: 0,
+                                });
+                              }).join("; ")
+                            : r.warnings.length > 0
+                              ? r.warnings.map((m, i) => {
+                                  const code = r.warningCodes?.[i];
+                                  return code ? t(`tc.warn.${code}`) : m;
+                                }).join("; ")
+                              : "OK"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12, alignItems: "center" }}>
-                <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "append"} onChange={() => setImportMode("append")} /> Append to current timesheet</label>
-                <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "replace"} onChange={() => setImportMode("replace")} /> Replace current timesheet</label>
-                <button type="button" className="button-indigo" disabled={importValidRows.length === 0 || (importParsed.employees.length > 1 && !importEmployee)} onClick={confirmImport}>Step 4 — Confirm import</button>
-                <button type="button" className="button-indigo-secondary" onClick={() => setImportStep("map")}>Back to mapping</button>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "append"} onChange={() => setImportMode("append")} /> {t("tc.append")}</label>
+                <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "replace"} onChange={() => setImportMode("replace")} /> {t("tc.replace")}</label>
+                <button type="button" className="button-indigo" disabled={importValidRows.length === 0 || (importParsed.employees.length > 1 && !importEmployee)} onClick={confirmImport}>{t("tc.confirmImport")}</button>
+                <button type="button" className="button-indigo-secondary" onClick={() => setImportStep("map")}>{t("tc.backToMapping")}</button>
               </div>
-              <p style={{ color: "#475569" }}>Rows outside the current period are imported as sessions and shown as out-of-period until you move the week-start date. Out-of-period minutes are excluded from totals and explained in the summary.</p>
+              <p style={{ color: "#475569" }}>{t("tc.outsideImportNote")}</p>
             </div>
           )}
         </section>
 
         {invoiceOpen && (
           <section aria-labelledby="tc-invoice-heading" style={{ marginTop: 32, border: "1px solid #C7D2FE", borderRadius: 12, padding: 16, background: "#EEF0FF" }}>
-            <h2 id="tc-invoice-heading" style={{ fontSize: 20 }}>Freelancer invoice from these hours</h2>
-            <p style={{ color: "#475569" }}>Edit anything before downloading. This is an editable freelancer billing document, not a payroll invoice. No tax rate is pre-filled beyond 0% — add one only if it applies to your work.</p>
+            <h2 id="tc-invoice-heading" style={{ fontSize: 20 }}>{t("tc.invoiceTitle")}</h2>
+            <p style={{ color: "#475569" }}>{t("tc.invoiceNote")}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               <div className="field">
-                <label className="label-premium" htmlFor="inv-seller">Seller / freelancer</label>
-                <input id="inv-seller" className="input-premium" type="text" value={seller} onChange={e => setSeller(e.target.value)} placeholder="Your name or business" autoComplete="off" />
+                <label className="label-premium" htmlFor="inv-seller">{t("tc.seller")}</label>
+                <input id="inv-seller" className="input-premium" type="text" value={seller} onChange={e => setSeller(e.target.value)} placeholder={t("tc.sellerPlaceholder")} autoComplete="off" />
               </div>
               <div className="field">
-                <label className="label-premium" htmlFor="inv-client">Client</label>
-                <input id="inv-client" className="input-premium" type="text" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Client name" autoComplete="off" />
+                <label className="label-premium" htmlFor="inv-client">{t("tc.client")}</label>
+                <input id="inv-client" className="input-premium" type="text" value={clientName} onChange={e => setClientName(e.target.value)} placeholder={t("tc.clientPlaceholder")} autoComplete="off" />
               </div>
               <div className="field">
-                <label className="label-premium" htmlFor="inv-number">Invoice number</label>
+                <label className="label-premium" htmlFor="inv-number">{t("tc.invoiceNumber")}</label>
                 <input id="inv-number" className="input-premium" type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} />
               </div>
               <div className="field">
-                <label className="label-premium" htmlFor="inv-date">Invoice date</label>
+                <label className="label-premium" htmlFor="inv-date">{t("tc.invoiceDate")}</label>
                 <input id="inv-date" className="input-premium" type="date" value={invoiceDate} onChange={e => setInvoiceDate(e.target.value)} />
               </div>
               <div className="field">
-                <label className="label-premium" htmlFor="inv-tax">Tax (%) — 0 unless it applies</label>
+                <label className="label-premium" htmlFor="inv-tax">{t("tc.tax")}</label>
                 <input id="inv-tax" className="input-premium" type="number" inputMode="decimal" min="0" step="0.01" value={taxPercent} onChange={e => setTaxPercent(e.target.value)} />
               </div>
             </div>
@@ -739,61 +808,61 @@ export default function TimeCardCalculatorClient() {
               {invoiceLines.map((line, idx) => (
                 <div key={line.id} style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end", background: "#FFFFFF", padding: 12, borderRadius: 8 }}>
                   <div className="field" style={{ flex: "2 1 240px" }}>
-                    <label className="label-premium" htmlFor={`inv-desc-${line.id}`}>Description</label>
+                    <label className="label-premium" htmlFor={`inv-desc-${line.id}`}>{t("tc.description")}</label>
                     <input id={`inv-desc-${line.id}`} className="input-premium" type="text" value={line.description} onChange={e => setInvoiceLines(prev => prev.map((l, i) => (i === idx ? { ...l, description: e.target.value } : l)))} />
                   </div>
                   <div className="field">
-                    <label className="label-premium" htmlFor={`inv-qty-${line.id}`}>Quantity (hours)</label>
+                    <label className="label-premium" htmlFor={`inv-qty-${line.id}`}>{t("tc.qtyHours")}</label>
                     <input id={`inv-qty-${line.id}`} className="input-premium" type="number" inputMode="decimal" min="0" step="0.01" value={line.qty} onChange={e => setInvoiceLines(prev => prev.map((l, i) => (i === idx ? { ...l, qty: Number(e.target.value) } : l)))} />
                   </div>
                   <div className="field">
-                    <label className="label-premium" htmlFor={`inv-rate-${line.id}`}>Rate ({currency}/hour)</label>
+                    <label className="label-premium" htmlFor={`inv-rate-${line.id}`}>{t("tc.ratePerHour", { currency })}</label>
                     <input id={`inv-rate-${line.id}`} className="input-premium" type="number" inputMode="decimal" min="0" step="0.01" value={line.rate} onChange={e => setInvoiceLines(prev => prev.map((l, i) => (i === idx ? { ...l, rate: Number(e.target.value) } : l)))} />
                   </div>
                   <strong>{formatMoney(Math.round(line.qty * line.rate * 100), currency)}</strong>
-                  <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceLines(prev => prev.filter((_, i) => i !== idx))}>Remove line</button>
+                  <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceLines(prev => prev.filter((_, i) => i !== idx))}>{t("tc.removeLine")}</button>
                 </div>
               ))}
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16, alignItems: "center" }}>
-              <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceLines(prev => [...prev, { id: `line-${Date.now()}`, description: "Additional work", qty: 0, rate: hourlyRate === "" ? 0 : Number(hourlyRate) }])}>Add line</button>
-              <strong>Total due: {formatMoney(Math.round(invoiceTotal * 100), currency)}</strong>
-              <button type="button" className="button-indigo" onClick={downloadInvoicePdf}>Download invoice PDF</button>
-              <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceOpen(false)}>Close invoice</button>
+              <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceLines(prev => [...prev, { id: `line-${Date.now()}`, description: t("tc.invoice.additional"), qty: 0, rate: hourlyRate === "" ? 0 : Number(hourlyRate) }])}>{t("tc.addLine")}</button>
+              <strong>{t("tc.totalDue")}: {formatMoney(Math.round(invoiceTotal * 100), currency)}</strong>
+              <button type="button" className="button-indigo" onClick={downloadInvoicePdf}>{t("tc.downloadInvoicePdf")}</button>
+              <button type="button" className="button-indigo-secondary" onClick={() => setInvoiceOpen(false)}>{t("tc.closeInvoice")}</button>
             </div>
-            <p style={{ color: "#475569" }}>Your timesheet details are kept in this tab only — they are not put into a link or URL.</p>
+            <p style={{ color: "#475569" }}>{t("tc.invoicePrivacyNote")}</p>
           </section>
         )}
 
         <section aria-labelledby="tc-save-heading" style={{ marginTop: 32, border: "1px solid #E2E8F0", borderRadius: 12, padding: 16 }}>
-          <h2 id="tc-save-heading" style={{ fontSize: 20 }}>Save on this device</h2>
+          <h2 id="tc-save-heading" style={{ fontSize: 20 }}>{t("tc.saveTitle")}</h2>
           <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-            Remember on this device (saves this timesheet in this browser only)
+            {t("tc.remember")}
           </label>
-          <p style={{ color: "#475569" }}>Saved data stays in your browser. It is not uploaded, and it is not shared with analytics. Timesheet processing here is local to your device.</p>
+          <p style={{ color: "#475569" }}>{t("tc.saveNote")}</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end" }}>
             <div className="field">
-              <label className="label-premium" htmlFor="tc-duplicate-date">Duplicate this week into a new period starting</label>
+              <label className="label-premium" htmlFor="tc-duplicate-date">{t("tc.duplicateLabel")}</label>
               <input id="tc-duplicate-date" className="input-premium" type="date" value={duplicateDate} onChange={e => setDuplicateDate(e.target.value)} />
             </div>
-            <button type="button" className="button-indigo-secondary" disabled={!isValidDateString(duplicateDate) || sessions.length === 0} onClick={duplicateWeek}>Duplicate week (dates shift, times stay the same)</button>
-            <button type="button" className="button-indigo-secondary" onClick={deleteSaved}>Delete saved data</button>
+            <button type="button" className="button-indigo-secondary" disabled={!isValidDateString(duplicateDate) || sessions.length === 0} onClick={duplicateWeek}>{t("tc.duplicateButton")}</button>
+            <button type="button" className="button-indigo-secondary" onClick={deleteSaved}>{t("tc.deleteSaved")}</button>
           </div>
         </section>
 
         <section aria-labelledby="tc-how-heading" style={{ marginTop: 32 }}>
-          <h2 id="tc-how-heading" style={{ fontSize: 20 }}>How the hours work</h2>
+          <h2 id="tc-how-heading" style={{ fontSize: 20 }}>{t("tc.howTitle")}</h2>
           <ul style={{ lineHeight: 1.7, color: "#334155" }}>
-            <li><strong>Formula:</strong> paid time = end minus start, minus unpaid break minutes. Exact minutes are used — no punch rounding.</li>
-            <li><strong>Decimal hours:</strong> divide minutes by 60. Example: 8 hours 30 minutes = 8.50 decimal hours; 45 minutes = 0.75 hours.</li>
-            <li><strong>Breaks:</strong> unpaid break minutes are subtracted from the shift. A break that is not shorter than the shift is an error, not a zero-hour day.</li>
-            <li><strong>Overnight shifts:</strong> check “Ends next day” explicitly. Minutes are split at midnight, so each date only counts its own minutes.</li>
-            <li><strong>Weekly vs biweekly:</strong> a biweekly period is two separate workweeks. Overtime is worked out per week (for example, 46 hours in week 1 and 30 in week 2 gives 6 overtime hours, even though the two-week total is below 80).</li>
-            <li><strong>Overtime assumption:</strong> the threshold and multiplier above are your settings. They are an estimate, not a statement of what any employer, state, or contract requires.</li>
-            <li><strong>Gross vs take-home pay:</strong> the pay figure is estimated gross pay before tax, deductions, or benefits. Take-home pay will be lower.</li>
-            <li><strong>Import and privacy:</strong> CSV and XLSX files are parsed in your browser. Uploads are not sent to a server and are not saved unless you check “Remember on this device” — and even then, only the timesheet itself is saved, not the source file.</li>
-            <li><strong>Worked examples:</strong> 09:00–17:30 with a 30-minute break = 8 hours. 22:00–06:00 next day with a 30-minute break = 7 hours 30 minutes. 46 hours at $20/hour with a 40-hour threshold and 1.5× overtime = 40 regular + 6 overtime = $980 gross.</li>
+            <li><strong>{t("tc.howFormula")}</strong></li>
+            <li>{t("tc.howDecimal")}</li>
+            <li>{t("tc.howBreaks")}</li>
+            <li>{t("tc.howOvernight")}</li>
+            <li>{t("tc.howWeekly")}</li>
+            <li>{t("tc.howOvertime")}</li>
+            <li>{t("tc.howGross")}</li>
+            <li>{t("tc.howPrivacy")}</li>
+            <li>{t("tc.howExamples")}</li>
           </ul>
         </section>
       </section>

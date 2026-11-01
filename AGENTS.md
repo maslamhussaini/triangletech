@@ -34,6 +34,28 @@ Scripts: `dev` / `build` / `start` / `lint`. Tests: Vitest (Phase 1+).
     services — require their own explicit authorization. A code or document
     approval is not a deployment approval.
 - No force-pushes.
+- MULTILINGUAL STANDARD (permanent project rule, owner requirement 2026-11-01):
+  "All current and future tools must support multiple languages through
+  shared localization infrastructure, a manual language dropdown, automatic
+  initial language selection, persistent user preference, and RTL where applicable."
+  Implementation: `src/lib/i18n/` (locales, dictionaries, provider),
+  `src/app/tools/layout.tsx` (shared dropdown), `src/components/i18n/`.
+  Languages: English, Spanish, French, German, Portuguese, Arabic, Urdu,
+  Hindi, Simplified Chinese, Japanese. Language is a saved preference
+  (cookie + localStorage), NOT a URL segment: each tool keeps one canonical
+  URL and no locale pages are indexed. Automatic selection priority:
+  saved choice > supported browser language (exact, then base language;
+  a region subtag is country information already present in the browser)
+  > English. No GPS, no paid geolocation API. Calculations stay
+  independent of translated text. Language switches must preserve entered
+  data and must never silently change currency, units, dates, or results;
+  currency defaults apply only to a fresh empty form. PDF exports use
+  WinAnsi Latin-1 for Latin-script languages; for Arabic, Urdu, Hindi,
+  Chinese, and Japanese the PDF falls back to English with an explicit
+  disclosure line (the built-in Helvetica font cannot shape those
+  scripts) — never broken glyphs, never a claim of full PDF support.
+  Print renders the fully translated page via the browser. Never mark
+  an untranslated tool complete: see `docs/tools-localization-inventory.md`.
 - The proposed estimator module location is `src/lib/tools/website-estimator.ts`.
   It does not exist yet; do not create it in documentation slices.
   `RULES_VERSION = "1.1.0"` is the approved planning specification version,

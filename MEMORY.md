@@ -352,3 +352,91 @@ measurement ID, the privacy policy's effective-date/legal sign-off, the
 two calculator routes missing from the sitemap, and CSP enforcement
 each remain separate owner decisions. Do not push branches, open PRs,
 merge into main, or deploy without the relevant authorization.
+
+## 2026-11-01 — Work Hours & Time Card Calculator + multilingual standard (feature branch, NOT merged, NOT deployed to QA)
+
+Owner-authorized (brief 2026-11-01 04:49 PST, plus additional multilingual
+requirement 2026-11-01 05:09 PST): build the time-card feature end to end
+on `feature/usa-growth-phase1`, push that branch, and update the existing
+Vercel QA project `triangletech-utilities-batch-qa` — subject to the
+preservation rule in the brief (§C), which is what happened below.
+
+Implementation (all in this checkout, `feature/usa-growth-phase1`):
+- `/tools/time-card-calculator` — weekly/biweekly timesheet, multiple
+  sessions per day, explicit overnight, unpaid breaks with proportional
+  midnight allocation, per-workweek overtime (never a single 80h
+  threshold), integer minutes, documented cent rounding, estimated gross
+  pay only (no tax/payroll/labor-law claims), CSV/XLSX import wizard
+  (Upload → Map → Validate/Preview → Confirm, explicit date format,
+  row-numbered errors, append/replace, one employee per calculator,
+  local parsing, formulas never executed, formula-injection neutralized
+  in exports), editable freelancer invoice PDF, optional localStorage
+  save ("Remember on this device"), duplicate-week with shifted dates,
+  PDF/CSV export. Pure engine `src/lib/tools/time-card.ts`,
+  dependency-free PDF writer `src/lib/tools/simple-pdf.ts`.
+- Companions sharing the engine: `/tools/hours-to-decimal`
+  (bidirectional converter + table) and `/tools/work-hours-calculator`
+  (single shift, overnight, optional pay estimate). All three registered
+  in `src/lib/tools.ts` (category "Work & Time", clock icon) and in
+  `src/app/sitemap.ts` (sitemap test enforces registry parity).
+- Dependency: `xlsx@0.18.5` added for local XLSX parsing only.
+- QA noindex: `QA_NOINDEX=1` at BUILD time adds
+  `X-Robots-Tag: noindex, nofollow` in `next.config.ts`; it is off by
+  default. Verified 2026-11-01: a build made with `QA_NOINDEX=1` in the
+  build environment serves `X-Robots-Tag: noindex, nofollow` on
+  `/tools/time-card-calculator` (200); a server started with the
+  variable set only at runtime did NOT add the header — so a QA
+  deployment must set it in the project's build environment. Never
+  applied to the live main site by code.
+
+Multilingual standard (permanent rule, AGENTS.md + this file):
+"All current and future tools must support multiple languages through
+shared localization infrastructure, a manual language dropdown, automatic
+initial language selection, persistent user preference, and RTL where applicable."
+Infrastructure: `src/lib/i18n/` (locales, dictionaries, provider),
+shared tools layout dropdown (`src/app/tools/layout.tsx`), language as
+a saved cookie+localStorage preference (not a URL segment; no locale
+pages indexed). Languages: en, es, fr, de, pt, ar, ur, hi, zh, ja.
+Dictionary coverage for the time-card scope is 100% in all 10 languages
+(asserted in `src/lib/i18n/i18n.test.ts`). Validation errors are
+translated via structured codes in the engine (not English strings).
+PDF: WinAnsi Latin-1 for Latin-script languages (accents verified);
+Arabic/Urdu/Hindi/Chinese/Japanese PDFs fall back to English with an
+explicit disclosure line (Helvetica cannot shape those scripts);
+browser Print renders the fully translated page. Full inventory,
+including tools NOT yet migrated (rental, airbnb, product-cost,
+pakistan-tax, qr, image-compressor — English-only, never mark complete)
+and the Gravel/Mulch/Topsoil tool (not present in this checkout at all;
+not built, not localized here): `docs/tools-localization-inventory.md`.
+
+Verified checks (2026-11-01, local production build):
+- 294 tests pass (was 282; +11 i18n, +1 PDF accent test), typecheck
+  clean, lint 0 errors (7 pre-existing warnings).
+- Build passes (49 routes; tools routes dynamic because the tools
+  layout reads the saved-language cookie; non-tool pages stay static).
+- Real-browser QA (Playwright Chromium, local build): original
+  time-card suite 15/16 script checks + 1 corrected check (rental page
+  H1 is "Should I Buy This Rental Property?" — title correct) and
+  XLSX import (2 rows, 15h 30m) all pass; i18n suite 17/17 pass
+  (Spanish/French/German/Arabic switches, totals preserved, import
+  date format unchanged by switch, RTL, persistence, mobile 390px,
+  Spanish/Arabic PDFs, 0 console errors).
+- Hand cases A–D pass in unit tests (8h; 7h 30m overnight; $980 at
+  46h/40h/$20/1.5×; biweekly 46+30 → 6 overtime hours).
+
+BLOCKED — QA deployment (do not redeploy over the existing project):
+1. Preservation: the live `triangletech-utilities-batch-qa` deployment
+   serves 11 tools whose source trees are NOT in this checkout
+   (2026-10-23 audit: two tool batches exist only as Vercel
+   deployments). Deploying this checkout there would remove them.
+   Per brief §C, the implementation was finished and pushed instead,
+   with a prepared isolated deploy copy (see below), and no replacement
+   project was created and no domain was changed.
+2. Vercel connector `not_connected` in this session (MCP); CLI auth
+   from the 2026-10-23 rental session is a separate path and was not
+   relied on here.
+Next action (exact): recover the utilities-batch source from its
+originating session, or get owner direction, before any redeploy of
+`triangletech-utilities-batch-qa`; set `QA_NOINDEX=1` in that project's
+build environment when redeploying. No merge to main, no production
+deployment, no purchase, no domain change was made or authorized here.

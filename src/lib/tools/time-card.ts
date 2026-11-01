@@ -39,8 +39,8 @@ export type SessionInput = {
   project?: string;
 };
 
-export type TimesheetError = { sessionId?: string; row?: number; message: string };
-export type TimesheetWarning = { sessionId?: string; row?: number; message: string };
+export type TimesheetError = { sessionId?: string; row?: number; message: string; code?: string };
+export type TimesheetWarning = { sessionId?: string; row?: number; message: string; code?: string };
 
 export type SegmentAllocation = {
   date: string;
@@ -97,6 +97,8 @@ export type TimesheetResult = {
   warnings: TimesheetWarning[];
   outOfPeriodPaidMinutes: number;
   outOfPeriodDetails: string[];
+  /** Structured form of outOfPeriodDetails, for translated rendering (dates/minutes, no English sentence). */
+  outOfPeriodSegments: { paidMinutes: number; sessionDate: string; segmentDate: string }[];
 };
 
 /* ---------- date / time helpers ---------- */
@@ -263,16 +265,16 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
   const thresholdMinutes = Math.round(input.overtimeThresholdHours * 60);
 
   if (!isValidDateString(input.weekStart)) {
-    errors.push({ message: "Week-start date is invalid. Pick a valid calendar date." });
+    errors.push({ code: "invalid-week-start", message: "Week-start date is invalid. Pick a valid calendar date." });
   }
   if (!(input.overtimeThresholdHours > 0) || input.overtimeThresholdHours > 168 || !Number.isFinite(input.overtimeThresholdHours)) {
-    errors.push({ message: "Weekly overtime threshold must be more than 0 and no more than 168 hours." });
+    errors.push({ code: "invalid-threshold", message: "Weekly overtime threshold must be more than 0 and no more than 168 hours." });
   }
   if (!(input.overtimeMultiplier >= 1) || input.overtimeMultiplier > 5 || !Number.isFinite(input.overtimeMultiplier)) {
-    errors.push({ message: "Overtime multiplier must be at least 1 and no more than 5." });
+    errors.push({ code: "invalid-multiplier", message: "Overtime multiplier must be at least 1 and no more than 5." });
   }
   if (input.hourlyRate !== null && input.hourlyRate !== undefined && (!Number.isFinite(input.hourlyRate) || input.hourlyRate < 0)) {
-    errors.push({ message: "Hourly rate cannot be negative." });
+    errors.push({ code: "negative-rate", message: "Hourly rate cannot be negative." });
   }
   const settingsValid = errors.length === 0;
   const periodStart = isValidDateString(input.weekStart) ? input.weekStart : "1970-01-01";
@@ -285,13 +287,13 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
 
   for (const session of input.sessions) {
     if (!isValidDateString(session.date)) {
-      errors.push({ sessionId: session.id, message: `Session on "${session.date}" has an invalid date.` });
+      errors.push({ sessionId: session.id, code: "invalid-date", message: `Session on "${session.date}" has an invalid date.` });
       continue;
     }
     const startMin = parseTimeToMinutes(session.start);
     const endMin = parseTimeToMinutes(session.end);
     if (startMin === null || endMin === null) {
-      errors.push({ sessionId: session.id, message: `Session on ${session.date} is incomplete: enter both a start time and an end time.` });
+      errors.push({ sessionId: session.id, code: "incomplete-session", message: `Session on ${session.date} is incomplete: enter both a start time and an end time.` });
       continue;
     }
     const startAbs = dateOrdinal(session.date) * 1440 + startMin;
@@ -303,6 +305,7 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
       if (endAbs <= startAbs) {
         errors.push({
           sessionId: session.id,
+          code: "ends-before-start",
           message: `Session on ${session.date} (${session.start}–${session.end}) ends before it starts. Check "Ends next day" if this shift runs overnight; it is not assumed.`,
         });
         continue;
@@ -310,16 +313,17 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
     }
     const gross = endAbs - startAbs;
     if (gross <= 0) {
-      errors.push({ sessionId: session.id, message: `Session on ${session.date} has no duration.` });
+      errors.push({ sessionId: session.id, code: "no-duration", message: `Session on ${session.date} has no duration.` });
       continue;
     }
     if (!Number.isFinite(session.breakMinutes) || session.breakMinutes < 0) {
-      errors.push({ sessionId: session.id, message: `Session on ${session.date} has a negative unpaid break.` });
+      errors.push({ sessionId: session.id, code: "negative-break", message: `Session on ${session.date} has a negative unpaid break.` });
       continue;
     }
     if (session.breakMinutes >= gross) {
       errors.push({
         sessionId: session.id,
+        code: "break-too-long",
         message: `Session on ${session.date} has an unpaid break (${session.breakMinutes} minutes) that is not shorter than the shift itself (${gross} minutes). Reduce the break or fix the times.`,
       });
       continue;
@@ -334,6 +338,7 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
     if (sorted[i].startAbs < sorted[i - 1].endAbs) {
       errors.push({
         sessionId: sorted[i].session.id,
+        code: "overlap",
         message: `Session on ${sorted[i].session.date} (${sorted[i].session.start}–${sorted[i].session.end}) overlaps another session. Overlapping sessions are not counted.`,
       });
       overlappedIds.add(sorted[i].session.id);
@@ -345,6 +350,7 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
   const sessionResults: SessionResult[] = [];
   let outOfPeriodPaidMinutes = 0;
   const outOfPeriodDetails: string[] = [];
+  const outOfPeriodSegments: { paidMinutes: number; sessionDate: string; segmentDate: string }[] = [];
 
   for (const item of expanded) {
     if (overlappedIds.has(item.session.id)) continue;
@@ -372,6 +378,7 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
       segments.push({ date: seg.date, grossMinutes: seg.gross, breakMinutes: segBreak, paidMinutes: paid, inPeriod });
       if (!inPeriod) {
         outOfPeriodPaidMinutes += paid;
+        outOfPeriodSegments.push({ paidMinutes: paid, sessionDate: item.session.date, segmentDate: seg.date });
         outOfPeriodDetails.push(
           `${formatDuration(paid)} of the ${item.session.date} shift falls on ${seg.date}, outside the ${input.period} period starting ${periodStart}, and is excluded from the totals.`
         );
@@ -445,6 +452,7 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
     warnings,
     outOfPeriodPaidMinutes,
     outOfPeriodDetails,
+    outOfPeriodSegments,
   };
 }
 
@@ -506,6 +514,10 @@ export type ImportedRow = {
   session: SessionInput | null;
   errors: string[];
   warnings: string[];
+  /** Parallel to errors/warnings: translation codes (tc.err.* / tc.warn.*), "" when none. */
+  errorCodes: string[];
+  warningCodes: string[];
+  errorDetails: string[];
 };
 
 export function parseImportedRows(
@@ -518,7 +530,7 @@ export function parseImportedRows(
   const employeeSet = new Set<string>();
   const dataRows = opts.hasHeader ? rows.slice(1) : rows;
   if (dataRows.length > 2000) {
-    errors.push({ message: "Import is limited to 2,000 rows. Split the file and try again." });
+    errors.push({ code: "import-row-limit", message: "Import is limited to 2,000 rows. Split the file and try again." });
     return { sessions: [], rows: imported, employees: [], errors, warnings };
   }
   const seen = new Set<string>();
@@ -533,14 +545,17 @@ export function parseImportedRows(
     };
     const rowErrors: string[] = [];
     const rowWarnings: string[] = [];
+    const rowErrorCodes: string[] = [];
+    const rowWarningCodes: string[] = [];
+    const rowErrorDetails: string[] = [];
     const date = parseDateCell(get("date"), opts.dateFormat);
-    if (!date) rowErrors.push(`Date "${String(get("date"))}" could not be read in ${opts.dateFormat} format.`);
+    if (!date) { rowErrors.push(`Date "${String(get("date"))}" could not be read in ${opts.dateFormat} format.`); rowErrorCodes.push("import-date-unreadable"); rowErrorDetails.push(String(get("date"))); }
     const startParsed = parseTimeCell(get("start"));
-    if (!startParsed) rowErrors.push(`Start time "${String(get("start"))}" could not be read.`);
+    if (!startParsed) { rowErrors.push(`Start time "${String(get("start"))}" could not be read.`); rowErrorCodes.push("import-start-unreadable"); rowErrorDetails.push(String(get("start"))); }
     const endParsed = parseTimeCell(get("end"));
-    if (!endParsed) rowErrors.push(`End time "${String(get("end"))}" could not be read.`);
+    if (!endParsed) { rowErrors.push(`End time "${String(get("end"))}" could not be read.`); rowErrorCodes.push("import-end-unreadable"); rowErrorDetails.push(String(get("end"))); }
     const breakMinutes = parseBreakCell(get("break"));
-    if (breakMinutes === null) rowErrors.push(`Unpaid break "${String(get("break"))}" must be a whole number of minutes.`);
+    if (breakMinutes === null) { rowErrors.push(`Unpaid break "${String(get("break"))}" must be a whole number of minutes.`); rowErrorCodes.push("import-break-not-integer"); rowErrorDetails.push(String(get("break"))); }
     const employee = String(get("employee")).trim();
     const project = String(get("project")).trim();
     if (employee) employeeSet.add(employee);
@@ -567,15 +582,15 @@ export function parseImportedRows(
         overtimeThresholdHours: 40,
         overtimeMultiplier: 1.5,
       });
-      check.errors.forEach(e => rowErrors.push(e.message));
+      check.errors.forEach(e => { rowErrors.push(e.message); rowErrorCodes.push(e.code ?? ""); rowErrorDetails.push(""); });
       const key = [session.date, session.start, session.end, session.breakMinutes].join("|");
-      if (seen.has(key)) rowWarnings.push("This row duplicates an earlier imported row.");
+      if (seen.has(key)) { rowWarnings.push("This row duplicates an earlier imported row."); rowWarningCodes.push("duplicate-row"); }
       seen.add(key);
     }
     if (session && rowErrors.length === 0) parsedSessions.push({ session, rowNumber });
-    imported.push({ rowNumber, session: rowErrors.length === 0 ? session : null, errors: rowErrors, warnings: rowWarnings });
-    rowErrors.forEach(m => errors.push({ row: rowNumber, message: m }));
-    rowWarnings.forEach(m => warnings.push({ row: rowNumber, message: m }));
+    imported.push({ rowNumber, session: rowErrors.length === 0 ? session : null, errors: rowErrors, warnings: rowWarnings, errorCodes: rowErrorCodes, warningCodes: rowWarningCodes, errorDetails: rowErrorDetails });
+    rowErrors.forEach((m, i) => errors.push({ row: rowNumber, message: m, code: rowErrorCodes[i] || undefined }));
+    rowWarnings.forEach((m, i) => warnings.push({ row: rowNumber, message: m, code: rowWarningCodes[i] || undefined }));
   });
 
   // Overlap warnings across otherwise-valid imported rows.

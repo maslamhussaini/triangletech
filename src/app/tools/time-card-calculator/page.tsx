@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { pageMetadata, business } from "@/lib/site";
+import { LOCALE_COOKIE, localeFromValue } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import TimeCardCalculatorClient from "./calculator-client";
 
 export const metadata: Metadata = pageMetadata(
@@ -19,26 +22,20 @@ const breadcrumb = {
   ],
 };
 
-const FAQS = [
-  {
-    question: "How is overtime calculated here?",
-    answer: "Overtime is a configurable estimate: hours above the weekly threshold you set (default 40) in a single workweek are paid at the multiplier you set (default 1.5x). In a biweekly period each week is evaluated separately — there is no single 80-hour threshold. This is not tax, payroll, or labor-law advice, and no state-specific rules are applied.",
-  },
-  {
-    question: "How do overnight shifts work?",
-    answer: "Check 'Ends next day' explicitly. An end time earlier than the start time is shown as an error rather than silently treated as overnight. Overnight minutes are split at midnight, and unpaid break minutes are allocated across the midnight segments in proportion to each segment's length, so each date and workweek only counts its own minutes.",
-  },
-  {
-    question: "Is my timesheet uploaded anywhere?",
-    answer: "No. The calculator, CSV/XLSX import, and PDF/CSV exports all run in your browser. Nothing is saved unless you check 'Remember on this device', and then it is saved only in that browser's local storage.",
-  },
-  {
-    question: "What is the difference between gross pay and take-home pay?",
-    answer: "The pay figure here is estimated gross pay before tax, deductions, or benefits. Take-home pay will be lower, and the exact difference depends on your tax and deduction situation, which this tool does not model.",
-  },
-] as const;
+function faqsFor(locale: ReturnType<typeof localeFromValue>) {
+  return [
+    { question: tServer(locale, "tc.faqOvertimeQ"), answer: tServer(locale, "tc.faqOvertimeA") },
+    { question: tServer(locale, "tc.faqOvernightQ"), answer: tServer(locale, "tc.faqOvernightA") },
+    { question: tServer(locale, "tc.faqPrivacyQ"), answer: tServer(locale, "tc.faqPrivacyA") },
+    { question: tServer(locale, "tc.faqGrossQ"), answer: tServer(locale, "tc.faqGrossA") },
+  ];
+}
 
-const faqSchema = {
+export default async function TimeCardCalculatorPage() {
+  const cookieStore = await cookies();
+  const locale = localeFromValue(cookieStore.get(LOCALE_COOKIE)?.value);
+  const FAQS = faqsFor(locale);
+  const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   mainEntity: FAQS.map(faq => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
@@ -54,7 +51,6 @@ const softwareSchema = {
   publisher: { "@id": `${business.url}/#organization` },
 };
 
-export default function TimeCardCalculatorPage() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
@@ -62,20 +58,20 @@ export default function TimeCardCalculatorPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema).replace(/</g, "\\u003c") }} />
       <TimeCardCalculatorClient />
       <section className="container" style={{ paddingBottom: 48 }}>
-        <h2>Related tools</h2>
+        <h2>{tServer(locale, "tc.relatedTitle")}</h2>
         <ul>
-          <li><Link href="/tools/hours-to-decimal">Hours to Decimal Converter</Link> — convert hours and minutes to decimal hours and back, with a conversion table.</li>
-          <li><Link href="/tools/work-hours-calculator">Work Hours Calculator</Link> — one shift at a time: duration, unpaid break, and overnight support.</li>
-          <li><Link href="/tools">All free tools</Link> — the full TriangleTech tools index.</li>
+          <li><Link href="/tools/hours-to-decimal">{tServer(locale, "htd.title")}</Link> — {tServer(locale, "tc.relatedHtd")}</li>
+          <li><Link href="/tools/work-hours-calculator">{tServer(locale, "wh.title")}</Link> — {tServer(locale, "tc.relatedWh")}</li>
+          <li><Link href="/tools">{tServer(locale, "common.toolsIndex")}</Link></li>
         </ul>
-        <h2>Frequently asked questions</h2>
+        <h2>{tServer(locale, "tc.faqHeading")}</h2>
         {FAQS.map(faq => (
           <div key={faq.question}>
             <h3>{faq.question}</h3>
             <p>{faq.answer}</p>
           </div>
         ))}
-        <p>Powered by TriangleTech. This tool estimates hours and gross pay from the figures you enter; it does not verify employment records, taxes, or labor-law compliance.</p>
+        <p>{tServer(locale, "tc.poweredNote")}</p>
       </section>
     </>
   );

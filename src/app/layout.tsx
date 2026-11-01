@@ -21,6 +21,9 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Language/direction for tool pages comes from the tools layout, which
+  // reads the saved cookie server-side. The root stays static so non-tool
+  // pages keep their existing rendering behavior.
   const structured = {
     "@context": "https://schema.org", "@type": "Organization", "@id": `${business.url}/#organization`,
     name: business.name, url: business.url, logo: `${business.url}/triangletech-logo.png`, email: business.email,

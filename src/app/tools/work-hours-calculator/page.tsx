@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { pageMetadata, business } from "@/lib/site";
+import { LOCALE_COOKIE, localeFromValue } from "@/lib/i18n/locales";
+import { tServer } from "@/lib/i18n/dictionaries";
 import WorkHoursClient from "./client";
 
 export const metadata: Metadata = pageMetadata(
@@ -18,13 +21,15 @@ const breadcrumb = {
   ],
 };
 
-export default function WorkHoursPage() {
+export default async function WorkHoursPage() {
+  const cookieStore = await cookies();
+  const locale = localeFromValue(cookieStore.get(LOCALE_COOKIE)?.value);
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb).replace(/</g, "\\u003c") }} />
       <WorkHoursClient />
       <section className="container" style={{ paddingBottom: 48 }}>
-        <p>Powered by TriangleTech. For weekly and biweekly timesheets with overtime and import, see the <a href="/tools/time-card-calculator">Work Hours &amp; Time Card Calculator</a>, and for conversions see the <a href="/tools/hours-to-decimal">Hours to Decimal Converter</a>.</p>
+        <p>{tServer(locale, "common.poweredBy")}.</p>
       </section>
     </>
   );
