@@ -6,22 +6,38 @@ Permanent project rule (AGENTS.md, owner requirement 2026-11-01):
 > shared localization infrastructure, a manual language dropdown, automatic
 > initial language selection, persistent user preference, and RTL where applicable.
 
-## Infrastructure (shared, reusable for existing and future tools)
+## Infrastructure — ONE shared system (unified 2026-11-01)
+
+The two batches previously shipped two competing systems (time-card
+`src/lib/i18n/` and landscaping `src/lib/tools/landscaping-i18n.ts` +
+`landscaping-locales.ts`). The landscaping system is deleted. All six
+tools now use the single shared system:
 
 - `src/lib/i18n/locales.ts` — supported locales, native names, direction,
-  detection priority (saved > browser language > English), locale number/
-  date/money formatting, localized number parsing (decimal/grouping
-  separators, Arabic-Indic / Eastern Arabic / Devanagari digits),
-  fresh-form-only currency defaults.
-- `src/lib/i18n/dictionaries.ts` + `src/lib/i18n/error-dictionaries.ts` —
-  shared dictionaries for the time-card scope; English is the fallback
-  for any missing key (a missing translation never renders a key name).
+  detection priority (saved choice > supported browser language >
+  English), locale number/date/money formatting, localized number
+  parsing (decimal/grouping separators, Arabic-Indic / Eastern Arabic /
+  Devanagari digits), fresh-form-only currency defaults.
+  Country fallback: the only country information used is the region
+  subtag already present in the browser language (e.g. `es-MX` →
+  Spanish, MXN default on a fresh empty form). No GPS, no paid
+  geolocation API, and no separate country detection exists — do not
+  claim otherwise.
+- `src/lib/i18n/dictionaries.ts` — shared dictionaries for all six
+  tools; English is the fallback for any missing key (a missing
+  translation never renders a key name). Key prefixes: `tc.` (time
+  card), `htd.` (hours-to-decimal), `wh.` (work hours), `ls.` +
+  `mat.` (landscaping), plus shared `common.` keys.
 - `src/lib/i18n/provider.tsx` — LanguageProvider + `useLanguage()` hook
   (`t`, `formatNumber`, `formatDate`, `formatMoney`, `parseNumber`).
-- `src/app/tools/layout.tsx` — shared tools layout with the language
-  dropdown (native `<select>`, keyboard accessible, mobile friendly,
-  names in native scripts). Initial locale comes from the saved cookie,
-  so returning users are server-rendered in their language with no flash.
+  The provider sets `html lang`/`dir` (RTL for ar/ur).
+- `src/app/tools/layout.tsx` — shared tools layout with the one
+  language dropdown (native `<select>`, keyboard accessible, mobile
+  friendly, names in native scripts). Initial locale comes from the
+  saved cookie, so returning users are server-rendered in their
+  language with no flash. Individual tools no longer render their own
+  dropdown; the landscaping component's former dropdown was removed
+  in the unification commit.
 - `src/components/i18n/language-selector.tsx` — the dropdown itself.
 - URL strategy: unchanged. Each tool keeps ONE canonical URL; language
   is a preference, not a locale path segment. No thin indexed pages are
@@ -29,31 +45,58 @@ Permanent project rule (AGENTS.md, owner requirement 2026-11-01):
   (`QA_NOINDEX=1` at build time adds `X-Robots-Tag: noindex, nofollow`;
   it is off by default and is never applied to the live main site by code).
 
-## Coverage — complete for the time-card scope (2026-11-01, verified)
+## Coverage — complete for all six tools (integrated branch, verified)
 
-Dictionary coverage is asserted by `src/lib/i18n/i18n.test.ts`
-(`dictionaryCoverage` per locale): **100% of keys present in all 10
-languages** for the time-card scope, including validation errors and
-import row errors (structured codes, not English strings).
+Dictionary coverage is asserted by
+`src/lib/i18n/unified-coverage.test.ts` (0 missing keys vs English in
+every locale, for every tool prefix): **276 keys, 10 languages, 0
+missing in any locale**.
 
 | Tool | Route | Localization status |
 | --- | --- | --- |
-| Work Hours & Time Card Calculator | `/tools/time-card-calculator` | **Complete** — workflow, labels, help, validation, results, import wizard, export controls, privacy, invoice, save, FAQ, related tools; 10 languages; RTL for ar/ur; locale numbers/dates/money; data preserved on switch; import date format independent of language. |
+| Work Hours & Time Card Calculator | `/tools/time-card-calculator` | **Complete** — workflow, labels, help, validation, results, import wizard, export controls, privacy, invoice, save, FAQ, related tools; RTL for ar/ur; locale numbers/dates/money; data preserved on switch; import date format independent of language. Midnight break-allocation warning translated (`tc.warnBreakAllocationOvertime`). |
 | Hours to Decimal Converter | `/tools/hours-to-decimal` | **Complete** — same infrastructure; locale decimal separator in results and conversion table. |
 | Work Hours Calculator | `/tools/work-hours-calculator` | **Complete** — same infrastructure; translated validation, overnight split dates localized. |
+| Gravel Calculator | `/tools/gravel-calculator` | **Complete** — workflow, areas, assumptions, results, bagged/bulk costs, save/restore, PDF/CSV/print; RTL for ar/ur; language switch preserves entries, units, currency and results. |
+| Mulch Calculator | `/tools/mulch-calculator` | **Complete** — same as gravel, plus bag-size example chips and the 2–3 inch depth guidance. |
+| Topsoil Calculator | `/tools/topsoil-calculator` | **Complete** — same as gravel, plus raised-bed fill mode with its "not interchangeable" note. |
 
-## PDF / print support — disclosed limitation
+## PDF / print support — disclosed limitation (unchanged by unification)
 
 - Latin-script languages (en, es, fr, de, pt): PDF exports are fully
   translated; the writer uses WinAnsi Latin-1 so accents survive
   (verified: Spanish PDF contains accented characters, not `?`).
 - Arabic, Urdu, Hindi, Simplified Chinese, Japanese: the built-in
   Helvetica PDF font cannot shape these scripts. The PDF therefore
-  falls back to English **with an explicit first line disclosing that
-  limitation** (verified: Arabic PDF contains the English disclosure).
-  Browser Print renders the fully translated page correctly via system
-  fonts, so a fully translated copy is always available via Print.
+  falls back to English **with an explicit disclosure line** (verified:
+  Arabic PDF contains the English disclosure). Browser Print renders
+  the fully translated page correctly via system fonts, so a fully
+  translated copy is always available via Print.
   This is a disclosed limitation, not full PDF support for those scripts.
+- Why no embedded font was added: true support needs more than a font
+  file. Arabic and Urdu need joining-form shaping and Hindi needs
+  conjunct shaping, which the dependency-free PDF writer does not do;
+  an embedded font without shaping would render those scripts
+  incorrectly, which is worse than the honest English fallback. CJK
+  glyphs alone would still need font subsetting and a ToUnicode map.
+  No font library or font asset exists in this repo, and no new
+  dependency was added for this integration. Revisit only with a
+  shaping-capable PDF library and reviewed fonts.
+
+## Midnight break allocation — documented assumption
+
+- Overnight sessions are split at midnight; unpaid break minutes are
+  allocated across the midnight segments in proportion to each
+  segment's length (integer minutes, remainder to the earliest
+  segments), shown per segment. This is an assumption about where the
+  break was taken, not a measurement.
+- When that split crosses a workweek boundary it can change weekly
+  overtime. The engine then emits a `break-allocation-overtime`
+  warning, shown above the results in the time-card tool, and the exact
+  route is to split the shift at midnight into two sessions with each
+  part's actual break minutes (there is no per-segment break input).
+  See `src/lib/tools/time-card.ts` header and the time-card test
+  "break allocation across a workweek boundary".
 
 ## Not yet migrated — do NOT mark complete
 
@@ -76,36 +119,13 @@ user-facing strings into `src/lib/i18n/dictionaries.ts` (English first,
 then the other 9 languages), keep calculations in the existing pure
 modules, and re-run the coverage test so a missing key fails loudly.
 
-## Not present in this checkout — cannot be localized here
+## Verification (integrated branch — actual counts, not summed batches)
 
-- **Gravel / Mulch / Topsoil calculator(s):** no such tool, route, or
-  source exists in the canonical `maslamhussaini/triangletech` checkout
-  (filesystem + registry search, 2026-11-01). Localization cannot be
-  applied to a tool that is not here. Next action: owner to confirm
-  whether this tool should be built as a new tool (with localization
-  from day one under this standard) or whether its source lives in
-  another session/project and should be recovered first. It is NOT
-  claimed as built or localized in this delivery.
-
-## Verification (2026-11-01)
-
-- Unit: 294 tests pass, including 11 i18n tests (detection, fallback,
-  pluralization, es/de number formatting and parsing, RTL markers,
-  currency defaults, 100% dictionary coverage, calculation consistency
-  across locales — pay in cents identical, only formatting differs).
-- Browser (real Chromium via Playwright, local production build):
-  17/17 i18n checks pass — dropdown with native names, Spanish switch
-  preserves example totals (41h 30m / $845), French import step,
-  German comma decimal (8,50), Arabic `dir=rtl` + `lang=ar-EG`,
-  saved Arabic choice persists across reload, import date format
-  unchanged by a language switch, Spanish PDF accents preserved,
-  Arabic PDF English fallback with disclosure, 390px mobile dropdown
-  usable with no overflow, 0 console errors.
-- Known limitation (documented, not hidden): the root `<html lang>`
-  attribute starts as `en` and is corrected by the tools provider on
-  mount; tool *content* language is server-rendered from the saved
-  cookie, so there is no content-language flash for returning users.
-  First-visit browser detection happens on the client after mount.
-- Translations are initial translations written for this delivery;
+- Unit: see the final integration report for the actual integrated
+  test count (the earlier 294 and 307 suites overlap and came from
+  different trees; they must not be added together).
+- Browser QA is recorded in the final integration report, per tool,
+  with PASS / FAIL / NOT RUN kept separate.
+- Translations are initial translations written for these deliveries;
   they have not been reviewed by native speakers. English fallback
   covers any key found missing in future edits.

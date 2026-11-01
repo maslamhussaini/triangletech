@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   areaM2, bagResult, buildCsv, bulkOrder, computeMaterial, costScenarios,
   displayAreaToMeters, displayDepthToMeters, displayLengthToMeters,
@@ -8,12 +8,11 @@ import {
   validateArea, type AreaInput, type MaterialKind, type Shape, type UnitSystem, type ValidationCode,
 } from "@/lib/tools/landscaping";
 import { buildPdfBlob, downloadBlob } from "@/lib/tools/simple-pdf";
+import { useLanguage } from "@/lib/i18n/provider";
 import {
-  DEFAULT_LOCALE, LOCALE_META, LOCALE_STORAGE_KEY, SUPPORTED_LOCALES,
-  defaultCurrencyForLocale, detectLocaleFromLanguages, formatNumber, isLocale, parseLocalizedNumber,
+  DEFAULT_LOCALE, LOCALE_META, LOCALE_STORAGE_KEY, defaultCurrencyForLocale, detectLocaleFromLanguages, isLocale,
   type Locale,
-} from "@/lib/tools/landscaping-i18n";
-import { getDictionary, t } from "@/lib/tools/landscaping-locales";
+} from "@/lib/i18n/locales";
 
 interface Draft {
   id: string;
@@ -78,7 +77,16 @@ const ERR_KEY: Record<ValidationCode, string> = {
 };
 
 export default function LandscapingCalculator({ material }: { material: MaterialKind }) {
-  const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
+  // Single shared localization system (src/lib/i18n): the shared tools
+  // layout provides the language dropdown and sets html lang/dir, so this
+  // component no longer keeps its own locale state or dropdown. Adapters
+  // below keep the existing t(locale, ...) / formatNumber(locale, ...) /
+  // parseLocalizedNumber(..., locale) call sites working against the
+  // provider's current locale.
+  const { locale, t: translate, formatNumber: formatLocale, parseNumber } = useLanguage();
+  const t = useCallback((...args: [Locale, string, Record<string, string | number>?]) => translate(args[1], args[2]), [translate]);
+  const formatNumber = useCallback((...args: [Locale, number, number?]) => formatLocale(args[1], args[2] ?? 2), [formatLocale]);
+  const parseLocalizedNumber = useCallback((s: string, _locale: Locale) => { void _locale; const v = parseNumber(s); return v === null ? undefined : v; }, [parseNumber]);
   const [mounted, setMounted] = useState(false);
   const [system, setSystem] = useState<UnitSystem>("imperial");
   const [areas, setAreas] = useState<Draft[]>([]);
@@ -124,7 +132,9 @@ export default function LandscapingCalculator({ material }: { material: Material
       else if (navigator.languages?.length) initial = detectLocaleFromLanguages(navigator.languages);
       else if (navigator.language) initial = detectLocaleFromLanguages([navigator.language]);
     } catch { /* storage unavailable: stay English */ }
-    setLocale(initial);
+    // Note: the provider owns the locale (saved cookie, then browser
+    // language). This effect only derives fresh-form defaults from the
+    // same detection, without changing the locale itself.
     const region = (navigator.language ?? "").split("-")[1]?.toUpperCase();
     if (region && !["US", "LR", "MM"].includes(region)) setSystem("metric");
     setCurrency(defaultCurrencyForLocale(initial, navigator.language));
@@ -150,26 +160,11 @@ export default function LandscapingCalculator({ material }: { material: Material
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
-    document.documentElement.lang = locale;
-    document.documentElement.dir = meta.dir;
-    return () => { document.documentElement.lang = "en"; document.documentElement.dir = "ltr"; };
-  }, [locale, meta.dir, mounted]);
-
-  useEffect(() => {
     if (!mounted || !remember) return;
     try {
       window.localStorage.setItem(`triangletech-landscaping-${material}`, JSON.stringify({ areas, system, extra, loose, density, projectName, currency }));
     } catch { /* storage full/blocked: tool still works */ }
   }, [mounted, remember, areas, system, extra, loose, density, projectName, currency, material]);
-
-  const changeLocale = (next: Locale) => {
-    setLocale(next);
-    try {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
-      document.cookie = `${LOCALE_STORAGE_KEY}=${next}; max-age=31536000; path=/; SameSite=Lax`;
-    } catch { /* ignore */ }
-  };
 
   const toCanonical = (d: Draft): AreaInput => {
     const p = (s: string) => parseLocalizedNumber(s, locale);
@@ -187,7 +182,7 @@ export default function LandscapingCalculator({ material }: { material: Material
     const draft = areas.find(d => d.id === a.id);
     const badNumber = draft && [draft.length, draft.width, draft.diameter, draft.area, draft.depth].some(s => s !== "" && parseLocalizedNumber(s, locale) === undefined);
     return { codes, badNumber };
-  }), [canonical, areas, locale]);
+  }), [canonical, areas, locale, parseLocalizedNumber]);
 
   const extraNum = parseLocalizedNumber(extra, locale) ?? 0;
   const looseNum = parseLocalizedNumber(loose, locale) ?? 1;
@@ -242,8 +237,6 @@ export default function LandscapingCalculator({ material }: { material: Material
   const exportLines = (forPdf: boolean): string[] => {
     const lang: Locale = forPdf && meta.script !== "latin" ? "en" : locale;
     const L = (key: string, vars?: Record<string, string | number>) => t(lang, key, vars);
-    const dict = getDictionary(lang);
-    void dict;
     const lines: string[] = [];
     lines.push(`${L("ls.title", { material: cap(L(`mat.${material}`)) })} — TriangleTech`);
     if (projectName) lines.push(`${L("ls.projectName")}: ${projectName}`);
@@ -325,12 +318,7 @@ export default function LandscapingCalculator({ material }: { material: Material
     <section className="container" dir={meta.dir} style={{ paddingTop: 32, paddingBottom: 48, overflowX: "hidden" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between" }}>
         <p className="eyebrow-indigo">FREE LANDSCAPING TOOL</p>
-        <label style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44 }}>
-          <span>{t(locale, "common.languageLabel")}</span>
-          <select aria-label={t(locale, "common.languageLabel")} value={locale} onChange={e => changeLocale(e.target.value as Locale)} className="select-premium" style={{ minHeight: 44, minWidth: 180 }}>
-            {SUPPORTED_LOCALES.map(code => <option key={code} value={code}>{LOCALE_META[code].nativeName}</option>)}
-          </select>
-        </label>
+        {/* Language is chosen in the shared tools header above (src/app/tools/layout.tsx). */}
       </div>
       <h1 style={{ fontSize: 34, lineHeight: 1.2, margin: "8px 0" }}>{title}</h1>
       <p style={{ maxWidth: 760, color: "#475569", lineHeight: 1.6 }}>{t(locale, "ls.subtitle", { material: materialName })}</p>
