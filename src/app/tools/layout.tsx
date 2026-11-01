@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { LanguageSelector } from "@/components/i18n/language-selector";
+import { ReportBrandingPrintHeader, ReportBrandingProvider } from "@/components/tools/report-branding";
 import { LanguageProvider } from "@/lib/i18n/provider";
 import { LOCALE_COOKIE, LOCALE_META, localeFromValue } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
@@ -18,15 +19,18 @@ export default async function ToolsLayout({ children }: { children: React.ReactN
   const initialLocale = localeFromValue(cookieStore.get(LOCALE_COOKIE)?.value);
   return (
     <LanguageProvider initialLocale={initialLocale}>
-      <div style={{ borderBottom: "1px solid #E2E8F0", background: "#F8FAFC" }}>
-        <div className="container" style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "space-between", paddingBlock: 12 }}>
-          <Link href="/tools" style={{ fontWeight: 700, color: "#312E81" }}>
-            {LOCALE_META[initialLocale].dir === "rtl" ? "→" : "←"} {tServer(initialLocale, "common.toolsIndex")}
-          </Link>
-          <LanguageSelector />
+      <ReportBrandingProvider>
+        <div style={{ borderBottom: "1px solid #E2E8F0", background: "#F8FAFC" }}>
+          <div className="container" style={{ display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "space-between", paddingBlock: 12 }}>
+            <Link href="/tools" style={{ fontWeight: 700, color: "#312E81" }}>
+              {LOCALE_META[initialLocale].dir === "rtl" ? "→" : "←"} {tServer(initialLocale, "common.toolsIndex")}
+            </Link>
+            <LanguageSelector />
+          </div>
         </div>
-      </div>
-      {children}
+        <ReportBrandingPrintHeader />
+        {children}
+      </ReportBrandingProvider>
     </LanguageProvider>
   );
 }

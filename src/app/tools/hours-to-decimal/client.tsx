@@ -5,10 +5,13 @@ import { LOCALE_META } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { formatDuration } from "@/lib/tools/time-card";
+import { ReportBrandingFields, useReportBranding } from "@/components/tools/report-branding";
+import { dataUrlToCompanyLogo } from "@/lib/tools/report-branding";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export default function HoursToDecimalClient() {
   const { t, locale, formatNumber } = useLanguage();
+  const { branding } = useReportBranding();
   const [hours, setHours] = useState("8");
   const [minutes, setMinutes] = useState("30");
   const [decimal, setDecimal] = useState("8.50");
@@ -53,6 +56,9 @@ export default function HoursToDecimalClient() {
       ],
       createdWith: tr("common.createdWith"),
       logoBytes: await fetchLogoBytes(),
+      pageOfTemplate: tr("common.pageOf"),
+      companyName: branding.companyName,
+      companyLogo: dataUrlToCompanyLogo(branding.logoDataUrl, branding.logoMime) ?? undefined,
     });
     const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }));
     const a = document.createElement("a");
@@ -123,7 +129,10 @@ export default function HoursToDecimalClient() {
           </div>
         </section>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 24 }}>
+        <div style={{ marginTop: 24 }}>
+          <ReportBrandingFields />
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
           <button type="button" className="button-indigo" onClick={downloadPdf}>{t("common.downloadPdf")}</button>
         </div>
       </section>

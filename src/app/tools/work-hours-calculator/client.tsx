@@ -5,10 +5,13 @@ import { LOCALE_META } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { calculateTimesheet, formatDecimalHours, formatDuration, formatMoney as formatMoneyAscii, parseTimeToMinutes } from "@/lib/tools/time-card";
+import { ReportBrandingFields, useReportBranding } from "@/components/tools/report-branding";
+import { dataUrlToCompanyLogo } from "@/lib/tools/report-branding";
 import { useLanguage } from "@/lib/i18n/provider";
 
 export default function WorkHoursClient() {
   const { t, locale, formatDate, formatMoney } = useLanguage();
+  const { branding } = useReportBranding();
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [start, setStart] = useState("09:00");
   const [end, setEnd] = useState("17:30");
@@ -78,6 +81,9 @@ export default function WorkHoursClient() {
       ],
       createdWith: tr("common.createdWith"),
       logoBytes: await fetchLogoBytes(),
+      pageOfTemplate: tr("common.pageOf"),
+      companyName: branding.companyName,
+      companyLogo: dataUrlToCompanyLogo(branding.logoDataUrl, branding.logoMime) ?? undefined,
     });
     const url = URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }));
     const a = document.createElement("a");
@@ -143,6 +149,9 @@ export default function WorkHoursClient() {
           </div>
         )}
 
+        <div style={{ marginTop: 16 }}>
+          <ReportBrandingFields />
+        </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
           <button type="button" className="button-indigo" disabled={!session || result.errors.length > 0} onClick={downloadPdf}>{t("common.downloadPdf")}</button>
           <button type="button" className="button-indigo-secondary" onClick={() => { setStart("09:00"); setEnd("17:30"); setEndsNextDay(false); setBreakMinutes("30"); }}>{t("wh.exampleDay")}</button>

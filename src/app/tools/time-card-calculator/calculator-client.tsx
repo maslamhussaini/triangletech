@@ -26,6 +26,8 @@ import {
 } from "@/lib/tools/time-card";
 import { downloadBlob } from "@/lib/tools/simple-pdf";
 import { buildTimesheetReport } from "@/lib/tools/timesheet-report";
+import { ReportBrandingFields, useReportBranding } from "@/components/tools/report-branding";
+import { dataUrlToCompanyLogo } from "@/lib/tools/report-branding";
 import { useLanguage } from "@/lib/i18n/provider";
 import { LOCALE_META, defaultCurrencyForLocale } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
@@ -50,6 +52,7 @@ type InvoiceLine = { id: string; description: string; qty: number; rate: number 
 
 export default function TimeCardCalculatorClient() {
   const { locale, t, formatDate, formatMoney } = useLanguage();
+  const { branding } = useReportBranding();
   const idCounter = useRef(0);
   const currencyUserSet = useRef(false);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
@@ -467,6 +470,9 @@ export default function TimeCardCalculatorClient() {
       createdWith: tr("common.createdWith"),
       disclaimer: tr("tc.reportDisclaimer"),
       logoBytes: await fetchLogoBytes(),
+      pageOfTemplate: tr("common.pageOf"),
+      companyName: branding.companyName,
+      companyLogo: dataUrlToCompanyLogo(branding.logoDataUrl, branding.logoMime) ?? undefined,
     });
     downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), "timesheet.pdf");
   }
@@ -530,6 +536,9 @@ export default function TimeCardCalculatorClient() {
       ],
       createdWith: tr("common.createdWith"),
       logoBytes: await fetchLogoBytes(),
+      pageOfTemplate: tr("common.pageOf"),
+      companyName: branding.companyName,
+      companyLogo: dataUrlToCompanyLogo(branding.logoDataUrl, branding.logoMime) ?? undefined,
     });
     downloadBlob(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }), `${invoiceNumber || "invoice"}.pdf`);
   }
@@ -783,7 +792,10 @@ export default function TimeCardCalculatorClient() {
             </table>
           </div>
           <p style={{ color: "#475569" }}>{t("tc.formulaNote", { threshold, multiplier })}</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ marginTop: 16 }}>
+            <ReportBrandingFields />
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
             <button type="button" className="button-indigo" onClick={() => window.print()}>{t("common.print")}</button>
             <button type="button" className="button-indigo" onClick={downloadPdf}>{t("tc.downloadPdf")}</button>
             <button type="button" className="button-indigo" onClick={downloadCsv}>{t("tc.downloadCsv")}</button>
