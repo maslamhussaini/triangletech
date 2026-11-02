@@ -6,6 +6,7 @@ import { Icon } from "./icons";
 import { DashboardMockup } from "./dashboard-mockup";
 import { BrowserFrame } from "./device-frame";
 import { useChatWidget } from "./chat-widget";
+import { productAvailability } from "@/lib/site";
 import type { products } from "@/lib/site";
 
 type Product = (typeof products)[number];
@@ -17,6 +18,7 @@ export function ProductSelector({ items }: { items: readonly Product[] }) {
       <div className="selector-visual"><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></div>
       <span className="eyebrow">{product.category}</span>
       <h3>{product.name}</h3>
+      <p><strong>Status: {productAvailability[product.id]?.status ?? "Demonstration Only"}</strong> — {productAvailability[product.id]?.note ?? "Demo walkthrough on request."}</p>
       <p className="selector-core"><Icon name="check" />{product.coreFeature}</p>
       <p>{product.description}</p>
       <p className="selector-audience">{product.audience}</p>
@@ -42,6 +44,7 @@ export function ProductShowcase({ items }: { items: readonly Product[] }) {
       <div className="showcase-copy">
         <span className="eyebrow">{product.category}</span>
         <h3>{product.name}</h3>
+        <p><strong>Status: {productAvailability[product.id]?.status ?? "Demonstration Only"}</strong> — {productAvailability[product.id]?.note ?? "Demo walkthrough on request."}</p>
         <p className="selector-core"><Icon name="check" />{product.coreFeature}</p>
         <p>{product.description}</p>
         <p className="selector-audience">{product.audience}</p>

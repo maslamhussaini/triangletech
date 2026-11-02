@@ -13,8 +13,9 @@ export const business = {
 } as const;
 
 export const navigation = [
-  { href: "/#products", label: "Products" },
-  { href: "/#demos", label: "Demos" },
+  { href: "/products", label: "Products" },
+  { href: "/services", label: "Services" },
+  { href: "/websites-for-us-small-business", label: "US Websites" },
   { href: "/tools", label: "Tools" },
   { href: "/case-studies", label: "Case Studies" },
   { href: "/about", label: "About" },
@@ -22,11 +23,11 @@ export const navigation = [
 ];
 
 export const hero = {
-  eyebrow: "EXPLORE OUR SOFTWARE · SEE HOW IT WORKS",
+  eyebrow: "CUSTOM SOFTWARE · WEBSITES FOR US SMALL BUSINESSES",
   headline: "Business Software That Works the Way You Work",
-  supporting: "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce.",
-  primaryCta: "Book a Free Demo",
-  secondaryCta: "Explore Our Products",
+  supporting: "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce — and professional websites, SEO and AI-search visibility for US small businesses.",
+  primaryCta: "Request a Free Consultation",
+  secondaryCta: "Explore Services",
   tertiaryCta: "See How It Works",
 };
 
@@ -48,7 +49,25 @@ export const services = [
   { id: "fbr-invoicing", title: "FBR Digital Invoicing", short: "Structured, compliant invoicing.", category: "Digital Invoicing", description: "Digital invoicing workflows built around FBR's structured submission requirements, from Excel upload to validation and tracking.", icon: "invoice" },
   { id: "database-backend", title: "Database and Backend Systems", short: "A solid foundation underneath.", category: "Backend Engineering", description: "Well-modelled databases and dependable backend services that keep your application accurate, fast and easy to extend.", icon: "database" },
   { id: "ui-ux-design", title: "UI/UX and Product Design", short: "Interfaces people enjoy using.", category: "Product Design", description: "Clean, purposeful interface design that makes complex business tools genuinely simple for the people who use them daily.", icon: "design" },
+  { id: "technical-seo-audit", title: "Technical SEO and Website Audit", short: "Find what is holding your website back.", category: "SEO and Audits", description: "A written technical audit of your existing website: crawlability, indexing, titles and descriptions, headings, internal links, broken links, redirects, mobile usability and page speed — with prioritised fixes and no promise of rankings.", icon: "trending" },
+  { id: "aeo-geo-readiness", title: "AEO and GEO Readiness", short: "Help search and AI tools understand you.", category: "AI-Search Visibility", description: "Answer-ready content, clear service definitions, genuine FAQs and structured data that match the visible page, so search engines and AI-assisted search can represent your business accurately. No guaranteed placement in ChatGPT, Google AI Overviews or any AI answer is claimed.", icon: "layers" },
+  { id: "website-performance-conversion", title: "Website Performance and Conversion Improvements", short: "Faster pages, clearer next steps.", category: "Web Performance", description: "Measured performance and conversion work on your existing website: loading speed, mobile layout, navigation, calls to action and contact paths — with before-and-after checks on the pages changed, not invented gains.", icon: "clock" },
 ] as const;
+
+/**
+ * Verified availability for the products in `products` (2026-11-03 audit).
+ * "Demonstration Only" means a demo walkthrough is offered on request;
+ * it is not an instant purchase, instant deployment or a runnable demo
+ * link. Only Dynamic Inventory Count has a verified purchase route
+ * (Odoo Apps) and real screenshots on its dedicated page.
+ */
+export const productAvailability: Record<string, { status: "Available" | "Demonstration Only"; note: string }> = {
+  "ordermate": { status: "Demonstration Only", note: "Demo walkthrough on request. Its dedicated page shows a real dashboard screenshot; other visuals are illustrated walkthroughs." },
+  "fbr-digital": { status: "Demonstration Only", note: "Demo walkthrough on request. Visuals on this page are illustrated walkthroughs, not live screenshots." },
+  "waterflow": { status: "Demonstration Only", note: "Demo walkthrough on request. Visuals on this page are illustrated walkthroughs, not live screenshots." },
+  "shopify-solutions": { status: "Demonstration Only", note: "Demo walkthrough on request. Visuals on this page are illustrated walkthroughs, not live screenshots." },
+  "dynamic-inventory-count": { status: "Available", note: "Available on the Odoo Apps store ($39, Odoo 19). Its dedicated page shows real module screenshots." },
+};
 
 export type ProductScreen = { id: string; title: string; does: string; benefit: string; layout: ScreenLayout };
 

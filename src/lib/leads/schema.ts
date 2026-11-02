@@ -21,6 +21,7 @@ export const SERVICE_INTEREST_IDS = [
   "growth-seo",
   "ai-visibility",
   "website-redesign",
+  "website-audit",
   "other",
 ] as const;
 
@@ -31,6 +32,7 @@ export const SERVICE_OPTIONS: ReadonlyArray<{ id: ServiceInterestId; label: stri
   { id: "growth-seo", label: "Growth SEO Website" },
   { id: "ai-visibility", label: "AI Visibility Website" },
   { id: "website-redesign", label: "Redesign of my existing website" },
+  { id: "website-audit", label: "Website & AI-search audit (introductory)" },
   { id: "other", label: "Something else / not sure yet" },
 ];
 

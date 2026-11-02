@@ -10,7 +10,7 @@ import { ScreenWalkthrough } from "@/components/screen-walkthrough";
 import { ProductCTA } from "@/components/product-cta";
 import { ChatTriggerButton } from "@/components/chat-trigger-button";
 import { ContactCTA } from "@/components/page-parts";
-import { business, faqs, featureNotes, products, pageMetadata } from "@/lib/site";
+import { business, faqs, featureNotes, productAvailability, products, pageMetadata } from "@/lib/site";
 
 export function generateStaticParams() {
   return products.map(product => ({ id: product.id }));
@@ -44,6 +44,8 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <p className="product-core-line">{product.coreFeature}</p>
         <p>{product.description}</p>
         <p className="product-audience-line">{product.audience}</p>
+        <p><strong>Status: {productAvailability[product.id]?.status ?? "Demonstration Only"}</strong> — {productAvailability[product.id]?.note ?? "Demo walkthrough on request."}</p>
+        <p>Known limitation: no demo video is published for this product yet. A live walkthrough can be requested below; do not treat the illustrated screens as a running demo.</p>
         <ProductCTA productId={product.id} productName={product.name} />
       </div>
       <div className="product-detail-visual"><BrowserFrame label={`app.triangletech.co/${product.id}`}><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></BrowserFrame></div>

@@ -31,6 +31,7 @@ export default function OrderMateProduct() {
         <p className="product-core-line">{product.coreFeature}</p>
         <p>{product.description}</p>
         <p className="product-audience-line">{product.audience}</p>
+        <p><strong>Status: Demonstration Only</strong> — demo walkthrough on request. The dashboard image above is a real product screenshot; no demo video is published yet.</p>
         <ProductCTA productId={product.id} productName={product.name} />
       </div>
       <div className="product-detail-visual">

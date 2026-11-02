@@ -33,8 +33,8 @@ export default function Home() {
           <h1>{heroLead}{heroTail && <span className="hero-accent-phrase">{heroTail}</span>}</h1>
           <p>{hero.supporting}</p>
           <div className="hero-actions">
-            <RouteLink className="button-indigo" href="/contact">{hero.primaryCta}<Icon name="arrow" /></RouteLink>
-            <RouteLink className="button-indigo-secondary on-dark" href="/#products">{hero.secondaryCta}</RouteLink>
+            <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation">{hero.primaryCta}<Icon name="arrow" /></RouteLink>
+            <RouteLink className="button-indigo-secondary on-dark" href="/services">{hero.secondaryCta}</RouteLink>
           </div>
           <RouteLink className="text-link light-link hero-tertiary" href="/#how-it-works">{hero.tertiaryCta}<Icon name="arrow" /></RouteLink>
         </div>
@@ -46,6 +46,20 @@ export default function Home() {
         load at every viewport, so it must never depend on an observer firing. */}
     <section className="stats-strip stats-strip-indigo"><div className="container stats-grid">
       {stats.map(stat => <div key={stat.label} className="stat-metric"><strong>{stat.value}</strong><span>{stat.label}</span></div>)}
+    </div></section>
+
+    <section className="section" data-reveal><div className="container">
+      <div className="section-heading"><div><span className="eyebrow">WEBSITES FOR US SMALL BUSINESSES</span><h2>A professional website that brings in inquiries.</h2><p className="section-lead">If you are a US small business, start here: a clear website, a written quote before work begins, and optional SEO and AI-search readiness. No fake local office, no invented results, no ranking promises.</p></div></div>
+      <div className="hero-actions">
+        <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation">Request a Free Consultation<Icon name="arrow" /></RouteLink>
+        <RouteLink className="button-indigo-secondary" href="/services">Explore Services</RouteLink>
+        <RouteLink className="text-link" href="/websites-for-us-small-business">See US website packages<Icon name="arrow" /></RouteLink>
+      </div>
+      <ul className="tech-pill-list">
+        <li><RouteLink href="/services/technical-seo-audit">Technical SEO and Website Audit</RouteLink></li>
+        <li><RouteLink href="/services/aeo-geo-readiness">AEO and GEO Readiness</RouteLink></li>
+        <li><RouteLink href="/services/website-performance-conversion">Performance and Conversion Improvements</RouteLink></li>
+      </ul>
     </div></section>
 
     <section className="section trust-section" data-reveal><div className="container">

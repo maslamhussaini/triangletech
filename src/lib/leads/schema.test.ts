@@ -47,7 +47,7 @@ describe("parseLeadSubmission — valid submissions", () => {
   });
 
   it("accepts every allowed service interest", () => {
-    for (const serviceInterest of ["starter-website", "growth-seo", "ai-visibility", "website-redesign", "other"]) {
+    for (const serviceInterest of ["starter-website", "growth-seo", "ai-visibility", "website-redesign", "website-audit", "other"]) {
       expect(parseLeadSubmission({ ...VALID, serviceInterest }).ok).toBe(true);
     }
   });
