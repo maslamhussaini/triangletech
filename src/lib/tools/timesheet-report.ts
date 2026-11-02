@@ -22,6 +22,8 @@ import {
 
 export type ReportSessionRow = {
   date: string;
+  /** "hours" rows show "Hours only" with blank start/end/break cells. */
+  mode: "times" | "hours";
   start: string;
   end: string;
   endsNextDay: boolean;
@@ -61,16 +63,18 @@ export function buildTimesheetReport(
 ): TimesheetReport {
   const sorted = [...result.sessions].sort((a, b) => {
     if (a.session.date !== b.session.date) return a.session.date < b.session.date ? -1 : 1;
-    const aStart = parseTimeToMinutes(a.session.start) ?? 0;
-    const bStart = parseTimeToMinutes(b.session.start) ?? 0;
+    // Hours-only rows have no start time and sort after times rows on the same date.
+    const aStart = a.session.mode === "hours" ? Number.POSITIVE_INFINITY : (parseTimeToMinutes(a.session.start) ?? 0);
+    const bStart = b.session.mode === "hours" ? Number.POSITIVE_INFINITY : (parseTimeToMinutes(b.session.start) ?? 0);
     return aStart - bStart;
   });
   const sessions: ReportSessionRow[] = sorted.map(s => ({
     date: s.session.date,
-    start: s.session.start,
-    end: s.session.end,
-    endsNextDay: s.session.endsNextDay,
-    breakMinutes: s.session.breakMinutes,
+    mode: s.session.mode === "hours" ? "hours" : "times",
+    start: s.session.mode === "hours" ? "" : s.session.start,
+    end: s.session.mode === "hours" ? "" : s.session.end,
+    endsNextDay: s.session.mode === "hours" ? false : s.session.endsNextDay,
+    breakMinutes: s.session.mode === "hours" ? 0 : s.session.breakMinutes,
     paidMinutes: s.paidMinutes,
   }));
   const dailyTotals: ReportDayRow[] = result.days

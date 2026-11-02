@@ -8,6 +8,7 @@ import {
   buildTimesheetCsv,
   calculateTimesheet,
   dateOrdinal,
+  decimalHoursToMinutes,
   formatDecimalHours,
   formatDuration,
   formatMoney as formatMoneyAscii,
@@ -20,6 +21,7 @@ import {
   validateSavedTimesheet,
   type ColumnMapping,
   type DateFormat,
+  type EntryMode,
   type ImportedRow,
   type PeriodKind,
   type SessionInput,
@@ -29,7 +31,7 @@ import { buildTimesheetReport } from "@/lib/tools/timesheet-report";
 import { ReportBrandingFields, useReportBranding } from "@/components/tools/report-branding";
 import { dataUrlToCompanyLogo } from "@/lib/tools/report-branding";
 import { useLanguage } from "@/lib/i18n/provider";
-import { LOCALE_META, defaultCurrencyForLocale } from "@/lib/i18n/locales";
+import { LOCALE_META, defaultCurrencyForLocale, formatLocaleNumber, parseLocalizedNumber } from "@/lib/i18n/locales";
 import { tServer } from "@/lib/i18n/dictionaries";
 
 const STORAGE_KEY = "triangletech-time-card-v1";
@@ -50,6 +52,15 @@ function newId(counter: React.MutableRefObject<number>): string {
 
 type InvoiceLine = { id: string; description: string; qty: number; rate: number };
 
+/**
+ * A session row as edited on screen. Hours-only rows carry their
+ * in-progress text in paidHoursText (transient, never saved: only
+ * canonical integer paidMinutes is persisted, so a locale switch can
+ * never reinterpret saved hours). The engine input is derived from
+ * drafts in the result memo below.
+ */
+type TimeCardSession = SessionInput & { paidHoursText?: string };
+
 export default function TimeCardCalculatorClient() {
   const { locale, t, formatDate, formatMoney } = useLanguage();
   const { branding } = useReportBranding();
@@ -57,7 +68,8 @@ export default function TimeCardCalculatorClient() {
   const currencyUserSet = useRef(false);
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [period, setPeriod] = useState<PeriodKind>("weekly");
-  const [sessions, setSessions] = useState<SessionInput[]>([]);
+  const [sessions, setSessions] = useState<TimeCardSession[]>([]);
+  const [pendingSwitch, setPendingSwitch] = useState<{ id: string; to: EntryMode } | null>(null);
   const [employee, setEmployee] = useState("");
   const [business, setBusiness] = useState("");
   const [project, setProject] = useState("");
@@ -81,6 +93,7 @@ export default function TimeCardCalculatorClient() {
   const [importMode, setImportMode] = useState<"append" | "replace">("append");
   const [importEmployee, setImportEmployee] = useState("");
   const [importError, setImportError] = useState("");
+  const [importChoices, setImportChoices] = useState<Record<number, "hours" | "times">>({});
 
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [seller, setSeller] = useState("");
@@ -96,18 +109,38 @@ export default function TimeCardCalculatorClient() {
     return Array.from({ length: periodDays }, (_, i) => addDays(weekStart, i));
   }, [weekStart, periodDays]);
 
+  // Derive engine sessions from drafts. Hours-only rows: non-empty
+  // text is parsed with the current locale (malformed text becomes
+  // NaN so the engine reports it); empty text means "no entry yet"
+  // and the row is left out, never counted as zero. Saved/imported
+  // rows carry canonical paidMinutes and no text.
+  const engineSessions: SessionInput[] = useMemo(
+    () =>
+      sessions.flatMap(s => {
+        if (s.mode !== "hours") return [s];
+        const { paidHoursText, ...base } = s;
+        if (paidHoursText !== undefined && paidHoursText.trim() !== "") {
+          const parsed = parseLocalizedNumber(paidHoursText, locale);
+          return [{ ...base, start: "", end: "", endsNextDay: false, breakMinutes: 0, paidMinutes: parsed === null ? NaN : decimalHoursToMinutes(parsed) }];
+        }
+        if (s.paidMinutes === undefined) return [];
+        return [{ ...base, start: "", end: "", endsNextDay: false, breakMinutes: 0 }];
+      }),
+    [sessions, locale]
+  );
+
   const result = useMemo(
     () =>
       calculateTimesheet({
         weekStart: isValidDateString(weekStart) ? weekStart : "1970-01-01",
         period,
-        sessions,
+        sessions: engineSessions,
         hourlyRate: hourlyRate === "" ? null : Number(hourlyRate),
         currency,
         overtimeThresholdHours: Number(threshold),
         overtimeMultiplier: Number(multiplier),
       }),
-    [weekStart, period, sessions, hourlyRate, currency, threshold, multiplier]
+    [weekStart, period, engineSessions, hourlyRate, currency, threshold, multiplier]
   );
 
   const rateError = hourlyRate !== "" && (Number.isNaN(Number(hourlyRate)) || Number(hourlyRate) < 0);
@@ -127,7 +160,18 @@ export default function TimeCardCalculatorClient() {
       end: s?.end ?? "",
       break: s?.breakMinutes ?? 0,
       gross,
+      value: s?.paidHoursText ?? "",
     });
+  }
+
+  /** Minutes for an hours-only draft (null = no value yet, NaN = malformed text). */
+  function draftHoursMinutes(s: TimeCardSession): number | null {
+    if (s.mode !== "hours") return null;
+    if (s.paidHoursText !== undefined && s.paidHoursText.trim() !== "") {
+      const parsed = parseLocalizedNumber(s.paidHoursText, locale);
+      return parsed === null ? NaN : decimalHoursToMinutes(parsed);
+    }
+    return s.paidMinutes ?? null;
   }
 
   useEffect(() => {
@@ -175,13 +219,27 @@ export default function TimeCardCalculatorClient() {
   useEffect(() => {
     if (!loaded || !remember) return;
     try {
+      // Persist canonical values only: transient edit text is never
+      // saved (a locale switch must never reinterpret saved hours),
+      // and out-of-range transient minutes are dropped so a bad row
+      // can never make the whole saved timesheet unrestorable.
+      const savedSessions = sessions.map(s => {
+        const { paidHoursText, ...base } = s;
+        void paidHoursText;
+        if (base.mode === "hours" && (base.paidMinutes === undefined || !Number.isInteger(base.paidMinutes) || base.paidMinutes <= 0 || base.paidMinutes > 1440)) {
+          const { paidMinutes, ...rest } = base;
+          void paidMinutes;
+          return rest;
+        }
+        return base;
+      });
       window.localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
           version: 1,
           weekStart,
           period,
-          sessions,
+          sessions: savedSessions,
           employee,
           business,
           project,
@@ -197,12 +255,49 @@ export default function TimeCardCalculatorClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, remember, weekStart, period, sessions, employee, business, project, hourlyRate, currency, threshold, multiplier]);
 
-  function updateSession(id: string, patch: Partial<SessionInput>) {
+  function updateSession(id: string, patch: Partial<TimeCardSession>) {
     setSessions(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)));
   }
 
   function addSession(date: string) {
     setSessions(prev => [...prev, { id: newId(idCounter), date, start: "09:00", end: "17:00", endsNextDay: false, breakMinutes: 0 }]);
+  }
+
+  function addHoursEntry(date: string) {
+    setSessions(prev => [...prev, { id: newId(idCounter), date, mode: "hours", start: "", end: "", endsNextDay: false, breakMinutes: 0, paidHoursText: "" }]);
+  }
+
+  /** True when switching this row's mode would discard user-entered data. */
+  function rowHasModeData(s: TimeCardSession): boolean {
+    if (s.mode === "hours") {
+      return (s.paidHoursText !== undefined && s.paidHoursText.trim() !== "") || s.paidMinutes !== undefined;
+    }
+    return s.start !== "09:00" || s.end !== "17:00" || s.endsNextDay || s.breakMinutes !== 0;
+  }
+
+  /** Convert a row to the other mode. Never guesses times from hours
+   *  or hours from times: the converted row starts empty/default. */
+  function convertSessionMode(s: TimeCardSession, to: EntryMode): TimeCardSession {
+    if (to === "hours") {
+      return { ...s, mode: "hours", start: "", end: "", endsNextDay: false, breakMinutes: 0, paidMinutes: undefined, paidHoursText: "" };
+    }
+    return { ...s, mode: "times", start: "09:00", end: "17:00", endsNextDay: false, breakMinutes: 0, paidMinutes: undefined, paidHoursText: undefined };
+  }
+
+  function requestModeSwitch(s: TimeCardSession, to: EntryMode) {
+    if (to === (s.mode ?? "times")) return;
+    if (rowHasModeData(s)) {
+      setPendingSwitch({ id: s.id, to });
+    } else {
+      setSessions(prev => prev.map(x => (x.id === s.id ? convertSessionMode(x, to) : x)));
+    }
+  }
+
+  function confirmModeSwitch() {
+    if (!pendingSwitch) return;
+    const { id, to } = pendingSwitch;
+    setSessions(prev => prev.map(x => (x.id === id ? convertSessionMode(x, to) : x)));
+    setPendingSwitch(null);
   }
 
   function loadExample() {
@@ -276,6 +371,7 @@ export default function TimeCardCalculatorClient() {
 
   async function handleImportFile(file: File) {
     setImportError("");
+    setImportChoices({});
     if (file.size > 5 * 1024 * 1024) {
       setImportError(t("tc.import.fileTooLarge"));
       return;
@@ -328,12 +424,40 @@ export default function TimeCardCalculatorClient() {
     return importParsed.rows.filter(r => r.session !== null);
   }, [importParsed]);
 
+  // Conflict rows with no usable choice yet. A "times" choice for a
+  // conflict whose times candidate is invalid also counts as
+  // unresolved, so confirm can never import an invalid candidate.
+  const importUnresolvedConflicts = useMemo(() => {
+    if (!importParsed) return [];
+    return importParsed.conflicts.filter(c => {
+      const choice = importChoices[c.rowNumber];
+      return choice === undefined || (choice === "times" && !c.timesSession);
+    });
+  }, [importParsed, importChoices]);
+
+  // Choices reference row numbers under one mapping; a mapping change
+  // invalidates them, so they reset rather than silently applying to
+  // different columns.
+  useEffect(() => {
+    setImportChoices({});
+  }, [importMapping]);
+
   function confirmImport() {
     if (!importParsed) return;
-    let toImport = importParsed.sessions;
+    // Decided rows plus conflict rows resolved by the user's choice.
+    // A conflict row is never counted twice: exactly one candidate
+    // is imported, and confirm is disabled while any conflict is
+    // unresolved (see the preview panel).
+    const resolved = importParsed.conflicts.flatMap(c => {
+      const choice = importChoices[c.rowNumber];
+      if (choice === "hours") return [c.hoursSession];
+      if (choice === "times" && c.timesSession) return [c.timesSession];
+      return [];
+    });
+    let toImport = [...importParsed.sessions, ...resolved];
     if (importParsed.employees.length > 1) {
       if (!importEmployee) return;
-      toImport = importParsed.sessions.filter(s => !s.employee || s.employee === importEmployee);
+      toImport = toImport.filter(s => !s.employee || s.employee === importEmployee);
     }
     if (importMode === "replace") {
       setSessions(toImport.map(s => ({ ...s, id: newId(idCounter) })));
@@ -343,10 +467,11 @@ export default function TimeCardCalculatorClient() {
     setImportStep("idle");
     setImportRawRows([]);
     setImportEmployee("");
+    setImportChoices({});
     setStorageNotice(t("tc.importedNotice", {
       count: toImport.length,
       file: importFileName,
-      errors: importParsed.rows.filter(r => r.session === null).length,
+      errors: importParsed.rows.filter(r => r.session === null && !r.conflict).length,
     }));
   }
 
@@ -400,15 +525,17 @@ export default function TimeCardCalculatorClient() {
       {
         heading: tr("tc.reportSessions"),
         table: {
-          headers: [tr("tc.reportDate"), tr("tc.reportStart"), tr("tc.reportEnd"), tr("tc.reportNextDay"), tr("tc.reportBreakMin"), tr("tc.reportPaid")],
-          widths: [104, 80, 80, 80, 80, 80],
-          align: ["left", "left", "left", "left", "right", "right"] as ("left" | "right")[],
+          headers: [tr("tc.reportDate"), tr("tc.entryMode"), tr("tc.reportStart"), tr("tc.reportEnd"), tr("tc.reportNextDay"), tr("tc.reportBreakMin"), tr("tc.reportPaid")],
+          widths: [76, 76, 72, 72, 64, 64, 80],
+          align: ["left", "left", "left", "left", "left", "right", "right"] as ("left" | "right")[],
           rows: report.sessions.map(s => [
             fmtDate(s.date),
-            fmtClock(s.start),
-            fmtClock(s.end),
-            s.endsNextDay ? tr("tc.reportYes") : tr("tc.reportNo"),
-            String(s.breakMinutes),
+            s.mode === "hours" ? tr("tc.modeHours") : tr("tc.modeTimes"),
+            // Hours-only rows leave unavailable start/end/next-day/break blank.
+            s.mode === "hours" ? "" : fmtClock(s.start),
+            s.mode === "hours" ? "" : fmtClock(s.end),
+            s.mode === "hours" ? "" : s.endsNextDay ? tr("tc.reportYes") : tr("tc.reportNo"),
+            s.mode === "hours" ? "" : String(s.breakMinutes),
             formatDuration(s.paidMinutes),
           ]),
         },
@@ -553,6 +680,7 @@ export default function TimeCardCalculatorClient() {
     nextDay: t("tc.mapNextDay"),
     employee: t("tc.mapEmployee"),
     project: t("tc.mapProject"),
+    paidHours: t("tc.mapPaidHours"),
   };
 
   return (
@@ -676,7 +804,11 @@ export default function TimeCardCalculatorClient() {
           )}
           <div style={{ display: "grid", gap: 16 }}>
             {periodDates.map(date => {
-              const daySessions = sessions.filter(s => s.date === date).sort((a, b) => (parseTimeToMinutes(a.start) ?? 0) - (parseTimeToMinutes(b.start) ?? 0));
+              const daySessions = sessions.filter(s => s.date === date).sort((a, b) => {
+                const aKey = a.mode === "hours" ? Number.POSITIVE_INFINITY : (parseTimeToMinutes(a.start) ?? 0);
+                const bKey = b.mode === "hours" ? Number.POSITIVE_INFINITY : (parseTimeToMinutes(b.start) ?? 0);
+                return aKey - bKey;
+              });
               const dayTotal = result.days.find(d => d.date === date)?.paidMinutes ?? 0;
               const targets = copyTargets[date] ?? [];
               return (
@@ -687,35 +819,93 @@ export default function TimeCardCalculatorClient() {
                   </div>
                   {daySessions.length === 0 && <p style={{ color: "#64748B" }}>{t("tc.noSessionsDay")}</p>}
                   <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-                    {daySessions.map(s => (
+                    {daySessions.map(s => {
+                      const isHours = s.mode === "hours";
+                      const hoursMinutes = draftHoursMinutes(s);
+                      const hoursDisplay = s.paidHoursText ?? (s.paidMinutes !== undefined ? formatLocaleNumber(locale, s.paidMinutes / 60) : "");
+                      return (
                       <div key={s.id} style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "end", background: "#F8FAFC", padding: 12, borderRadius: 8 }}>
                         <div className="field">
-                          <label className="label-premium" htmlFor={`start-${s.id}`}>{t("tc.start")}</label>
-                          <input id={`start-${s.id}`} className="input-premium" type="time" value={s.start} onChange={e => updateSession(s.id, { start: e.target.value })} />
+                          <label className="label-premium" htmlFor={`mode-${s.id}`}>{t("tc.entryMode")}</label>
+                          <select id={`mode-${s.id}`} className="input-premium" value={isHours ? "hours" : "times"} onChange={e => requestModeSwitch(s, e.target.value as EntryMode)}>
+                            <option value="times">{t("tc.modeTimes")}</option>
+                            <option value="hours">{t("tc.modeHours")}</option>
+                          </select>
                         </div>
-                        <div className="field">
-                          <label className="label-premium" htmlFor={`end-${s.id}`}>{t("tc.end")}</label>
-                          <input id={`end-${s.id}`} className="input-premium" type="time" value={s.end} onChange={e => updateSession(s.id, { end: e.target.value })} />
-                        </div>
-                        <label style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44 }}>
-                          <input type="checkbox" checked={s.endsNextDay} onChange={e => updateSession(s.id, { endsNextDay: e.target.checked })} />
-                          {t("tc.endsNextDay")}
-                        </label>
-                        <div className="field">
-                          <label className="label-premium" htmlFor={`break-${s.id}`}>{t("tc.breakMinutes")}</label>
-                          <input id={`break-${s.id}`} className="input-premium" type="number" inputMode="numeric" min="0" step="1" value={s.breakMinutes} onChange={e => updateSession(s.id, { breakMinutes: e.target.value === "" ? 0 : Number(e.target.value) })} />
-                        </div>
-                        <span style={{ color: "#475569" }}>
-                          {hour12 && parseTimeToMinutes(s.start) !== null && parseTimeToMinutes(s.end) !== null
-                            ? `${formatTime(parseTimeToMinutes(s.start)!, true)} – ${formatTime(parseTimeToMinutes(s.end)!, true)}${s.endsNextDay ? " next day" : ""}`
-                            : ""}
-                        </span>
+                        {isHours ? (
+                          <>
+                            <div className="field">
+                              <label className="label-premium" htmlFor={`hours-${s.id}`}>{t("tc.paidHoursWorked")}</label>
+                              <input
+                                id={`hours-${s.id}`}
+                                className="input-premium"
+                                type="text"
+                                inputMode="decimal"
+                                dir="ltr"
+                                value={hoursDisplay}
+                                onChange={e => {
+                                  const text = e.target.value;
+                                  const parsed = parseLocalizedNumber(text, locale);
+                                  updateSession(s.id, { paidHoursText: text, paidMinutes: parsed === null ? undefined : decimalHoursToMinutes(parsed) });
+                                }}
+                                onBlur={e => {
+                                  const text = e.target.value;
+                                  if (text.trim() === "") {
+                                    updateSession(s.id, { paidHoursText: undefined, paidMinutes: undefined });
+                                    return;
+                                  }
+                                  const parsed = parseLocalizedNumber(text, locale);
+                                  // Valid text normalizes to canonical minutes; malformed
+                                  // text stays so the engine error can name it.
+                                  if (parsed !== null) updateSession(s.id, { paidHoursText: undefined, paidMinutes: decimalHoursToMinutes(parsed) });
+                                }}
+                              />
+                            </div>
+                            <span style={{ color: "#475569" }}>
+                              {hoursMinutes !== null && Number.isFinite(hoursMinutes) ? `= ${formatDuration(hoursMinutes)}` : ""}
+                            </span>
+                            <p style={{ color: "#64748B", fontSize: 13, margin: 0, flexBasis: "100%" }}>{t("tc.paidHoursHint")}</p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="field">
+                              <label className="label-premium" htmlFor={`start-${s.id}`}>{t("tc.start")}</label>
+                              <input id={`start-${s.id}`} className="input-premium" type="time" value={s.start} onChange={e => updateSession(s.id, { start: e.target.value })} />
+                            </div>
+                            <div className="field">
+                              <label className="label-premium" htmlFor={`end-${s.id}`}>{t("tc.end")}</label>
+                              <input id={`end-${s.id}`} className="input-premium" type="time" value={s.end} onChange={e => updateSession(s.id, { end: e.target.value })} />
+                            </div>
+                            <label style={{ display: "flex", gap: 8, alignItems: "center", minHeight: 44 }}>
+                              <input type="checkbox" checked={s.endsNextDay} onChange={e => updateSession(s.id, { endsNextDay: e.target.checked })} />
+                              {t("tc.endsNextDay")}
+                            </label>
+                            <div className="field">
+                              <label className="label-premium" htmlFor={`break-${s.id}`}>{t("tc.breakMinutes")}</label>
+                              <input id={`break-${s.id}`} className="input-premium" type="number" inputMode="numeric" min="0" step="1" value={s.breakMinutes} onChange={e => updateSession(s.id, { breakMinutes: e.target.value === "" ? 0 : Number(e.target.value) })} />
+                            </div>
+                            <span style={{ color: "#475569" }}>
+                              {hour12 && parseTimeToMinutes(s.start) !== null && parseTimeToMinutes(s.end) !== null
+                                ? `${formatTime(parseTimeToMinutes(s.start)!, true)} – ${formatTime(parseTimeToMinutes(s.end)!, true)}${s.endsNextDay ? " next day" : ""}`
+                                : ""}
+                            </span>
+                          </>
+                        )}
+                        {pendingSwitch?.id === s.id && (
+                          <div role="alert" style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", flexBasis: "100%", background: "#FFFBEB", border: "1px solid #FDE68A", padding: "8px 12px", borderRadius: 8 }}>
+                            <span>{t("tc.switchModeWarning")}</span>
+                            <button type="button" className="button-indigo" onClick={confirmModeSwitch}>{t("tc.switchDiscard")}</button>
+                            <button type="button" className="button-indigo-secondary" onClick={() => setPendingSwitch(null)}>{t("tc.switchKeep")}</button>
+                          </div>
+                        )}
                         <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>{t("tc.removeSession")}</button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                     <button type="button" className="button-indigo-secondary" onClick={() => addSession(date)}>{t("tc.addSession")}</button>
+                    <button type="button" className="button-indigo-secondary" onClick={() => addHoursEntry(date)}>{t("tc.addHoursEntry")}</button>
                     {daySessions.length > 0 && (
                       <span style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                         <span>{t("tc.copyTo")}</span>
@@ -742,9 +932,14 @@ export default function TimeCardCalculatorClient() {
               <strong>{t("tc.outsideTitle")}</strong>
               <p>{t("tc.outsideNote")}</p>
               <ul>
-                {outOfPeriodSessions.map(s => (
-                  <li key={s.id}>{s.date} {s.start}–{s.end} <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>{t("tc.remove")}</button></li>
-                ))}
+                {outOfPeriodSessions.map(s => {
+                  const hm = draftHoursMinutes(s);
+                  return (
+                    <li key={s.id}>
+                      {s.date} {s.mode === "hours" ? (hm !== null && Number.isFinite(hm) ? formatDuration(hm) : t("tc.modeHours")) : `${s.start}–${s.end}`} <button type="button" className="button-indigo-secondary" onClick={() => setSessions(prev => prev.filter(x => x.id !== s.id))}>{t("tc.remove")}</button>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
@@ -829,7 +1024,7 @@ export default function TimeCardCalculatorClient() {
                     </select>
                   </div>
                 ))}
-                {(["break", "nextDay", "employee", "project"] as const).map(field => (
+                {(["break", "nextDay", "paidHours", "employee", "project"] as const).map(field => (
                   <div className="field" key={field}>
                     <label className="label-premium" htmlFor={`map-${field}`}>{mapFieldLabel[field]}</label>
                     <select id={`map-${field}`} className="input-premium" value={importMapping[field] ?? -1} onChange={e => setImportMapping(prev => ({ ...prev, [field]: Number(e.target.value) }))}>
@@ -847,13 +1042,14 @@ export default function TimeCardCalculatorClient() {
                   </select>
                 </div>
               </div>
-              <button type="button" className="button-indigo" style={{ marginTop: 12 }} disabled={importMapping.date === undefined || importMapping.start === undefined || importMapping.end === undefined} onClick={() => setImportStep("preview")}>{t("tc.previewValidate")}</button>
+              <p style={{ color: "#475569" }}>{t("tc.mapModesNote")}</p>
+              <button type="button" className="button-indigo" style={{ marginTop: 12 }} disabled={importMapping.date === undefined || ((importMapping.start === undefined || importMapping.end === undefined) && importMapping.paidHours === undefined)} onClick={() => setImportStep("preview")}>{t("tc.previewValidate")}</button>
             </div>
           )}
           {importStep === "preview" && importParsed && (
             <div style={{ marginTop: 16 }}>
               <h3 style={{ fontSize: 16 }}>{t("tc.previewTitle")}</h3>
-              <p>{t("tc.previewValid", { count: importValidRows.length }, importValidRows.length)} {t("tc.previewErrors", { count: importParsed.rows.filter(r => r.session === null).length })}</p>
+              <p>{t("tc.previewValid", { count: importValidRows.length }, importValidRows.length)} {t("tc.previewErrors", { count: importParsed.rows.filter(r => r.session === null && !r.conflict).length })} {importParsed.conflicts.length > 0 && t("tc.previewConflicts", { count: importParsed.conflicts.length }, importParsed.conflicts.length)}</p>
               {importParsed.employees.length > 1 && (
                 <div className="field">
                   <label className="label-premium" htmlFor="import-employee">{t("tc.chooseEmployee")}</label>
@@ -865,14 +1061,15 @@ export default function TimeCardCalculatorClient() {
               )}
               <div style={{ overflowX: "auto", maxHeight: 320, overflowY: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
-                  <thead><tr><th style={{ textAlign: "start", padding: 8 }}>Row</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapDate")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapStart")}–{t("tc.mapEnd")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapBreak")}</th><th style={{ textAlign: "start", padding: 8 }}>Status</th></tr></thead>
+                  <thead><tr><th style={{ textAlign: "start", padding: 8 }}>Row</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapDate")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapStart")}–{t("tc.mapEnd")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapPaidHours")}</th><th style={{ textAlign: "start", padding: 8 }}>{t("tc.mapBreak")}</th><th style={{ textAlign: "start", padding: 8 }}>Status</th></tr></thead>
                   <tbody>
                     {importParsed.rows.slice(0, 100).map(r => (
                       <tr key={r.rowNumber}>
                         <td style={{ padding: 8 }}>{r.rowNumber}</td>
-                        <td style={{ padding: 8 }}>{r.session?.date ?? "—"}</td>
-                        <td style={{ padding: 8 }}>{r.session ? `${r.session.start}–${r.session.end}${r.session.endsNextDay ? " (next day)" : ""}` : "—"}</td>
-                        <td style={{ padding: 8 }}>{r.session?.breakMinutes ?? "—"}</td>
+                        <td style={{ padding: 8 }}>{r.session?.date ?? r.conflict?.date ?? "—"}</td>
+                        <td style={{ padding: 8 }}>{r.session ? (r.session.mode === "hours" ? t("tc.modeHours") : `${r.session.start}–${r.session.end}${r.session.endsNextDay ? " (next day)" : ""}`) : r.conflict?.timesSession ? `${r.conflict.timesSession.start}–${r.conflict.timesSession.end}${r.conflict.timesSession.endsNextDay ? " (next day)" : ""}` : "—"}</td>
+                        <td style={{ padding: 8 }}>{r.session?.mode === "hours" && r.session.paidMinutes !== undefined ? formatDecimalHours(r.session.paidMinutes) : r.conflict ? formatDecimalHours(r.conflict.hoursSession.paidMinutes ?? 0) : "—"}</td>
+                        <td style={{ padding: 8 }}>{r.session && r.session.mode !== "hours" ? r.session.breakMinutes : r.conflict?.timesSession ? r.conflict.timesSession.breakMinutes : "—"}</td>
                         <td style={{ padding: 8 }}>
                           {r.errors.length > 0
                             ? r.errors.map((m, i) => {
@@ -901,10 +1098,45 @@ export default function TimeCardCalculatorClient() {
                   </tbody>
                 </table>
               </div>
+              {importParsed.conflicts.length > 0 && (
+                <div style={{ marginTop: 16, background: "#FFFBEB", border: "1px solid #FDE68A", padding: 12, borderRadius: 8 }}>
+                  <h4 style={{ fontSize: 15, margin: "0 0 4px" }}>{t("tc.importConflictTitle")}</h4>
+                  <p style={{ margin: "0 0 12px", color: "#475569" }}>{t("tc.importConflictNote")}</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    <button type="button" className="button-indigo-secondary" onClick={() => setImportChoices(prev => { const next = { ...prev }; importParsed.conflicts.forEach(c => { next[c.rowNumber] = "hours"; }); return next; })}>{t("tc.importApplyAllHours")}</button>
+                    <button type="button" className="button-indigo-secondary" onClick={() => setImportChoices(prev => { const next = { ...prev }; importParsed.conflicts.forEach(c => { if (c.timesSession) next[c.rowNumber] = "times"; }); return next; })}>{t("tc.importApplyAllTimes")}</button>
+                  </div>
+                  <div style={{ display: "grid", gap: 12 }}>
+                    {importParsed.conflicts.map(c => (
+                      <div key={c.rowNumber} style={{ background: "#FFFFFF", border: "1px solid #FDE68A", padding: 12, borderRadius: 8 }}>
+                        <strong>Row {c.rowNumber} — {c.date}</strong>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginTop: 8 }}>
+                          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <input type="radio" name={`conflict-${c.rowNumber}`} checked={importChoices[c.rowNumber] === "hours"} onChange={() => setImportChoices(prev => ({ ...prev, [c.rowNumber]: "hours" }))} />
+                            {t("tc.importUseHours")} ({formatDecimalHours(c.hoursSession.paidMinutes ?? 0)} h)
+                          </label>
+                          <label style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                            <input type="radio" name={`conflict-${c.rowNumber}`} disabled={!c.timesSession} checked={importChoices[c.rowNumber] === "times"} onChange={() => setImportChoices(prev => ({ ...prev, [c.rowNumber]: "times" }))} />
+                            {t("tc.importUseTimes")} ({c.timesSession ? `${c.timesSession.start}–${c.timesSession.end}${c.timesSession.endsNextDay ? " (next day)" : ""}, ${c.timesSession.breakMinutes} min break` : "—"})
+                          </label>
+                        </div>
+                        {!c.timesSession && c.timesErrors.length > 0 && (
+                          <p style={{ color: "#B91C1C", margin: "8px 0 0" }}>
+                            {c.timesErrors.map((m, i) => {
+                              const code = c.timesErrorCodes[i];
+                              return code ? t(`tc.err.${code}`, { date: c.date, value: "" }) : m;
+                            }).join("; ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 12, alignItems: "center" }}>
                 <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "append"} onChange={() => setImportMode("append")} /> {t("tc.append")}</label>
                 <label style={{ display: "flex", gap: 8, alignItems: "center" }}><input type="radio" name="import-mode" checked={importMode === "replace"} onChange={() => setImportMode("replace")} /> {t("tc.replace")}</label>
-                <button type="button" className="button-indigo" disabled={importValidRows.length === 0 || (importParsed.employees.length > 1 && !importEmployee)} onClick={confirmImport}>{t("tc.confirmImport")}</button>
+                <button type="button" className="button-indigo" disabled={(importValidRows.length + (importParsed.conflicts.length - importUnresolvedConflicts.length)) === 0 || importUnresolvedConflicts.length > 0 || (importParsed.employees.length > 1 && !importEmployee)} onClick={confirmImport}>{t("tc.confirmImport")}</button>
                 <button type="button" className="button-indigo-secondary" onClick={() => setImportStep("map")}>{t("tc.backToMapping")}</button>
               </div>
               <p style={{ color: "#475569" }}>{t("tc.outsideImportNote")}</p>
@@ -991,6 +1223,7 @@ export default function TimeCardCalculatorClient() {
             <li><strong>{t("tc.howFormula")}</strong></li>
             <li>{t("tc.howDecimal")}</li>
             <li>{t("tc.howBreaks")}</li>
+            <li>{t("tc.howHoursOnly")}</li>
             <li>{t("tc.howOvernight")}</li>
             <li>{t("tc.howBreakAllocation")}</li>
             <li>{t("tc.howWeekly")}</li>

@@ -536,3 +536,16 @@ Hypotheses must not be presented as proven advantages."
   branch push, it is reported in the delivery message, not here.)
 - No recommendations in this file are owner-approved implementation
   decisions. The recommended next feature awaits William's approval.
+
+## Implemented since the audit (2026-11-02): direct-hours entry mode
+
+The Time Card Calculator gained a "Hours only" entry mode (direct
+paid-hours entry alongside start/end times, with import conflict
+resolution). This is recorded here as workflow convenience, NOT as a
+moat claim: entering hours without times is a standard convenience
+that competitors can copy, it adds no saved data, distribution, or
+switching cost, and it does not change either cluster's WEAK verdict.
+It is a small step toward the ranked work-pattern-templates idea
+(weekly entry becomes faster) but is not that feature, and no
+retention effect is claimed until the validation experiments in §7
+are run.

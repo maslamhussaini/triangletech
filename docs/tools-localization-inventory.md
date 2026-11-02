@@ -246,3 +246,33 @@ modules, and re-run the coverage test so a missing key fails loudly.
   NOT TESTED — this Chromium build's viewer loads its UI but never
   paints pages (verified visually headless and under Xvfb), so no
   click coordinate exists; the annotation itself is verified exactly.
+
+## Phase 3 — direct-hours entry mode for Time Card (2026-11-02)
+
+- Dictionary: 437 merged keys, 0 missing in all 10 locales (coverage test
+  enforces this). New in this delivery: 19 main keys + 11 error/warning
+  keys, translated in all 10 locales (in-session authored, NOT
+  native-reviewed, same caveat as all other keys). Main keys:
+  `tc.entryMode`, `tc.modeTimes`, `tc.modeHours`, `tc.paidHoursWorked`,
+  `tc.paidHoursHint` (decimals are fractions of an hour: 7.30 = 7h 18m),
+  `tc.addHoursEntry`, `tc.switchModeWarning`, `tc.switchDiscard`,
+  `tc.switchKeep`, `tc.mapPaidHours`, `tc.mapModesNote`,
+  `tc.importConflictTitle`, `tc.importConflictNote`, `tc.importUseHours`,
+  `tc.importUseTimes`, `tc.importApplyAllHours`, `tc.importApplyAllTimes`,
+  `tc.previewConflicts`, `tc.howHoursOnly`. Error/warning keys:
+  `tc.err.hours-incomplete`, `tc.err.hours-malformed`,
+  `tc.err.hours-non-positive`, `tc.err.hours-over-24h`,
+  `tc.err.day-over-24h`, `tc.err.mixed-mode-day`,
+  `tc.err.import-paid-hours-malformed`,
+  `tc.err.import-paid-hours-out-of-range`, `tc.err.import-no-entry`,
+  `tc.warn.import-conflict`, `tc.warn.import-mixed-mode-day`.
+- Non-Latin PDF limitation RETAINED (unchanged): ar/ur/hi/zh/ja PDF
+  reports render in English via the existing fallback, including the
+  new "Hours only" / "Start / End times" mode labels; browser Print
+  renders the fully translated page. CSV headers stay English (as
+  before) so files stay importable under the header synonyms; the
+  mode value "Hours only" in CSV matches that convention.
+- Saved-data rule: only canonical integer paidMinutes is persisted
+  for hours-only rows (transient edit text is never saved), so a
+  locale switch can never reinterpret saved hours. Older saves
+  without `mode`/`paidMinutes` still load as start/end rows.

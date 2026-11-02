@@ -1,16 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSampleCsv,
   buildTimesheetCsv,
   calculateTimesheet,
   decimalHours,
+  decimalHoursToMinutes,
+  directHoursToMinutes,
   escapeCsvCell,
   formatDuration,
   parseCsvText,
   parseDateCell,
   parseImportedRows,
+  parsePaidHoursCell,
   guessColumnMapping,
+  validateSavedTimesheet,
   type SessionInput,
 } from "./time-card";
+import { parseLocalizedNumber } from "../i18n/locales";
+import { buildTimesheetReport } from "./timesheet-report";
 
 function session(partial: Partial<SessionInput> & { date: string }): SessionInput {
   return { id: `s-${partial.date}-${partial.start ?? "x"}`, start: "09:00", end: "17:30", endsNextDay: false, breakMinutes: 30, ...partial };
@@ -173,5 +180,244 @@ describe("break allocation across a workweek boundary", () => {
       sessions: [{ id: "s1", date: "2026-10-27", start: "22:00", end: "06:00", endsNextDay: true, breakMinutes: 60 }],
     });
     expect(r.warnings.map(w => w.code)).not.toContain("break-allocation-overtime");
+  });
+});
+
+describe("direct hours conversion", () => {
+  it("maps whole and fractional hours to integer minutes with nearest-minute rounding", () => {
+    expect(directHoursToMinutes(3)).toBe(180);
+    expect(directHoursToMinutes(4)).toBe(240);
+    expect(directHoursToMinutes(5)).toBe(300);
+    expect(directHoursToMinutes(7.5)).toBe(450);
+    expect(directHoursToMinutes(7.25)).toBe(435);
+    // Decimals are fractions of an hour: 7.30 = 7.3h = 7h 18m, never 7h 30m.
+    expect(directHoursToMinutes(7.3)).toBe(438);
+    expect(decimalHoursToMinutes(7.3)).toBe(438);
+    expect(decimalHoursToMinutes(0.01)).toBe(1);
+    expect(directHoursToMinutes(24)).toBe(1440);
+  });
+  it("rejects negative, zero, non-finite, and over-24-hour values", () => {
+    expect(directHoursToMinutes(-1)).toBeNull();
+    expect(directHoursToMinutes(0)).toBeNull();
+    expect(directHoursToMinutes(24.01)).toBeNull();
+    expect(directHoursToMinutes(NaN)).toBeNull();
+    expect(directHoursToMinutes(Infinity)).toBeNull();
+  });
+  it("parses localized decimals through the shared parser", () => {
+    expect(parseLocalizedNumber("7,5", "de")).toBe(7.5);
+    expect(decimalHoursToMinutes(parseLocalizedNumber("7,5", "de")!)).toBe(450);
+    expect(parseLocalizedNumber("7.25", "en")).toBe(7.25);
+    expect(decimalHoursToMinutes(parseLocalizedNumber("٧٫٥", "ar")!)).toBe(450);
+  });
+  it("parses paid-hours import cells (numbers, dot/comma decimals, h suffix)", () => {
+    expect(parsePaidHoursCell(7.5)).toEqual({ kind: "ok", hours: 7.5, minutes: 450 });
+    expect(parsePaidHoursCell("7,5")).toEqual({ kind: "ok", hours: 7.5, minutes: 450 });
+    expect(parsePaidHoursCell("7.5h")).toEqual({ kind: "ok", hours: 7.5, minutes: 450 });
+    expect(parsePaidHoursCell("")).toEqual({ kind: "empty" });
+    expect(parsePaidHoursCell("abc")).toEqual({ kind: "malformed" });
+    expect(parsePaidHoursCell("25")).toEqual({ kind: "out-of-range" });
+    expect(parsePaidHoursCell("-3")).toEqual({ kind: "out-of-range" });
+  });
+});
+
+function hoursSession(date: string, paidMinutes: number, extra: Partial<SessionInput> = {}): SessionInput {
+  return { id: `h-${date}-${paidMinutes}`, date, mode: "hours", start: "", end: "", endsNextDay: false, breakMinutes: 0, paidMinutes, ...extra };
+}
+
+describe("hours-only entries in the engine", () => {
+  it("accepts 3, 4, and 5 hours without start/end times", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [hoursSession("2026-11-02", 180), hoursSession("2026-11-03", 240), hoursSession("2026-11-04", 300)],
+    });
+    expect(r.errors).toEqual([]);
+    expect(r.totalMinutes).toBe(720);
+    expect(r.days.find(d => d.date === "2026-11-02")!.paidMinutes).toBe(180);
+  });
+  it("counts direct hours exactly, with no break deduction and no midnight split", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [hoursSession("2026-11-02", 450, { breakMinutes: 30 })],
+    });
+    expect(r.errors).toEqual([]);
+    expect(r.totalMinutes).toBe(450);
+    expect(r.sessions[0].segments).toHaveLength(1);
+    expect(r.sessions[0].segments[0]).toEqual({ date: "2026-11-02", grossMinutes: 450, breakMinutes: 0, paidMinutes: 450, inPeriod: true });
+  });
+  it("mixes modes across days and feeds the same overtime engine", () => {
+    const r = calculateTimesheet({
+      ...base,
+      hourlyRate: 20,
+      sessions: [
+        hoursSession("2026-11-02", 450),
+        session({ date: "2026-11-03", start: "09:00", end: "17:30", breakMinutes: 30 }),
+      ],
+    });
+    expect(r.errors).toEqual([]);
+    expect(r.totalMinutes).toBe(930);
+    expect(r.days.find(d => d.date === "2026-11-02")!.paidMinutes).toBe(450);
+    expect(r.days.find(d => d.date === "2026-11-03")!.paidMinutes).toBe(480);
+  });
+  it("applies weekly overtime to hours-only weeks", () => {
+    const days = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07"];
+    const r = calculateTimesheet({ ...base, hourlyRate: 20, sessions: days.map(d => hoursSession(d, 480)) });
+    expect(r.errors).toEqual([]);
+    expect(r.totalMinutes).toBe(48 * 60);
+    expect(r.regularMinutes).toBe(40 * 60);
+    expect(r.overtimeMinutes).toBe(8 * 60);
+    expect(r.payCents).toBe(104000);
+  });
+  it("keeps biweekly overtime independent per week for hours-only entries", () => {
+    const week1 = ["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"].map(d => hoursSession(d, 540));
+    week1.push(hoursSession("2026-11-06", 540));
+    const week2 = ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"].map(d => hoursSession(d, 420));
+    const r = calculateTimesheet({ ...base, period: "biweekly", sessions: [...week1, ...week2] });
+    expect(r.errors).toEqual([]);
+    expect(r.weeks[0].overtimeMinutes).toBe(5 * 60);
+    expect(r.weeks[1].overtimeMinutes).toBe(0);
+    expect(r.overtimeMinutes).toBe(5 * 60);
+  });
+  it("excludes hours-only entries on a mixed-mode day instead of double-counting", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [
+        session({ date: "2026-11-02", start: "09:00", end: "17:00", breakMinutes: 0 }),
+        hoursSession("2026-11-02", 480),
+      ],
+    });
+    expect(r.errors.map(e => e.code)).toContain("mixed-mode-day");
+    expect(r.totalMinutes).toBe(480);
+  });
+  it("excludes hours-only entries when an overnight segment lands on the same day", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [
+        session({ date: "2026-11-02", start: "22:00", end: "06:00", endsNextDay: true, breakMinutes: 0 }),
+        hoursSession("2026-11-03", 480),
+      ],
+    });
+    expect(r.errors.map(e => e.code)).toContain("mixed-mode-day");
+    expect(r.totalMinutes).toBe(480);
+  });
+  it("rejects a day whose hours-only entries total more than 24 hours", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [hoursSession("2026-11-02", 900), hoursSession("2026-11-02", 600)],
+    });
+    expect(r.errors.map(e => e.code)).toContain("day-over-24h");
+    expect(r.totalMinutes).toBe(900);
+  });
+  it("rejects invalid hours values with distinct codes", () => {
+    const over = calculateTimesheet({ ...base, sessions: [hoursSession("2026-11-02", 1500)] });
+    expect(over.errors.map(e => e.code)).toContain("hours-over-24h");
+    const neg = calculateTimesheet({ ...base, sessions: [hoursSession("2026-11-02", -60)] });
+    expect(neg.errors.map(e => e.code)).toContain("hours-non-positive");
+    const zero = calculateTimesheet({ ...base, sessions: [hoursSession("2026-11-02", 0)] });
+    expect(zero.errors.map(e => e.code)).toContain("hours-non-positive");
+    const nan = calculateTimesheet({ ...base, sessions: [hoursSession("2026-11-02", NaN)] });
+    expect(nan.errors.map(e => e.code)).toContain("hours-malformed");
+    const missing = calculateTimesheet({ ...base, sessions: [{ id: "h-x", date: "2026-11-02", mode: "hours", start: "", end: "", endsNextDay: false, breakMinutes: 0 }] });
+    expect(missing.errors.map(e => e.code)).toContain("hours-incomplete");
+  });
+  it("excludes out-of-period hours-only entries and explains them", () => {
+    const r = calculateTimesheet({ ...base, sessions: [hoursSession("2026-11-09", 480)] });
+    expect(r.errors).toEqual([]);
+    expect(r.outOfPeriodPaidMinutes).toBe(480);
+    expect(r.totalMinutes).toBe(0);
+  });
+});
+
+describe("hours-only import", () => {
+  it("maps a paid-hours column and imports hours-only rows", () => {
+    const rows = parseCsvText("Date,Paid hours,Employee\n2026-11-02,7.5,Ana\n2026-11-03,7.25,Ana\n");
+    const mapping = guessColumnMapping(rows[0]);
+    expect(mapping.paidHours).toBe(1);
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping, hasHeader: true });
+    expect(result.errors).toEqual([]);
+    expect(result.conflicts).toEqual([]);
+    expect(result.sessions.map(s => [s.date, s.mode, s.paidMinutes])).toEqual([
+      ["2026-11-02", "hours", 450],
+      ["2026-11-03", "hours", 435],
+    ]);
+  });
+  it("holds a both-sides row as a conflict and imports neither side automatically", () => {
+    const rows = parseCsvText("Date,Start,End,Paid hours\n2026-11-02,09:00,17:00,7.5\n");
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(rows[0]), hasHeader: true });
+    expect(result.sessions).toEqual([]);
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.conflicts[0].timesSession!.start).toBe("09:00");
+    expect(result.conflicts[0].hoursSession.paidMinutes).toBe(450);
+    expect(result.rows[0].warnings).toContain("This row contains both paid hours and start/end times. Choose one interpretation; the row is never counted twice.");
+  });
+  it("still offers the hours choice when the times candidate itself is invalid", () => {
+    const rows = parseCsvText("Date,Start,End,Paid hours\n2026-11-02,17:00,09:00,7.5\n");
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(rows[0]), hasHeader: true });
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.conflicts[0].timesSession).toBeNull();
+    expect(result.conflicts[0].timesErrors.length).toBeGreaterThan(0);
+    expect(result.conflicts[0].hoursSession.paidMinutes).toBe(450);
+  });
+  it("errors malformed or out-of-range paid hours instead of ignoring them", () => {
+    const bad = parseCsvText("Date,Start,End,Paid hours\n2026-11-02,09:00,17:00,abc\n");
+    const badResult = parseImportedRows(bad, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(bad[0]), hasHeader: true });
+    expect(badResult.rows[0].errorCodes).toContain("import-paid-hours-malformed");
+    const over = parseCsvText("Date,Paid hours\n2026-11-02,25\n");
+    const overResult = parseImportedRows(over, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(over[0]), hasHeader: true });
+    expect(overResult.rows[0].errorCodes).toContain("import-paid-hours-out-of-range");
+  });
+  it("errors rows with neither times nor paid hours", () => {
+    const rows = parseCsvText("Date,Start,End,Paid hours\n2026-11-02,,,,\n");
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(rows[0]), hasHeader: true });
+    expect(result.rows[0].errorCodes).toContain("import-no-entry");
+  });
+  it("warns when decided rows mix modes on one date", () => {
+    const rows = parseCsvText("Date,Start,End,Paid hours\n2026-11-02,09:00,17:00,\n2026-11-02,,,7.5\n");
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(rows[0]), hasHeader: true });
+    expect(result.rows[1].warningCodes).toContain("import-mixed-mode-day");
+  });
+  it("parses the shipped sample CSV, including its hours-only row", () => {
+    const rows = parseCsvText(buildSampleCsv());
+    const result = parseImportedRows(rows, { dateFormat: "YYYY-MM-DD", mapping: guessColumnMapping(rows[0]), hasHeader: true });
+    expect(result.errors).toEqual([]);
+    expect(result.conflicts).toEqual([]);
+    const hoursRow = result.sessions.find(s => s.date === "2026-11-06");
+    expect(hoursRow?.mode).toBe("hours");
+    expect(hoursRow?.paidMinutes).toBe(450);
+  });
+});
+
+describe("hours-only reports and saved data", () => {
+  it("marks hours rows as Hours only with blank start/end in CSV", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [hoursSession("2026-11-02", 450), session({ date: "2026-11-03", start: "09:00", end: "17:00", breakMinutes: 0 })],
+    });
+    const parsed = parseCsvText(buildTimesheetCsv(r, {}));
+    expect(parsed[0]).toEqual(["Date", "Entry mode", "Start", "End", "Ends next day", "Unpaid break (minutes)", "Paid hours", "Paid minutes", "Paid time", "Paid decimal hours"]);
+    // CSV keeps result order (times rows first, hours rows appended);
+    // the PDF report is the chronologically sorted view.
+    const hoursRow = parsed.find(row => row[0] === "2026-11-02")!;
+    const timesRow = parsed.find(row => row[0] === "2026-11-03")!;
+    expect(hoursRow).toEqual(["2026-11-02", "Hours only", "", "", "", "", "7.50", "450", "7h 30m", "7.50"]);
+    expect(timesRow[1]).toBe("Start / End");
+  });
+  it("marks hours rows in the PDF report with blank start/end and sorts by date", () => {
+    const r = calculateTimesheet({
+      ...base,
+      sessions: [session({ date: "2026-11-03", start: "09:00", end: "17:00", breakMinutes: 0 }), hoursSession("2026-11-02", 450)],
+    });
+    const report = buildTimesheetReport(r, { hourlyRate: null });
+    expect(report.sessions[0]).toMatchObject({ date: "2026-11-02", mode: "hours", start: "", end: "", paidMinutes: 450 });
+    expect(report.sessions[1]).toMatchObject({ date: "2026-11-03", mode: "times", start: "09:00" });
+  });
+  it("keeps older saved timesheets compatible and validates new hours rows", () => {
+    const old = { version: 1, weekStart: "2026-11-02", period: "weekly", sessions: [{ id: "s1", date: "2026-11-02", start: "09:00", end: "17:00", endsNextDay: false, breakMinutes: 30 }], overtimeThresholdHours: 40, overtimeMultiplier: 1.5 };
+    expect(validateSavedTimesheet(old)).not.toBeNull();
+    const hours = { ...old, sessions: [hoursSession("2026-11-02", 450)] };
+    expect(validateSavedTimesheet(hours)).not.toBeNull();
+    const bad = { ...old, sessions: [hoursSession("2026-11-02", 1500)] };
+    expect(validateSavedTimesheet(bad)).toBeNull();
+    const badMode = { ...old, sessions: [{ id: "s1", date: "2026-11-02", mode: "other", start: "", end: "", endsNextDay: false, breakMinutes: 0 }] };
+    expect(validateSavedTimesheet(badMode)).toBeNull();
   });
 });

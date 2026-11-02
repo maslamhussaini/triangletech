@@ -34,16 +34,43 @@
 export type PeriodKind = "weekly" | "biweekly";
 export type DateFormat = "YYYY-MM-DD" | "MM/DD/YYYY" | "DD/MM/YYYY";
 
+/** Entry mode for one session row. "times" is the original start/end
+ *  mode; "hours" is a direct paid-hours entry. Absent means "times"
+ *  (older saved timesheets predate the field). */
+export type EntryMode = "times" | "hours";
+
 export type SessionInput = {
   id: string;
-  date: string; // YYYY-MM-DD, the day the shift starts
-  start: string; // HH:MM or 12-hour text, e.g. "9:00 AM"
-  end: string;
-  endsNextDay: boolean;
-  breakMinutes: number;
+  date: string; // YYYY-MM-DD, the day the shift starts (hours mode: the day the hours count toward)
+  start: string; // HH:MM or 12-hour text, e.g. "9:00 AM" ("" when mode is "hours")
+  end: string; // "" when mode is "hours"
+  endsNextDay: boolean; // false when mode is "hours": no overnight split is invented
+  breakMinutes: number; // 0 when mode is "hours": hours are already net of unpaid breaks
+  /** Entry mode. Absent means "times" (older saved timesheets). */
+  mode?: EntryMode;
+  /** Direct paid hours, as integer minutes. Only meaningful when mode is "hours". */
+  paidMinutes?: number;
   employee?: string;
   project?: string;
 };
+
+/**
+ * Convert direct decimal hours to integer minutes with an explicit
+ * nearest-minute rule (half-up via Math.round). Returns null for
+ * negative, non-finite, zero, or over-24-hour values. Decimals are
+ * fractions of an hour: 7.30 means 7.3 hours = 7h 18m, never 7h 30m.
+ */
+/** Decimal hours -> integer minutes with the nearest-minute rule.
+ * No range check here: NaN and out-of-range values pass through so
+ * the caller's validation can report the exact problem. */
+export function decimalHoursToMinutes(hours: number): number {
+  return Math.round(hours * 60);
+}
+
+export function directHoursToMinutes(hours: number): number | null {
+  if (!Number.isFinite(hours) || hours <= 0 || hours > 24) return null;
+  return decimalHoursToMinutes(hours);
+}
 
 export type TimesheetError = { sessionId?: string; row?: number; message: string; code?: string };
 export type TimesheetWarning = { sessionId?: string; row?: number; message: string; code?: string };
@@ -255,6 +282,36 @@ function parseBreakCell(value: unknown): number | null {
   return Number(raw);
 }
 
+/**
+ * Parse a paid-hours cell for import. Numbers are decimal hours as-is.
+ * Strings accept a single dot or comma decimal separator and an
+ * optional trailing "h" (e.g. "7.5", "7,5", "7.5h"). Returns null for
+ * empty cells (absent column value) and "malformed" for non-empty
+ * cells that are not a number. The result is integer minutes via
+ * directHoursToMinutes, so over-24 and non-positive values are
+ * distinguished from malformed ones by the caller checking the
+ * returned kind.
+ */
+export function parsePaidHoursCell(value: unknown): { kind: "empty" } | { kind: "ok"; hours: number; minutes: number } | { kind: "malformed" } | { kind: "out-of-range" } {
+  if (value === "" || value === null || value === undefined) return { kind: "empty" };
+  if (typeof value === "number") {
+    const minutes = directHoursToMinutes(value);
+    if (minutes === null) return { kind: "out-of-range" };
+    return { kind: "ok", hours: value, minutes };
+  }
+  const raw = String(value).trim().replace(/\s*h$/i, "");
+  if (!raw) return { kind: "empty" };
+  // A readable but non-positive number is out of range, not malformed.
+  if (/^-\d/.test(raw)) return { kind: "out-of-range" };
+  // One comma as decimal separator when no dot is present ("7,5").
+  const normalized = raw.includes(".") ? raw : raw.replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return { kind: "malformed" };
+  const hours = Number(normalized);
+  const minutes = directHoursToMinutes(hours);
+  if (minutes === null) return { kind: "out-of-range" };
+  return { kind: "ok", hours, minutes };
+}
+
 function parseNextDayCell(value: unknown): boolean {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value === 1;
@@ -290,8 +347,39 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
 
   type Expanded = { session: SessionInput; startAbs: number; endAbs: number; gross: number };
   const expanded: Expanded[] = [];
+  /** Hours-mode rows validated so far, in input order (processed after times rows). */
+  const hoursCandidates: { session: SessionInput; paid: number }[] = [];
 
   for (const session of input.sessions) {
+    if (session.mode === "hours") {
+      // Direct paid-hours entry: no start/end times, no overnight
+      // split, no break deduction (hours are already net). Only the
+      // value itself is validated here; day-level guards (mixed mode,
+      // daily 24-hour cap) run after times rows are expanded.
+      if (!isValidDateString(session.date)) {
+        errors.push({ sessionId: session.id, code: "invalid-date", message: `Session on "${session.date}" has an invalid date.` });
+        continue;
+      }
+      const paid = session.paidMinutes;
+      if (paid === undefined) {
+        errors.push({ sessionId: session.id, code: "hours-incomplete", message: `Hours-only entry on ${session.date} has no hours value. Enter the paid hours worked.` });
+        continue;
+      }
+      if (!Number.isFinite(paid) || !Number.isInteger(paid)) {
+        errors.push({ sessionId: session.id, code: "hours-malformed", message: `Hours-only entry on ${session.date} could not be read as a whole number of minutes.` });
+        continue;
+      }
+      if (paid <= 0) {
+        errors.push({ sessionId: session.id, code: "hours-non-positive", message: `Hours-only entry on ${session.date} must be more than 0 hours.` });
+        continue;
+      }
+      if (paid > 1440) {
+        errors.push({ sessionId: session.id, code: "hours-over-24h", message: `Hours-only entry on ${session.date} exceeds 24 hours in a day.` });
+        continue;
+      }
+      hoursCandidates.push({ session, paid });
+      continue;
+    }
     if (!isValidDateString(session.date)) {
       errors.push({ sessionId: session.id, code: "invalid-date", message: `Session on "${session.date}" has an invalid date.` });
       continue;
@@ -419,6 +507,55 @@ export function calculateTimesheet(input: TimesheetInput): TimesheetResult {
     }
   }
 
+  // Hours-only entries, after times rows: one segment on the entry
+  // date, never split at midnight, never break-deducted. Day-level
+  // guards: a date must not mix entry modes, and hours-only entries
+  // on one date must not total more than 24 hours. Guarded rows are
+  // excluded and reported, never silently merged or double-counted.
+  const timesDates = new Set<string>();
+  for (const sr of sessionResults) {
+    for (const seg of sr.segments) if (seg.inPeriod) timesDates.add(seg.date);
+  }
+  const hoursDaySums = new Map<string, number>();
+  for (const { session, paid } of hoursCandidates) {
+    const ordinal = dateOrdinal(session.date);
+    const inPeriod = ordinal >= periodStartOrdinal && ordinal <= periodEndOrdinal;
+    if (inPeriod && timesDates.has(session.date)) {
+      errors.push({
+        sessionId: session.id,
+        code: "mixed-mode-day",
+        message: `Day ${session.date} mixes start/end sessions with hours-only entries. The hours-only entries on this day are not counted. Use one entry mode per day.`,
+      });
+      continue;
+    }
+    if (inPeriod) {
+      const sum = (hoursDaySums.get(session.date) ?? 0) + paid;
+      if (sum > 1440) {
+        errors.push({
+          sessionId: session.id,
+          code: "day-over-24h",
+          message: `Hours-only entries on ${session.date} add up to more than 24 hours. Reduce them so the day totals 24 hours or less.`,
+        });
+        continue;
+      }
+      hoursDaySums.set(session.date, sum);
+      dayTotals.set(session.date, (dayTotals.get(session.date) ?? 0) + paid);
+      dayCounts.set(session.date, (dayCounts.get(session.date) ?? 0) + 1);
+    } else {
+      outOfPeriodPaidMinutes += paid;
+      outOfPeriodSegments.push({ paidMinutes: paid, sessionDate: session.date, segmentDate: session.date });
+      outOfPeriodDetails.push(
+        `${formatDuration(paid)} of hours-only time entered for ${session.date} falls outside the ${input.period} period starting ${periodStart}, and is excluded from the totals.`
+      );
+    }
+    sessionResults.push({
+      session,
+      grossMinutes: paid,
+      paidMinutes: paid,
+      segments: [{ date: session.date, grossMinutes: paid, breakMinutes: 0, paidMinutes: paid, inPeriod }],
+    });
+  }
+
   const days: DayResult[] = [];
   for (let i = 0; i < periodDays; i++) {
     const date = addDays(periodStart, i);
@@ -507,7 +644,7 @@ function normalizeHeader(header: string): string {
   return header.trim().toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-export type ImportField = "date" | "start" | "end" | "break" | "nextDay" | "employee" | "project";
+export type ImportField = "date" | "start" | "end" | "break" | "nextDay" | "employee" | "project" | "paidHours";
 export type ColumnMapping = Partial<Record<ImportField, number>>;
 
 const HEADER_SYNONYMS: Record<ImportField, string[]> = {
@@ -518,6 +655,7 @@ const HEADER_SYNONYMS: Record<ImportField, string[]> = {
   nextDay: ["next day", "ends next day", "overnight", "nextday", "ends nextday"],
   employee: ["employee", "name", "employee name", "worker", "staff"],
   project: ["project", "job", "client", "task"],
+  paidHours: ["paid hours", "paid hours worked", "hours worked", "worked hours", "hours", "paid time", "decimal hours"],
 };
 
 export function guessColumnMapping(headers: string[]): ColumnMapping {
@@ -539,23 +677,54 @@ export type ImportedRow = {
   errorCodes: string[];
   warningCodes: string[];
   errorDetails: string[];
+  /** Set when the row contains both usable times and usable paid hours: the user must choose. */
+  conflict?: ImportConflict;
+};
+
+/**
+ * One row that contains both a usable start/end pair and a usable
+ * paid-hours value. Neither interpretation is applied automatically:
+ * the wizard must ask the user to choose, so a row is never counted
+ * twice. A candidate is null when that side itself is invalid; the
+ * user can only choose a valid candidate.
+ */
+export type ImportConflict = {
+  rowNumber: number;
+  date: string;
+  timesSession: SessionInput | null;
+  timesErrors: string[];
+  timesErrorCodes: string[];
+  hoursSession: SessionInput;
 };
 
 export function parseImportedRows(
   rows: unknown[][],
   opts: { dateFormat: DateFormat; mapping: ColumnMapping; hasHeader: boolean }
-): { sessions: SessionInput[]; rows: ImportedRow[]; employees: string[]; errors: TimesheetError[]; warnings: TimesheetWarning[] } {
+): { sessions: SessionInput[]; rows: ImportedRow[]; conflicts: ImportConflict[]; employees: string[]; errors: TimesheetError[]; warnings: TimesheetWarning[] } {
   const errors: TimesheetError[] = [];
   const warnings: TimesheetWarning[] = [];
   const imported: ImportedRow[] = [];
+  const conflicts: ImportConflict[] = [];
   const employeeSet = new Set<string>();
   const dataRows = opts.hasHeader ? rows.slice(1) : rows;
   if (dataRows.length > 2000) {
     errors.push({ code: "import-row-limit", message: "Import is limited to 2,000 rows. Split the file and try again." });
-    return { sessions: [], rows: imported, employees: [], errors, warnings };
+    return { sessions: [], rows: imported, conflicts, employees: [], errors, warnings };
   }
   const seen = new Set<string>();
   const parsedSessions: { session: SessionInput; rowNumber: number }[] = [];
+  /** Decided modes per date, for mixed-mode warnings (conflict rows are undecided and skipped). */
+  const decidedModes = new Map<string, Set<EntryMode>>();
+
+  const noteMixedMode = (date: string, mode: EntryMode, rowWarnings: string[], rowWarningCodes: string[]) => {
+    const modes = decidedModes.get(date) ?? new Set<EntryMode>();
+    if (modes.size > 0 && !modes.has(mode)) {
+      rowWarnings.push(`Date ${date} already has ${mode === "hours" ? "start/end" : "hours-only"} entries in this import. Mixed entry modes on one day are not counted together.`);
+      rowWarningCodes.push("import-mixed-mode-day");
+    }
+    modes.add(mode);
+    decidedModes.set(date, modes);
+  };
 
   dataRows.forEach((row, idx) => {
     const rowNumber = (opts.hasHeader ? 2 : 1) + idx;
@@ -564,6 +733,7 @@ export function parseImportedRows(
       if (col === undefined || col < 0 || col >= row.length) return "";
       return row[col] ?? "";
     };
+    const isCellEmpty = (v: unknown) => v === "" || v === null || v === undefined || (typeof v === "string" && v.trim() === "");
     const rowErrors: string[] = [];
     const rowWarnings: string[] = [];
     const rowErrorCodes: string[] = [];
@@ -571,45 +741,145 @@ export function parseImportedRows(
     const rowErrorDetails: string[] = [];
     const date = parseDateCell(get("date"), opts.dateFormat);
     if (!date) { rowErrors.push(`Date "${String(get("date"))}" could not be read in ${opts.dateFormat} format.`); rowErrorCodes.push("import-date-unreadable"); rowErrorDetails.push(String(get("date"))); }
-    const startParsed = parseTimeCell(get("start"));
-    if (!startParsed) { rowErrors.push(`Start time "${String(get("start"))}" could not be read.`); rowErrorCodes.push("import-start-unreadable"); rowErrorDetails.push(String(get("start"))); }
-    const endParsed = parseTimeCell(get("end"));
-    if (!endParsed) { rowErrors.push(`End time "${String(get("end"))}" could not be read.`); rowErrorCodes.push("import-end-unreadable"); rowErrorDetails.push(String(get("end"))); }
+    // Times side: present when either time cell is non-empty. Absent
+    // cells are fine for a pure hours-only row; a half-present side
+    // is an error, never a guess.
+    const startCell = get("start");
+    const endCell = get("end");
+    const timesPresent = !isCellEmpty(startCell) || !isCellEmpty(endCell);
+    const startParsed = timesPresent ? parseTimeCell(startCell) : null;
+    const endParsed = timesPresent ? parseTimeCell(endCell) : null;
+    if (timesPresent && !startParsed) { rowErrors.push(`Start time "${String(startCell)}" could not be read.`); rowErrorCodes.push("import-start-unreadable"); rowErrorDetails.push(String(startCell)); }
+    if (timesPresent && !endParsed) { rowErrors.push(`End time "${String(endCell)}" could not be read.`); rowErrorCodes.push("import-end-unreadable"); rowErrorDetails.push(String(endCell)); }
     const breakMinutes = parseBreakCell(get("break"));
     if (breakMinutes === null) { rowErrors.push(`Unpaid break "${String(get("break"))}" must be a whole number of minutes.`); rowErrorCodes.push("import-break-not-integer"); rowErrorDetails.push(String(get("break"))); }
+    // Hours side: a malformed or out-of-range value is always an
+    // error, even when a valid times side exists — silently ignoring
+    // entered data would hide a file problem.
+    const paidParsed = parsePaidHoursCell(get("paidHours"));
+    if (paidParsed.kind === "malformed") { rowErrors.push(`Paid hours "${String(get("paidHours"))}" could not be read as a number of hours.`); rowErrorCodes.push("import-paid-hours-malformed"); rowErrorDetails.push(String(get("paidHours"))); }
+    if (paidParsed.kind === "out-of-range") { rowErrors.push(`Paid hours "${String(get("paidHours"))}" must be more than 0 and no more than 24.`); rowErrorCodes.push("import-paid-hours-out-of-range"); rowErrorDetails.push(String(get("paidHours"))); }
+    const hoursPresent = paidParsed.kind === "ok";
     const employee = String(get("employee")).trim();
     const project = String(get("project")).trim();
     if (employee) employeeSet.add(employee);
+
     let session: SessionInput | null = null;
-    if (date && startParsed && endParsed && breakMinutes !== null) {
-      const startStr = minutesToHHMM(startParsed.minutes);
-      const endStr = minutesToHHMM(endParsed.minutes);
-      const sessionDate = startParsed.dateFromSerial ?? date;
-      session = {
-        id: `import-${rowNumber}`,
-        date: sessionDate,
-        start: startStr,
-        end: endStr,
-        endsNextDay: parseNextDayCell(get("nextDay")),
-        breakMinutes,
-        employee: employee || undefined,
-        project: project || undefined,
-      };
-      // Validate duration / break / overnight rules with the same rules as manual entry.
-      const check = calculateTimesheet({
-        weekStart: sessionDate,
-        period: "weekly",
-        sessions: [session],
-        overtimeThresholdHours: 40,
-        overtimeMultiplier: 1.5,
-      });
-      check.errors.forEach(e => { rowErrors.push(e.message); rowErrorCodes.push(e.code ?? ""); rowErrorDetails.push(""); });
-      const key = [session.date, session.start, session.end, session.breakMinutes].join("|");
-      if (seen.has(key)) { rowWarnings.push("This row duplicates an earlier imported row."); rowWarningCodes.push("duplicate-row"); }
-      seen.add(key);
+    let conflict: ImportConflict | undefined;
+    if (date && rowErrors.length === 0) {
+      if (timesPresent && hoursPresent && startParsed && endParsed && breakMinutes !== null && paidParsed.kind === "ok") {
+        // Both sides usable: offer the choice, apply neither yet.
+        const sessionDate = startParsed.dateFromSerial ?? date;
+        const timesCandidate: SessionInput = {
+          id: `import-${rowNumber}`,
+          date: sessionDate,
+          start: minutesToHHMM(startParsed.minutes),
+          end: minutesToHHMM(endParsed.minutes),
+          endsNextDay: parseNextDayCell(get("nextDay")),
+          breakMinutes,
+          employee: employee || undefined,
+          project: project || undefined,
+        };
+        const check = calculateTimesheet({
+          weekStart: sessionDate,
+          period: "weekly",
+          sessions: [timesCandidate],
+          overtimeThresholdHours: 40,
+          overtimeMultiplier: 1.5,
+        });
+        const hoursCandidate: SessionInput = {
+          id: `import-${rowNumber}`,
+          date,
+          mode: "hours",
+          start: "",
+          end: "",
+          endsNextDay: false,
+          breakMinutes: 0,
+          paidMinutes: paidParsed.minutes,
+          employee: employee || undefined,
+          project: project || undefined,
+        };
+        if (check.errors.length === 0) {
+          conflict = {
+            rowNumber,
+            date,
+            timesSession: timesCandidate,
+            timesErrors: [],
+            timesErrorCodes: [],
+            hoursSession: hoursCandidate,
+          };
+          rowWarnings.push("This row contains both paid hours and start/end times. Choose one interpretation; the row is never counted twice.");
+          rowWarningCodes.push("import-conflict");
+        } else {
+          // Times side is broken: the row cannot be imported as times.
+          // Hours side is usable, so still offer the choice, but only
+          // the hours candidate is choosable.
+          conflict = {
+            rowNumber,
+            date,
+            timesSession: null,
+            timesErrors: check.errors.map(e => e.message),
+            timesErrorCodes: check.errors.map(e => e.code ?? ""),
+            hoursSession: hoursCandidate,
+          };
+          rowWarnings.push("This row contains both paid hours and start/end times. Choose one interpretation; the row is never counted twice.");
+          rowWarningCodes.push("import-conflict");
+        }
+        conflicts.push(conflict);
+      } else if (timesPresent && startParsed && endParsed && breakMinutes !== null) {
+        const startStr = minutesToHHMM(startParsed.minutes);
+        const endStr = minutesToHHMM(endParsed.minutes);
+        const sessionDate = startParsed.dateFromSerial ?? date;
+        session = {
+          id: `import-${rowNumber}`,
+          date: sessionDate,
+          start: startStr,
+          end: endStr,
+          endsNextDay: parseNextDayCell(get("nextDay")),
+          breakMinutes,
+          employee: employee || undefined,
+          project: project || undefined,
+        };
+        // Validate duration / break / overnight rules with the same rules as manual entry.
+        const check = calculateTimesheet({
+          weekStart: sessionDate,
+          period: "weekly",
+          sessions: [session],
+          overtimeThresholdHours: 40,
+          overtimeMultiplier: 1.5,
+        });
+        check.errors.forEach(e => { rowErrors.push(e.message); rowErrorCodes.push(e.code ?? ""); rowErrorDetails.push(""); });
+        if (rowErrors.length === 0) {
+          const key = [session.date, session.start, session.end, session.breakMinutes].join("|");
+          if (seen.has(key)) { rowWarnings.push("This row duplicates an earlier imported row."); rowWarningCodes.push("duplicate-row"); }
+          seen.add(key);
+          noteMixedMode(session.date, "times", rowWarnings, rowWarningCodes);
+        }
+      } else if (hoursPresent && paidParsed.kind === "ok") {
+        session = {
+          id: `import-${rowNumber}`,
+          date,
+          mode: "hours",
+          start: "",
+          end: "",
+          endsNextDay: false,
+          breakMinutes: 0,
+          paidMinutes: paidParsed.minutes,
+          employee: employee || undefined,
+          project: project || undefined,
+        };
+        const key = [session.date, `hours:${paidParsed.minutes}`].join("|");
+        if (seen.has(key)) { rowWarnings.push("This row duplicates an earlier imported row."); rowWarningCodes.push("duplicate-row"); }
+        seen.add(key);
+        noteMixedMode(session.date, "hours", rowWarnings, rowWarningCodes);
+      } else if (!timesPresent && !hoursPresent) {
+        rowErrors.push("Row has neither start/end times nor paid hours. Enter one entry mode per row.");
+        rowErrorCodes.push("import-no-entry");
+        rowErrorDetails.push("");
+      }
     }
     if (session && rowErrors.length === 0) parsedSessions.push({ session, rowNumber });
-    imported.push({ rowNumber, session: rowErrors.length === 0 ? session : null, errors: rowErrors, warnings: rowWarnings, errorCodes: rowErrorCodes, warningCodes: rowWarningCodes, errorDetails: rowErrorDetails });
+    imported.push({ rowNumber, session: rowErrors.length === 0 && !conflict ? session : null, errors: rowErrors, warnings: rowWarnings, errorCodes: rowErrorCodes, warningCodes: rowWarningCodes, errorDetails: rowErrorDetails, conflict });
     rowErrors.forEach((m, i) => errors.push({ row: rowNumber, message: m, code: rowErrorCodes[i] || undefined }));
     rowWarnings.forEach((m, i) => warnings.push({ row: rowNumber, message: m, code: rowWarningCodes[i] || undefined }));
   });
@@ -626,7 +896,7 @@ export function parseImportedRows(
   // imported rows may span weeks; the main calculator re-validates on confirm.
   void overlapCheck;
 
-  return { sessions: parsedSessions.map(p => p.session), rows: imported, employees: [...employeeSet], errors, warnings };
+  return { sessions: parsedSessions.map(p => p.session), rows: imported, conflicts, employees: [...employeeSet], errors, warnings };
 }
 
 /** Neutralize spreadsheet formula injection: a leading = + - @ (or tab/CR) is quoted with a leading apostrophe. */
@@ -639,14 +909,22 @@ export function escapeCsvCell(value: string): string {
 
 export function buildTimesheetCsv(result: TimesheetResult, meta: { employee?: string; business?: string; project?: string; currency?: string }): string {
   const lines: string[][] = [];
-  lines.push(["Date", "Start", "End", "Ends next day", "Unpaid break (minutes)", "Paid minutes", "Paid time", "Paid decimal hours"]);
+  // CSV headers stay English (as before) so files stay importable
+  // under the header synonyms. Hours-only rows show "Hours only"
+  // with blank start/end/next-day/break cells and their decimal
+  // hours in "Paid hours", so a re-import reads them back as
+  // hours-only rows instead of conflicting with empty times.
+  lines.push(["Date", "Entry mode", "Start", "End", "Ends next day", "Unpaid break (minutes)", "Paid hours", "Paid minutes", "Paid time", "Paid decimal hours"]);
   result.sessions.forEach(s => {
+    const hoursMode = s.session.mode === "hours";
     lines.push([
       s.session.date,
-      s.session.start,
-      s.session.end,
-      s.session.endsNextDay ? "Yes" : "No",
-      String(s.session.breakMinutes),
+      hoursMode ? "Hours only" : "Start / End",
+      hoursMode ? "" : s.session.start,
+      hoursMode ? "" : s.session.end,
+      hoursMode ? "" : s.session.endsNextDay ? "Yes" : "No",
+      hoursMode ? "" : String(s.session.breakMinutes),
+      hoursMode ? formatDecimalHours(s.paidMinutes) : "",
       String(s.paidMinutes),
       formatDuration(s.paidMinutes),
       formatDecimalHours(s.paidMinutes),
@@ -670,10 +948,11 @@ export function buildTimesheetCsv(result: TimesheetResult, meta: { employee?: st
 
 export function buildSampleCsv(): string {
   return [
-    "Date,Start,End,Ends next day,Unpaid break (minutes),Employee,Project",
-    "2026-11-02,09:00,17:30,No,30,Alex Rivera,Website support",
-    "2026-11-02,18:00,20:00,No,0,Alex Rivera,Website support",
-    "2026-11-03,22:00,06:00,Yes,30,Alex Rivera,Night cover",
+    "Date,Start,End,Ends next day,Unpaid break (minutes),Paid hours,Employee,Project",
+    "2026-11-02,09:00,17:30,No,30,,Alex Rivera,Website support",
+    "2026-11-02,18:00,20:00,No,0,,Alex Rivera,Website support",
+    "2026-11-03,22:00,06:00,Yes,30,,Alex Rivera,Night cover",
+    "2026-11-06,,,,,7.5,Alex Rivera,Website support",
   ].join("\n") + "\n";
 }
 
@@ -706,6 +985,16 @@ export function validateSavedTimesheet(data: unknown): SavedTimesheet | null {
     if (typeof sess.date !== "string" || !isValidDateString(sess.date)) return null;
     if (typeof sess.start !== "string" || typeof sess.end !== "string") return null;
     if (typeof sess.breakMinutes !== "number" || sess.breakMinutes < 0) return null;
+    // Hours-mode fields are optional (older saves predate them and
+    // default to times mode), but when present they must be valid:
+    // a corrupt paid value rejects the save rather than inventing hours.
+    if (sess.mode !== undefined && sess.mode !== "times" && sess.mode !== "hours") return null;
+    if (sess.mode === "hours") {
+      if (sess.paidMinutes !== undefined) {
+        if (typeof sess.paidMinutes !== "number" || !Number.isInteger(sess.paidMinutes) || sess.paidMinutes <= 0 || sess.paidMinutes > 1440) return null;
+      }
+      if (sess.paidHoursText !== undefined && typeof sess.paidHoursText !== "string") return null;
+    }
   }
   return data as SavedTimesheet;
 }
