@@ -4,12 +4,11 @@ import { HeroVisual } from "@/components/hero-visual";
 import { ProductSelector, ProductShowcase } from "@/components/product-showcase";
 import { DevicePreview } from "@/components/device-frame";
 import { GuidedProductFinder } from "@/components/guided-finder";
-import { VideoCard, GuideCard } from "@/components/video-guide-cards";
 import { ServiceCard } from "@/components/service-card";
 import { PortfolioSection } from "@/components/portfolio-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { ContactCTA } from "@/components/page-parts";
-import { faqs, hero, howItWorks, products, services, stats, technologies, trustPoints, videos, guides, pageMetadata } from "@/lib/site";
+import { faqs, hero, howItWorks, products, services, stats, technologies, trustPoints, pageMetadata } from "@/lib/site";
 
 export const metadata = pageMetadata("Business Software and Digital Solutions", "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce. Explore our products and book a free demo.", "/");
 
@@ -100,9 +99,7 @@ export default function Home() {
     <PortfolioSection />
 
     <section className="section video-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">WALKTHROUGHS AND GUIDES</span><h2>Recorded demos, in production.</h2><p className="section-lead">We&apos;re recording a walkthrough and writing a user guide for each product. Until they&apos;re published, a live demo covers the same ground — and you can ask questions.</p></div></div>
-      <div className="video-grid">{videos.map(v => <VideoCard key={v.id} title={v.title} product={v.product} />)}</div>
-      <div className="guide-grid guide-grid-spaced">{guides.map(g => <GuideCard key={g.id} title={g.title} product={g.product} />)}</div>
+      <div className="section-heading"><div><span className="eyebrow">DEMO WALKTHROUGHS</span><h2>See a product in action, live.</h2><p className="section-lead">No recorded video is published yet. A live walkthrough covers the same ground for OrderMate, FBR Digital, WaterFlow, Shopify Solutions and Dynamic Inventory Count, and you can ask questions.</p></div><RouteLink className="text-link" href="/contact">Request a live walkthrough<Icon name="arrow" /></RouteLink></div>
     </div></section>
 
     <section className="section technology-section" data-reveal><div className="container">
