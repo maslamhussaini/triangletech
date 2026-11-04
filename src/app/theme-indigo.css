@@ -3369,3 +3369,44 @@ button.card-premium:focus-visible {
 .lead-success h3:focus {
   outline: none;
 }
+
+/* --- Homepage positioning + mobile UX refinement (2026-11-04) -------------
+   Additive overrides only, at the end of the file so they win over the
+   earlier glass rules. Mobile navigation is intentionally opaque here:
+   the earlier rgba(0.82) + backdrop-blur glass panel let hero text bleed
+   through in headless screenshots and hurt readability. The dark indigo
+   ground keeps the Indigo Glass identity (border, shadow, light links)
+   without any page content showing through. */
+@media (max-width: 799px) {
+  .mobile-navigation {
+    background: #0e0d2e;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-bottom: 1px solid rgba(167, 155, 255, 0.28);
+    box-shadow: 0 24px 50px rgba(6, 5, 24, 0.5);
+    z-index: 60;
+    max-height: calc(100dvh - 145px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-navigation nav a { color: #e4e5fa; }
+  .mobile-navigation nav a:focus-visible,
+  .mobile-navigation .button-indigo:focus-visible,
+  .mobile-nav-whatsapp:focus-visible {
+    outline: 2px solid #c9ccf5;
+    outline-offset: 2px;
+  }
+  /* One mobile contact pattern: the single sticky consultation button.
+     The floating chat launcher is hidden on mobile (chat remains reachable
+     from in-page "Chat About This Product" buttons); the floating WhatsApp
+     control was already hidden on mobile in globals.css. */
+  .chat-launcher { display: none; }
+  .mobile-cta-single { padding: 10px 15px max(10px, env(safe-area-inset-bottom)); }
+  .mobile-cta-single a {
+    flex: 1;
+    min-height: 48px;
+    font-size: 13px;
+    background: var(--brand-strong);
+  }
+  .site-footer { padding-bottom: max(105px, calc(88px + env(safe-area-inset-bottom))); }
+}

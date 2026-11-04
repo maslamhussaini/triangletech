@@ -22,7 +22,7 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
     setErrors(nextErrors);
     const first = Object.keys(nextErrors)[0];
     if (first) { document.getElementById(`${id}-${first}`)?.focus(); return; }
-    const message = ["Book a Free Product Demo", "", `Name: ${values.name.trim()}`, `Business name: ${values.company.trim() || "Not specified"}`, `Email: ${values.email.trim()}`, `WhatsApp: ${values.whatsapp.trim() || "Not specified"}`, `Business type: ${values.businessType.trim() || "Not specified"}`, `Product interested in: ${values.interest}`, `Preferred contact time: ${values.contactTime.trim() || "Not specified"}`, `Message: ${values.message.trim() || "Not specified"}`].join("\n");
+    const message = ["Request a Product Demo", "", `Name: ${values.name.trim()}`, `Business name: ${values.company.trim() || "Not specified"}`, `Email: ${values.email.trim()}`, `WhatsApp: ${values.whatsapp.trim() || "Not specified"}`, `Business type: ${values.businessType.trim() || "Not specified"}`, `Product interested in: ${values.interest}`, `Preferred contact time: ${values.contactTime.trim() || "Not specified"}`, `Message: ${values.message.trim() || "Not specified"}`].join("\n");
     const url = `mailto:${business.email}?subject=${encodeURIComponent("Demo Request — TriangleTech")}&body=${encodeURIComponent(message)}`;
     window.location.href = url;
     setSubmitted(true);
@@ -50,10 +50,10 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
   </section>;
 
   return <section className="request-panel" aria-labelledby={`${id}-title`}>
-    <div className="form-heading"><span className="eyebrow">BOOK A FREE PRODUCT DEMO</span><span className="form-mark"><Icon name="arrow" /></span></div>
+    <div className="form-heading"><span className="eyebrow">REQUEST A PRODUCT DEMO</span><span className="form-mark"><Icon name="arrow" /></span></div>
     <h2 id={`${id}-title`}>See it before you decide.</h2>
     <p className="form-intro">Tell us about your business. We&apos;ll walk you through the right product live.</p>
-    <form onSubmit={submit} noValidate aria-label="Book a free product demo">
+    <form onSubmit={submit} noValidate aria-label="Request a product demo">
       <div className="form-grid">
         <div className="field-premium"><label htmlFor={`${id}-name`}>Full name <span className="required-mark">*</span></label><input className="input-premium" {...field("name")} autoComplete="name" placeholder="Full name" required maxLength={100} />{error("name")}</div>
         <div className="field-premium"><label htmlFor={`${id}-company`}>Business name <span className="optional-mark">optional</span></label><input className="input-premium" {...field("company")} autoComplete="organization" placeholder="Your business name" maxLength={160} /></div>
@@ -64,7 +64,7 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
         <div className="field-premium field-wide"><label htmlFor={`${id}-contactTime`}>Preferred contact time <span className="optional-mark">optional</span></label><input className="input-premium" {...field("contactTime")} placeholder="e.g. Weekday afternoons" maxLength={100} /></div>
         <div className="field-premium field-wide"><label htmlFor={`${id}-message`}>Message <span className="optional-mark">optional</span></label><textarea className="textarea-premium" {...field("message")} rows={2} placeholder="Tell us about your business or what you'd like to see in the demo" maxLength={700} /></div>
       </div>
-      <div className="form-actions form-actions-single"><button className="button-indigo" type="submit"><Icon name="mail" />Book a Free Demo</button></div>
+      <div className="form-actions form-actions-single"><button className="button-indigo" type="submit"><Icon name="mail" />Request a Product Demo</button></div>
       <p className="form-note">Opens an email draft in your app. Review it and press Send — access is provided after a short demo/review, not automatically.</p>
     </form>
   </section>;

@@ -9,7 +9,7 @@ export const metadata = pageMetadata("About TriangleTech", "Meet TriangleTech, a
 export default function About() {
   return <><PageIntro label="ABOUT TRIANGLETECH" title="Software built by people who've run the workflow.">We build OrderMate, FBR Digital and WaterFlow as real products, and build custom web, mobile and ecommerce solutions alongside them.</PageIntro>
     <section className="section"><div className="container about-story">
-      <div className="identity-panel"><Brand /><div className="identity-rings" aria-hidden="true" /><div><span className="eyebrow light">PAKISTAN · WORLDWIDE CLIENTS</span><p>Book a demo.<br /><em>See it working first.</em></p></div></div>
+      <div className="identity-panel"><Brand /><div className="identity-rings" aria-hidden="true" /><div><span className="eyebrow light">PAKISTAN · WORLDWIDE CLIENTS</span><p>Request a consultation.<br /><em>See it working first.</em></p></div></div>
       <div><span className="eyebrow">WHO WE ARE</span><h2>Focused on business<br />problems, not just code.</h2><p>{business.name} builds OrderMate for sales and inventory, FBR Digital for structured invoicing, and WaterFlow for delivery operations — each a maintained product, not a one-off build. We also design and build custom web apps, mobile apps and Shopify stores.</p><p>Demo walkthroughs are available on request, so you can see how a product works before you commit to anything. Product status is shown on each product page.</p><RouteLink className="text-link" href="/products">See our products<Icon name="arrow" /></RouteLink></div>
     </div></section>
     <section className="section about-principles"><div className="container"><span className="eyebrow">WORKING WITH TRIANGLETECH</span><div className="principles-grid">

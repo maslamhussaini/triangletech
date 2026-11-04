@@ -16,7 +16,7 @@ const sora = Sora({ variable: "--font-sora", subsets: ["latin"], weight: ["500",
 export const metadata: Metadata = {
   metadataBase: new URL(business.url),
   title: { default: "TriangleTech | Business Software and Digital Solutions", template: "%s | TriangleTech" },
-  description: "TriangleTech builds practical business software, digital invoicing platforms, delivery solutions and ecommerce experiences. Explore our products and book a free demo.",
+  description: "TriangleTech builds practical business software, digital invoicing platforms, delivery solutions and ecommerce experiences. Explore our products and request a free consultation.",
   icons: { icon: [{ url: "/icon" }], apple: [{ url: "/icon" }] },
 };
 

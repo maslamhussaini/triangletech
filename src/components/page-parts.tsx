@@ -8,7 +8,7 @@ export function PageIntro({ label, title, children }: { label: string; title: st
   return <section className="page-intro page-intro-indigo"><div className="container"><span className="eyebrow">{label}</span><h1>{title}</h1><p>{children}</p></div></section>;
 }
 export function ContactCTA() {
-  return <section className="contact-cta contact-cta-indigo"><span className="cta-orb gradient-drift" aria-hidden="true" /><div className="container cta-inner"><div><span className="eyebrow light">SEE TRIANGLETECH IN ACTION</span><h2>Book a personalized<br />product walkthrough.</h2></div><div><RouteLink className="button-indigo" href="/contact">Book a Free Demo<Icon name="arrow" /></RouteLink><RouteLink className="cta-phone" href="/contact">Contact TriangleTech</RouteLink></div></div></section>;
+  return <section className="contact-cta contact-cta-indigo"><span className="cta-orb gradient-drift" aria-hidden="true" /><div className="container cta-inner"><div><span className="eyebrow light">SEE TRIANGLETECH IN ACTION</span><h2>Request a personalized<br />product walkthrough.</h2></div><div><RouteLink className="button-indigo" href="/contact">Request a Product Demo<Icon name="arrow" /></RouteLink><RouteLink className="cta-phone" href="/contact">Contact TriangleTech</RouteLink></div></div></section>;
 }
 export function ContactDetails() {
   return <div className="contact-details">

@@ -23,19 +23,19 @@ export const navigation = [
 ];
 
 export const hero = {
-  eyebrow: "CUSTOM SOFTWARE · WEBSITES FOR US SMALL BUSINESSES",
+  eyebrow: "CUSTOM SOFTWARE DEVELOPMENT · SAAS PRODUCTS · DIGITAL SOLUTIONS",
   headline: "Business Software That Works the Way You Work",
-  supporting: "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce — and professional websites, SEO and AI-search visibility for US small businesses.",
+  supporting: "TriangleTech builds custom business software, SaaS products, and digital solutions — web, mobile, and desktop applications, business process automation, and ecommerce integrations — plus professional websites and technical SEO, AEO, and GEO services for US small businesses.",
   primaryCta: "Request a Free Consultation",
-  secondaryCta: "Explore Services",
+  secondaryCta: "Explore Our Solutions",
   tertiaryCta: "See How It Works",
 };
 
-export const stats = [
-  { value: "4", label: "Products we build and maintain ourselves" },
-  { value: "Sales · Invoicing · Delivery", label: "The operations our software covers" },
-  { value: "Web · Mobile · Desktop", label: "Where your team can use it" },
-  { value: "After launch", label: "We stay on for support and improvements" },
+export const capabilities = [
+  { title: "Software Built Around Your Business", description: "Practical applications and digital solutions designed for real business workflows." },
+  { title: "Business Operations & Automation", description: "Solutions for inventory, sales, invoicing, reporting and operational efficiency." },
+  { title: "Web, Mobile & Desktop Engineering", description: "Custom applications built around business requirements." },
+  { title: "Ongoing Support & Optimization", description: "Continuous improvements, maintenance and technical support." },
 ];
 
 export type ScreenLayout = "stats" | "table" | "form" | "upload" | "workflow" | "grid" | "product" | "calendar" | "report" | "document";
@@ -232,7 +232,7 @@ export const trustPoints = [
 
 export const howItWorks = [
   { step: "01", title: "Choose a Solution", description: "Tell us what you need — or use the product finder below." },
-  { step: "02", title: "Book a Demo", description: "See the actual product walked through for your kind of business." },
+  { step: "02", title: "Request a Product Demo", description: "See the actual product walked through for your kind of business." },
   { step: "03", title: "See Your Workflow", description: "We map your sales, invoicing or delivery process onto the product." },
   { step: "04", title: "Start Your Trial or Project", description: "Begin with guided access or a scoped implementation project." },
   { step: "05", title: "Get Support and Improvements", description: "We stay involved, fixing issues and shipping improvements as you grow." },
@@ -323,9 +323,9 @@ export const faqs = [
   { question: "Can you connect a domain and deploy the website?", answer: "Yes. We handle domain connection, deployment and go-live for the websites and platforms we build." },
   { question: "Do you provide mobile applications?", answer: "Yes. We build cross-platform mobile applications for iOS and Android using modern frameworks like Flutter." },
   { question: "Can you improve an existing application?", answer: "Yes. We regularly take over, audit and improve existing applications, whether that means new features, performance work or a backend rebuild." },
-  { question: "How does the project process work?", answer: "Choose a solution, book a demo, see your workflow mapped onto the product, then start a trial or scoped project. We stay involved for support and improvements after launch." },
+  { question: "How does the project process work?", answer: "Choose a solution, request a product demo, see your workflow mapped onto the product, then start a trial or scoped project. We stay involved for support and improvements after launch." },
   { question: "Do you provide maintenance and support?", answer: "Yes. We offer long-term technical support and ongoing improvement after launch, rather than handing off a project and disappearing." },
-  { question: "Is a free trial available?", answer: "Access to OrderMate, FBR Digital and WaterFlow is provided after a demo and a short review, so we can set your workspace up correctly. Book a demo to request access." },
+  { question: "Is a free trial available?", answer: "Access to OrderMate, FBR Digital and WaterFlow is provided after a demo and a short review, so we can set your workspace up correctly. Request a product demo for access." },
 ];
 
 export function pageMetadata(title: string, description: string, path: string): Metadata {

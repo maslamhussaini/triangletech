@@ -47,7 +47,7 @@ export default function DynamicInventoryCountPage() {
             <p>Activity-based cycle counting for Odoo 19. Automatically identify Product + Location combinations that need physical counting based on completed movements or cumulative stock activity.</p>
             <div className="product-cta hero-actions" style={{ marginTop: 24 }}>
               <a className="button button-accent" href={odooAppsUrl} target="_blank" rel="noopener noreferrer">View on Odoo Apps — $39</a>
-              <a className="button button-outline-dark" href={`/contact?interest=${encodeURIComponent("Dynamic Inventory Count")}`}>Book a Demo</a>
+              <a className="button button-outline-dark" href={`/contact?interest=${encodeURIComponent("Dynamic Inventory Count")}`}>Request a Product Demo</a>
             </div>
           </div>
           <div className="product-detail-visual" style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
@@ -116,7 +116,7 @@ export default function DynamicInventoryCountPage() {
           <div><span className="eyebrow light">GET DYNAMIC INVENTORY COUNT</span><h2>Available now on the Odoo Apps store.</h2><p style={{ color: "#9fadc9", marginTop: 12 }}>$39 for Odoo 19. Includes dashboard, activity-based rules, and native Physical Inventory integration.</p></div>
           <div>
             <a className="button-indigo" href={odooAppsUrl} target="_blank" rel="noopener noreferrer">View on Odoo Apps <Icon name="arrow" /></a>
-            <RouteLink className="cta-phone" href={`/contact?interest=${encodeURIComponent("Dynamic Inventory Count")}`}>Book a Demo</RouteLink>
+            <RouteLink className="cta-phone" href={`/contact?interest=${encodeURIComponent("Dynamic Inventory Count")}`}>Request a Product Demo</RouteLink>
           </div>
         </div>
       </section>

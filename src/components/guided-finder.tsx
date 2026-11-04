@@ -47,7 +47,7 @@ export function GuidedProductFinder() {
         <p>Your business needs don&apos;t map neatly to one product — let&apos;s talk through a custom solution.</p>
       </>}
       <div className="hero-actions">
-        <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(recommended?.name ?? "Custom Software")}`}>Book a Demo<Icon name="arrow" /></RouteLink>
+        <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(recommended?.name ?? "Custom Software")}`}>Request a Product Demo<Icon name="arrow" /></RouteLink>
         <a className="button button-outline-dark" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Us</a>
       </div>
       <button className="text-link finder-restart" onClick={restart}>Start over<Icon name="arrow" /></button>

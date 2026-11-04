@@ -8,9 +8,9 @@ import { ServiceCard } from "@/components/service-card";
 import { PortfolioSection } from "@/components/portfolio-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { ContactCTA } from "@/components/page-parts";
-import { faqs, hero, howItWorks, products, services, stats, technologies, trustPoints, pageMetadata } from "@/lib/site";
+import { faqs, hero, howItWorks, products, services, capabilities, technologies, trustPoints, pageMetadata } from "@/lib/site";
 
-export const metadata = pageMetadata("Business Software and Digital Solutions", "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce. Explore our products and book a free demo.", "/");
+export const metadata = pageMetadata("Business Software and Digital Solutions", "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce. Explore our products and request a free consultation.", "/");
 
 /* Purely visual emphasis: the headline STRING in site.ts is unchanged, it is
    only split so the closing phrase can carry the indigo tint. If the copy ever
@@ -41,17 +41,16 @@ export default function Home() {
       </div>
     </section>
 
-    {/* No data-reveal: this band sits directly under the hero and is visible on
-        load at every viewport, so it must never depend on an observer firing. */}
-    <section className="stats-strip stats-strip-indigo"><div className="container stats-grid">
-      {stats.map(stat => <div key={stat.label} className="stat-metric"><strong>{stat.value}</strong><span>{stat.label}</span></div>)}
+    <section className="section capabilities-section" data-reveal><div className="container">
+      <div className="section-heading"><div><span className="eyebrow">OUR CAPABILITIES</span><h2>Custom Software Development, SaaS Products &amp; Digital Solutions</h2><p className="section-lead">No fixed product count and no invented numbers — here is what TriangleTech builds and supports, for businesses that are still growing.</p></div></div>
+      <div className="why-grid">{capabilities.map(item => <div key={item.title} className="why-card"><Icon name="check" /><h3>{item.title}</h3><p>{item.description}</p></div>)}</div>
     </div></section>
 
     <section className="section" data-reveal><div className="container">
       <div className="section-heading"><div><span className="eyebrow">WEBSITES FOR US SMALL BUSINESSES</span><h2>A professional website that brings in inquiries.</h2><p className="section-lead">If you are a US small business, start here: a clear website, a written quote before work begins, and optional SEO and AI-search readiness. No fake local office, no invented results, no ranking promises.</p></div></div>
       <div className="hero-actions">
         <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation">Request a Free Consultation<Icon name="arrow" /></RouteLink>
-        <RouteLink className="button-indigo-secondary" href="/services">Explore Services</RouteLink>
+        <RouteLink className="button-indigo-secondary" href="/services">Explore Our Solutions</RouteLink>
         <RouteLink className="text-link" href="/websites-for-us-small-business">See US website packages<Icon name="arrow" /></RouteLink>
       </div>
       <ul className="tech-pill-list">
@@ -67,7 +66,7 @@ export default function Home() {
     </div></section>
 
     <section id="products" className="section products-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">OUR PRODUCTS</span><h2>Four products, four jobs.</h2><p className="section-lead">Pick the one that matches the part of your business that hurts most. Each one can be demoed live.</p></div></div>
+      <div className="section-heading"><div><span className="eyebrow">OUR PRODUCTS</span><h2>Software for the work that matters most.</h2><p className="section-lead">Pick the one that matches the part of your business that needs it most. Each one can be shown live on request.</p></div></div>
       <ProductSelector items={products} />
     </div></section>
 
@@ -82,7 +81,7 @@ export default function Home() {
     </div></section>
 
     <section id="services" className="section services-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">SERVICES</span><h2>Need something built to order?</h2><p className="section-lead">When none of the four products is the right shape, we build the system your workflow actually needs.</p></div><RouteLink className="text-link" href="/services">View all services<Icon name="arrow" /></RouteLink></div>
+      <div className="section-heading"><div><span className="eyebrow">SERVICES</span><h2>Need something built to order?</h2><p className="section-lead">When an off-the-shelf product is not the right shape, we build the system your workflow actually needs.</p></div><RouteLink className="text-link" href="/services">View all services<Icon name="arrow" /></RouteLink></div>
       <div className="service-card-grid">{services.slice(0, 6).map(service => <ServiceCard key={service.id} service={service} compact />)}</div>
     </div></section>
 

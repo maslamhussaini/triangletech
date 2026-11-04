@@ -24,7 +24,7 @@ export function ProductSelector({ items }: { items: readonly Product[] }) {
       <p className="selector-audience">{product.audience}</p>
       <ul className="product-features product-features-compact">{product.features.slice(0, 4).map(f => <li key={f}><Icon name="check" />{f}</li>)}</ul>
       <div className="selector-card-actions">
-        <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(product.name)}`}>Book a Demo<Icon name="arrow" /></RouteLink>
+        <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(product.name)}`}>Request a Product Demo<Icon name="arrow" /></RouteLink>
         <button className="button button-outline-dark" onClick={() => openChat(product.id)}><Icon name="chat" />Chat About This Product</button>
         <RouteLink className="button button-outline-dark" href={`/products/${product.id}`}>{product.cta}<Icon name="arrow" /></RouteLink>
       </div>
@@ -50,7 +50,7 @@ export function ProductShowcase({ items }: { items: readonly Product[] }) {
         <p className="selector-audience">{product.audience}</p>
         <ul className="product-features">{product.features.map(f => <li key={f}><Icon name="check" />{f}</li>)}</ul>
         <div className="hero-actions">
-          <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(product.name)}`}>Book a Demo<Icon name="arrow" /></RouteLink>
+          <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(product.name)}`}>Request a Product Demo<Icon name="arrow" /></RouteLink>
           <button className="button button-outline-dark" onClick={() => openChat(product.id)}><Icon name="chat" />Chat About This Product</button>
           <RouteLink className="button button-outline-dark" href={`/products/${product.id}`}>Explore Product<Icon name="arrow" /></RouteLink>
         </div>

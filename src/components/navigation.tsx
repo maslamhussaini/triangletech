@@ -48,6 +48,10 @@ export function Header() {
 
   useEffect(() => {
     if (!open) return;
+    // Body scroll lock while the menu is open: the menu itself scrolls
+    // internally (max-height + overflow:auto), the page behind it does not.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     menu.current?.querySelector<HTMLAnchorElement>("a")?.focus();
     const close = (event: KeyboardEvent) => {
       if (event.key === "Escape") { setOpen(false); toggle.current?.focus(); }
@@ -59,7 +63,7 @@ export function Header() {
     document.addEventListener("keydown", close);
     document.addEventListener("pointerdown", outside);
     window.addEventListener("resize", resize);
-    return () => { document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); window.removeEventListener("resize", resize); };
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", close); document.removeEventListener("pointerdown", outside); window.removeEventListener("resize", resize); };
   }, [open]);
 
   return <header className={`site-header${scrolled ? " is-scrolled" : ""}`}>
@@ -68,7 +72,7 @@ export function Header() {
       <nav aria-label="Main navigation" className="desktop-nav">
         {navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>{item.label}</RouteLink>)}
       </nav>
-      <RouteLink className="button-indigo header-cta" href="/contact">Book a Free Demo</RouteLink>
+      <RouteLink className="button-indigo header-cta" href="/websites-for-us-small-business#consultation">Request a Free Consultation</RouteLink>
       <button ref={toggle} className="menu-toggle" aria-label={open ? "Close navigation menu" : "Open navigation menu"} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d={open ? "m6 6 12 12M6 18 18 6" : "M4 7h16M4 12h16M4 17h16"} /></svg>
       </button>
@@ -77,7 +81,7 @@ export function Header() {
       if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node) && event.relatedTarget !== toggle.current) setOpen(false);
     }}>
       <nav aria-label="Mobile navigation">{navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} onNavigate={() => setOpen(false)}>{item.label}<Icon name="arrow" /></RouteLink>)}</nav>
-      <RouteLink className="button-indigo" href="/contact" onNavigate={() => setOpen(false)}>Book a Free Demo</RouteLink>
+      <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation" onNavigate={() => setOpen(false)}>Request a Free Consultation</RouteLink>
       <a className="mobile-nav-whatsapp" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Support"><Icon name="chat" />WhatsApp Support</a>
     </div>
   </header>;
