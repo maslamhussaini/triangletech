@@ -2,7 +2,7 @@ import { ContactDetails } from "@/components/page-parts";
 import { DemoRequestForm } from "@/components/demo-form";
 import { pageMetadata, demoOptions } from "@/lib/site";
 
-export const metadata = pageMetadata("Request a Product Demo", "Request a free TriangleTech product demo. Call, WhatsApp or send an email with your business details and we'll walk you through OrderMate, FBR Digital, WaterFlow or Shopify Solutions.", "/contact");
+export const metadata = pageMetadata("Request a Product Demo", "Request a free TriangleTech product demo. Call, WhatsApp or send an email with your business details and we'll walk you through OrderMate, FBR Digital, WaterFlow, Shopify Solutions or Dynamic Inventory Count.", "/contact");
 
 export default async function Contact({ searchParams }: { searchParams: Promise<{ interest?: string }> }) {
   const params = await searchParams;

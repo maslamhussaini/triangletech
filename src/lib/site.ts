@@ -219,11 +219,11 @@ export const featureNotes: Record<string, string> = {
   "$39 price": "Available on the Odoo Apps store for $39, ready for Odoo 19.",
 };
 
-export const demoOptions =["OrderMate", "FBR Digital", "WaterFlow", "Shopify Solutions", "Custom Software"];
+export const demoOptions =["OrderMate", "FBR Digital", "WaterFlow", "Shopify Solutions", "Dynamic Inventory Count", "Custom Software"];
 
 export const trustPoints = [
   { title: "We start from your workflow, not a template", description: "Before a screen gets designed, we map how a sale, a delivery or an invoice actually moves through your business — including the messy parts." },
-  { title: "Our own products, not resold software", description: "OrderMate, FBR Digital and WaterFlow are designed, coded and maintained by us. When something needs to change, we change it — no vendor queue." },
+  { title: "Our own products, not resold software", description: "Our own products are designed, coded and maintained by us. When something needs to change, we change it — no vendor queue." },
   { title: "The same system at the counter and in the van", description: "Staff use the same records on a desktop, a tablet and a phone, so a delivery update in the field is visible in the office immediately." },
   { title: "Each person sees only their part of it", description: "Role-based access keeps pricing, accounting and customer records visible to the people who need them and no one else." },
   { title: "Built to keep working on a bad connection", description: "OrderMate is designed to keep accepting entries through patchy connectivity and sync once the connection returns." },

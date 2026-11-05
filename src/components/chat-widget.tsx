@@ -111,7 +111,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const firstName = lead.name.trim().split(" ")[0];
     const greeting = product
       ? `Hi ${firstName}, I'm the TriangleTech assistant for ${product.name}. I can help you understand features, workflows, demo options and next steps. What would you like to know?`
-      : `Hi ${firstName}, I'm the TriangleTech assistant. Ask me about OrderMate, FBR Digital, WaterFlow or Shopify Solutions, or book a free demo.`;
+      : `Hi ${firstName}, I'm the TriangleTech assistant. Ask me about OrderMate, FBR Digital, WaterFlow, Shopify Solutions or Dynamic Inventory Count, or request a product demo.`;
     setMessages([{ id: "greet", role: "assistant", text: greeting }]);
     setStage("chat");
   }

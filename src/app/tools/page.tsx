@@ -111,7 +111,7 @@ export default function Tools() {
         <div className="tools-next-inner">
           <div>
             <h2 id="tools-next-heading" className="tools-next-title">Need more than a calculator?</h2>
-            <p>A calculator answers one question. OrderMate, FBR Digital, WaterFlow and our Shopify Solutions handle the sales, invoicing, delivery and store operations behind it.</p>
+            <p>A calculator answers one question. OrderMate, FBR Digital, WaterFlow, our Shopify Solutions and Dynamic Inventory Count handle the sales, invoicing, delivery, store and stock-count operations behind it.</p>
           </div>
           <div className="tools-next-actions">
             <RouteLink className="button-indigo-secondary" href="/products">See our products</RouteLink>
