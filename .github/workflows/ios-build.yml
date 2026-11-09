@@ -1,0 +1,351 @@
+# iOS build workflow — TAG-TRIGGER VARIANT (GitHub Actions)
+#
+# Variant of ios-build-workflow.yml (318 lines). Changes vs the draft:
+# (1) the `on:` block — a `push: tags: ['freelancer-ios-ci-*']`
+# execution trigger is added so the build can run without the workflow
+# being on the default branch (see IOS_CI_DISPATCH_BLOCKER_SOLUTION.md);
+# (2) the signed-ipa job gate — it now requires BOTH
+# `github.event_name == 'workflow_dispatch'` AND
+# `inputs.build_signed_ipa == true`, so the signed-IPA and TestFlight
+# paths can never run on tag pushes (owner safety improvement,
+# 2026-11-09).
+# DRAFT, not installed. Do NOT copy this file into `.github/workflows/`
+# without explicit owner approval.
+#
+# Status: DRAFT, not installed. Do NOT copy this file into
+# `.github/workflows/` without explicit owner approval — the isolated
+# push proposal (orphan branch `freelancer-ios-ci`, exact snapshot
+# contents, push audit) is in IOS_CI_ISOLATED_PUSH_PROPOSAL.md.
+# (Supersedes FREELANCER_STORE_READINESS_DRAFT.md §6, which proposed
+# pushing the feature branch with its 30 base commits of Tools/website
+# history.) No secrets are in this file — all signing values come from
+# GitHub repository secrets (see ios-signed-ipa-workflow.md).
+#
+# Trigger: `push` on tags `freelancer-ios-ci-*` (execution path) +
+# `workflow_dispatch` (secondary, inert until this workflow ever
+# reaches a default branch — dispatch requires the workflow on the
+# default branch). There is deliberately no `push: branches:` trigger:
+# pushing the `freelancer-ios-ci` branch itself runs nothing. The owner
+# authorizes the branch push and the run separately — the run is
+# authorized by pushing a tag, one new tag per run.
+#
+# M5 verification (2026-11-07, against the actual Freelancer project):
+#   - iOS project: `ios-freelancer/App/App.xcodeproj` (NOT `ios/App/` —
+#     the pre-M5 draft had the wrong path everywhere; corrected here).
+#   - Scheme: shared `App` (added in M5 at
+#     `App.xcodeproj/xcshareddata/xcschemes/App.xcscheme`), bundle id
+#     `co.triangletech.freelancer`, deployment target 15.0.
+#   - Web build: `npm run build:freelancer` → `out-freelancer/`
+#     (see scripts/build-freelancer.mjs; webDir in
+#     capacitor.freelancer.config.ts).
+#   - `cap sync` needs the config-swap dance (Capacitor CLI 8.6.0 has
+#     no --config option and assumes a single `ios/` directory; the
+#     Freelancer project lives at `ios-freelancer/`). The plain
+#     `npx cap sync ios` in the pre-M5 draft would have synced the
+#     TOOLS app into `ios/` — wrong app. Corrected below.
+#   - SPM dependencies: 9 plugins via CapApp-SPM (M4 added
+#     @capacitor-community/admob + @capgo/native-purchases).
+#   - Runner: `macos-26` (Xcode 26.6); never `macos-15`.
+#   - Secrets: 8 named secrets for the signed-IPA job (count verified
+#     correct in this file and both iOS docs).
+#
+# Prerequisites before the first run:
+#   - M1–M5 have landed: `scripts/build-freelancer.mjs` and
+#     `npm run build:freelancer` exist, and the Freelancer iOS project
+#     exists at `ios-freelancer/App/` with shared scheme `App`,
+#     deployment target 15.0, bundle id `co.triangletech.freelancer`.
+#   - Runner is pinned to `macos-26` (Xcode 26.6 default). Do NOT use
+#     `macos-15` (defaults to Xcode 16.4 — App Store Connect rejects
+#     uploads built with it) and do NOT rely on the floating
+#     `macos-latest` label.
+#   - For the Tools reference project instead: change `build:freelancer`
+#     to `build:mobile` and the bundle id to `co.triangletech.tools`.
+#
+# Jobs:
+#   - `simulator` — runs on a pushed `freelancer-ios-ci-*` tag (or on
+#     manual dispatch if this workflow is ever registered on a default
+#     branch). Unsigned simulator build + optional simulator smoke test.
+#     Needs NO Apple account and NO secrets. Cost on this public repo: $0.
+#   - `signed-ipa` — DISABLED until the Apple Developer Program account
+#     and signing assets exist (see the job header below). Runs ONLY on
+#     manual dispatch with `build_signed_ipa=true` AND
+#     `github.event_name == 'workflow_dispatch'` (dual job gate); a tag
+#     push can never run it, with or without inputs. Signed IPA via
+#     fastlane + optional TestFlight upload. Needs the Apple Developer
+#     Program membership and the 8 secrets in ios-signed-ipa-workflow.md.
+#     Cost on this public repo: $0 beyond the $99/yr membership.
+
+name: iOS Build
+
+# Least privilege: the workflow only reads the repo. (upload-artifact
+# operates under this baseline.) No write permissions are granted.
+permissions:
+  contents: read
+
+on:
+  # Execution path: a pushed tag matching `freelancer-ios-ci-*` runs
+  # the workflow version from the tagged commit. GitHub runs
+  # push-triggered workflows even when they are not merged into the
+  # default branch ("Events that trigger workflows", push section).
+  # No `branches:` key: pushing the `freelancer-ios-ci` branch itself
+  # runs nothing, so the owner authorizes the branch push and the run
+  # separately — the run is authorized by pushing a tag, one new tag
+  # per run (re-pushing an existing tag may not re-trigger).
+  push:
+    tags:
+      - 'freelancer-ios-ci-*'
+  # Secondary: manual dispatch. Inert until/unless this workflow ever
+  # reaches a default branch — `workflow_dispatch` requires the
+  # workflow on the default branch. Kept so the same file also works
+  # in a separate CI repository (where it would be on the default
+  # branch) and if it is ever registered on main by owner decision.
+  workflow_dispatch:
+    inputs:
+      build_signed_ipa:
+        description: "Also build the signed IPA (needs Apple account + secrets)"
+        type: boolean
+        default: false
+      upload_to_testflight:
+        description: "Upload the signed IPA to TestFlight (needs build_signed_ipa)"
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  simulator:
+    name: Unsigned simulator build
+    runs-on: macos-26
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          node --version
+          npm --version
+          # Expect: Xcode 26.x, Node 22+. Fail fast if the runner does
+          # not provide Xcode 26 (Apple's upload floor since Apr 2026;
+          # macos-15 ships Xcode 16.4 and must never be used).
+          XCODE_VER=$(xcodebuild -version | head -n 1)
+          echo "$XCODE_VER" | grep -q '^Xcode 26\.' || { echo "ERROR: need Xcode 26.x, got: $XCODE_VER" >&2; exit 1; }
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the Freelancer web export
+        run: npm run build:freelancer
+
+      - name: Sync Capacitor iOS project (freelancer config swap)
+        run: |
+          # Capacitor CLI 8.6.0 has no --config option and assumes a
+          # single `ios/` directory. The Freelancer project lives at
+          # `ios-freelancer/` (see capacitor.freelancer.config.ts), so
+          # sync it via the swap dance: Tools ios/ aside (if present),
+          # freelancer project to ios/, freelancer config in, sync,
+          # move back, restore. A plain `npx cap sync ios` would sync
+          # the TOOLS app instead. In the Freelancer-only snapshot
+          # there is no Tools `ios/` and no Tools capacitor.config.ts,
+          # so the aside/restore moves are conditional and the runner
+          # (ephemeral) needs no git restore.
+          if [ -f capacitor.config.ts ]; then cp capacitor.config.ts capacitor.config.ts.orig; fi
+          if [ -d ios ]; then mv ios ios-tools-keep; fi
+          mv ios-freelancer ios
+          cp capacitor.freelancer.config.ts capacitor.config.ts
+          npx cap sync ios
+          mv ios ios-freelancer
+          if [ -d ios-tools-keep ]; then mv ios-tools-keep ios; fi
+          if [ -f capacitor.config.ts.orig ]; then mv capacitor.config.ts.orig capacitor.config.ts; fi
+          git status --porcelain -- ios-freelancer
+
+      - name: Check Capacitor environment
+        run: npx cap doctor
+        continue-on-error: true
+        # `cap doctor` may warn about a missing Android SDK on the macOS
+        # runner. That is expected and irrelevant to the iOS build.
+
+      - name: Resolve SPM dependencies
+        run: xcodebuild -resolvePackageDependencies -project ios-freelancer/App/App.xcodeproj -scheme App
+
+      - name: Build for simulator (unsigned)
+        run: >
+          xcodebuild
+          -project ios-freelancer/App/App.xcodeproj
+          -scheme App
+          -configuration Debug
+          -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$PWD/ios-freelancer/App/build"
+          CODE_SIGNING_ALLOWED=NO
+          build
+
+      - name: Locate the built app
+        id: app
+        run: |
+          APP_PATH=$(find ios-freelancer/App/build/Build/Products/Debug-iphonesimulator -maxdepth 1 -name "*.app" -print -quit)
+          echo "app_path=$APP_PATH" >> "$GITHUB_OUTPUT"
+          ls -la "$APP_PATH"
+
+      - name: Simulator smoke test (best effort)
+        continue-on-error: true
+        env:
+          # Pass the app path via env, not ${{ }} interpolation inside
+          # the run script (avoids script-injection patterns even
+          # though this value is workflow-generated, not user input).
+          APP_PATH: ${{ steps.app.outputs.app_path }}
+        run: |
+          # Boot the first available iPhone simulator, install the app, launch
+          # it, and capture a screenshot. A flaky simulator must not fail the
+          # build job — this step is a smoke test, not a gate.
+          DEVICE_ID=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin); print(next(dev['udid'] for runtime in d['devices'].values() for dev in runtime if 'iPhone' in dev['name'] and dev['isAvailable']))")
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl install "$DEVICE_ID" "$APP_PATH"
+          xcrun simctl launch "$DEVICE_ID" co.triangletech.freelancer
+          sleep 10
+          xcrun simctl io "$DEVICE_ID" screenshot ios-freelancer/App/build/simulator-screenshot.png
+          xcrun simctl shutdown "$DEVICE_ID" || true
+
+      - name: Upload simulator app + screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator-app
+          path: |
+            ${{ steps.app.outputs.app_path }}
+            ios-freelancer/App/build/simulator-screenshot.png
+          if-no-files-found: warn
+          retention-days: 30
+
+  signed-ipa:
+    name: Signed IPA (fastlane) — DISABLED until the Apple account + signing assets exist
+    # DISABLED: this job cannot run until (1) the Apple Developer Program
+    # membership exists, (2) all 8 secrets in ios-signed-ipa-workflow.md
+    # are added as repository secrets, and (3) the Gemfile + fastlane
+    # setup exists in the repo root (RC-stage owner step). It is gated
+    # on BOTH github.event_name == 'workflow_dispatch' AND
+    # inputs.build_signed_ipa == true (default false), so it can never
+    # run on a tag push or any other event. Do NOT enable it before
+    # those exist.
+    runs-on: macos-26
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_signed_ipa == true }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          node --version
+          # Fail fast unless the runner provides Xcode 26.x (see the
+          # simulator job's toolchain step).
+          XCODE_VER=$(xcodebuild -version | head -n 1)
+          echo "$XCODE_VER" | grep -q '^Xcode 26\.' || { echo "ERROR: need Xcode 26.x, got: $XCODE_VER" >&2; exit 1; }
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the Freelancer web export
+        run: npm run build:freelancer
+
+      - name: Sync Capacitor iOS project (freelancer config swap)
+        run: |
+          # Same swap dance as the simulator job (conditional moves —
+          # see that job's comment). The Freelancer-only snapshot has
+          # no Tools `ios/` and no Tools capacitor.config.ts.
+          if [ -f capacitor.config.ts ]; then cp capacitor.config.ts capacitor.config.ts.orig; fi
+          if [ -d ios ]; then mv ios ios-tools-keep; fi
+          mv ios-freelancer ios
+          cp capacitor.freelancer.config.ts capacitor.config.ts
+          npx cap sync ios
+          mv ios ios-freelancer
+          if [ -d ios-tools-keep ]; then mv ios-tools-keep ios; fi
+          if [ -f capacitor.config.ts.orig ]; then mv capacitor.config.ts.orig capacitor.config.ts; fi
+          git status --porcelain -- ios-freelancer
+
+      - name: Set up Ruby + fastlane
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+        # Requires a Gemfile + fastlane setup in the repo root — NOT
+        # present yet (not added in M5; RC-stage owner step, see
+        # FREELANCER_STORE_READINESS_DRAFT.md §5). `bundler-cache: true`
+        # runs `bundle install` automatically once they exist.
+
+      - name: Import distribution certificate
+        env:
+          CERT_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_P12_BASE64 }}
+          CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+        run: |
+          # Temporary keychain, deleted at the end of the job. The .p12 never
+          # touches the repo — it comes from the secret, base64-decoded.
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo "$CERT_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -P "$CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          rm -f "$RUNNER_TEMP/dist.p12"
+
+      - name: Install provisioning profile
+        env:
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/freelancer.mobileprovision
+          PROFILE_NAME=$(security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/freelancer.mobileprovision | python3 -c "import plistlib,sys; d=plistlib.load(sys.stdin.buffer); print(d['Name'])")
+          echo "Installed profile: $PROFILE_NAME"
+          echo "IOS_PROVISIONING_PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Build signed IPA (fastlane gym)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          IOS_PROVISIONING_PROFILE_NAME: ${{ env.IOS_PROVISIONING_PROFILE_NAME }}
+        run: bundle exec fastlane ios build_ipa
+
+      - name: Verify IPA artifact
+        run: |
+          IPA_PATH=$(find ios-freelancer/App/build -maxdepth 2 -name "*.ipa" -print -quit)
+          echo "ipa_path=$IPA_PATH" >> "$GITHUB_OUTPUT"
+          ls -la "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH"
+          unzip -l "$IPA_PATH" | head -20
+          # The IPA must exist, be non-empty, and contain Payload/App.app.
+          # No IPA = no claim of a successful build. Record the SHA-256.
+        id: ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-signed-ipa
+          path: ${{ steps.ipa.outputs.ipa_path }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload to TestFlight (optional)
+        if: ${{ inputs.upload_to_testflight == true }}
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: bundle exec fastlane ios upload_testflight

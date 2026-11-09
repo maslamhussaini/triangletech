@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Freelancer Time & Invoice — App Privacy Manifest (M5).
+  Truthful declaration for the app as built:
+  - The app itself stores ALL user data on-device only (time entries,
+    clients, invoices in a local JSON document; settings in UserDefaults
+    via Capacitor Preferences). No user record, invoice, or purchase
+    detail is ever transmitted to TriangleTech — there is no server.
+  - The ONLY data that leaves the device is what the Google Mobile Ads
+    SDK (AdMob) sends to Google for advertising: the advertising/device
+    identifier, ad interaction, and advertising performance data. The
+    app ships Google TEST ad ids only; live ads need an owner-created
+    AdMob account (RC stage).
+  - Purchases are handled on-device by StoreKit through the Capgo
+    native-purchases plugin. The entitlement is derived locally and
+    stored in the local document; no purchase history is transmitted.
+  - NSPrivacyTracking is false: the app does not use the IDFA or link
+    data across apps/websites, and ships no AppTrackingTransparency
+    prompt. OWNER MUST RE-CONFIRM at submission time if personalized
+    ads / ATT are ever enabled — that would change this answer.
+  - Required-reason API: UserDefaults only (CA92.1) — Capacitor
+    Preferences stores app settings and report branding there.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeAdvertisingData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeThirdPartyAdvertising</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

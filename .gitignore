@@ -1,0 +1,58 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+/out-mobile/
+/out-freelancer/
+
+# mobile (Capacitor) — generated / signing material. NEVER commit keystores,
+# signing keys, passwords or local SDK paths. Release signing stays owner-side.
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+android/local.properties
+android/app/build/
+android/build/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/Pods/
+**/DerivedData/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+.vercel

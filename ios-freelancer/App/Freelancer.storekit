@@ -1,0 +1,56 @@
+{
+  "identifier": "F1E31ANCER",
+  "products": [
+    {
+      "displayPrice": "99.99",
+      "familyShareable": true,
+      "localizations": [
+        {
+          "description": "Freelancer Pro for the current major version, one payment. A future major version is a separate purchase.",
+          "displayName": "Pro Lifetime",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "freelancer_pro_lifetime",
+      "type": "Non-Consumable"
+    }
+  ],
+  "subscriptionGroups": [
+    {
+      "id": "A1B2C3D4",
+      "name": "Freelancer Pro",
+      "subscriptions": [
+        {
+          "displayPrice": "4.99",
+          "familyShareable": true,
+          "groupNumber": 1,
+          "localizations": [
+            {
+              "description": "Freelancer Pro, billed every month. Unlimited invoices, clients and templates, no ads.",
+              "displayName": "Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "freelancer_pro_monthly",
+          "recurringSubscriptionPeriod": "P1M",
+          "type": "RecurringSubscription"
+        },
+        {
+          "displayPrice": "39.99",
+          "familyShareable": true,
+          "groupNumber": 1,
+          "localizations": [
+            {
+              "description": "Freelancer Pro, billed once a year. Unlimited invoices, clients and templates, no ads.",
+              "displayName": "Pro Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "freelancer_pro_yearly",
+          "recurringSubscriptionPeriod": "P1Y",
+          "type": "RecurringSubscription"
+        }
+      ]
+    }
+  ]
+}
