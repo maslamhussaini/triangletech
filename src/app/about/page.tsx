@@ -16,7 +16,7 @@ export default function About() {
       <div><h2>Built around<br />your requirements.</h2><p>Everyday operations and larger projects deserve the same clear communication.</p></div>
       <dl>
         <div><dt>Demo before commitment</dt><dd>You see the real product working on your kind of business before you decide anything.</dd></div>
-        <div><dt>Direct communication</dt><dd>Speak with our team by WhatsApp or email throughout your project — no account managers, no runaround.</dd></div>
+        <div><dt>Direct communication</dt><dd>Speak with our team by email throughout your project — no account managers, no runaround.</dd></div>
         <div><dt>Long-term support</dt><dd>We stay involved after launch, improving the product as your requirements evolve.</dd></div>
       </dl>
     </div></div></section>

@@ -44,7 +44,7 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
     <h2>Your demo request is drafted.</h2>
     <p className="form-intro">We&apos;ve opened an email draft with your details. Review it and press Send to complete your request — nothing has been sent yet.</p>
     <div className="hero-actions">
-      <a className="button-indigo" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Us Instead</a>
+      <a className="button-indigo" href={`mailto:${business.email}?subject=${encodeURIComponent("TriangleTech demo request")}`}><Icon name="mail" />Email Us Instead</a>
       <button className="button-indigo-secondary" onClick={() => setSubmitted(false)}>Edit Request</button>
     </div>
   </section>;

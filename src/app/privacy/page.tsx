@@ -49,14 +49,14 @@ export default function Privacy() {
       <h2 id="information-you-provide">2. Information you voluntarily provide</h2>
       <p>We only receive the information you choose to give us. This typically includes:</p>
       <ul>
-        <li><strong>Contact and account information</strong> you enter on our contact or demo request form or send by email or WhatsApp &mdash; for example your name, business name, email address, phone or WhatsApp number, business type, the product you are interested in, your preferred contact time, and anything you include in the message field.</li>
+        <li><strong>Contact and account information</strong> you enter on our contact or demo request form or send by email &mdash; for example your name, business name, email address, phone or WhatsApp number, business type, the product you are interested in, your preferred contact time, and anything you include in the message field.</li>
         <li><strong>Consultation inquiries</strong> you send through the inquiry form on our page for US small businesses &mdash; your name, business name, email address, your current website address if you choose to give it, the service you are interested in, and your description of your project. When you submit that form, your inquiry is delivered to us as an email by our transactional email provider (see section 6). We use these details only to respond to your inquiry; submitting the form does not subscribe you to any mailing list.</li>
         <li><strong>Product assistant details</strong> you type into the assistant on this website &mdash; including your name, email address, phone number and business name if you choose to give them, together with the messages you send in that conversation.</li>
         <li><strong>Project and support information</strong> you send while evaluating or using a TriangleTech product, such as workflow descriptions, requirements, and files or records you submit for the work you have asked us to do.</li>
         <li><strong>Account information</strong> you provide when you create an account for a TriangleTech product or service, including a user name, email address and the permissions or access level you assign to other users of your workspace.</li>
       </ul>
       <p>
-        Browsing this website does not require an account or sign-in, and nothing on this site asks you to create one. On the demo request form, your entries are prepared as an email draft in your own email application, and nothing is transmitted to TriangleTech until you press send. If you would rather talk to us first, WhatsApp and email details are shown throughout the site.
+        Browsing this website does not require an account or sign-in, and nothing on this site asks you to create one. On the demo request form, your entries are prepared as an email draft in your own email application, and nothing is transmitted to TriangleTech until you press send. If you would rather talk to us first, our email address and contact form are shown throughout the site.
       </p>
 
       <h2 id="website-and-technical-use">3. Website use and necessary technical information</h2>
@@ -180,7 +180,6 @@ export default function Privacy() {
       </p>
       <ul>
         <li>Email: <a href={`mailto:${business.email}`}>{business.email}</a></li>
-        <li>WhatsApp: <a href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer">{business.whatsappPrimaryLabel}</a></li>
         <li>Contact form: <RouteLink className="text-link" href="/contact">Contact TriangleTech<Icon name="arrow" /></RouteLink></li>
       </ul>
       <p>
@@ -199,7 +198,7 @@ export default function Privacy() {
       </div>
       <div className="legal-aside-card legal-aside-contact">
         <h2>Privacy question?</h2>
-        <p>Email <a href={`mailto:${business.email}`}>{business.email}</a> or reach us on WhatsApp.</p>
+        <p>Email <a href={`mailto:${business.email}`}>{business.email}</a> or use the contact form.</p>
         <RouteLink className="button-indigo-secondary" href="/contact">Contact TriangleTech<Icon name="arrow" /></RouteLink>
       </div>
     </aside>

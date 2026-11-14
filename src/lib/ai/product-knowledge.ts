@@ -153,7 +153,7 @@ export const generalKnowledge: ProductKnowledge = {
     "WaterFlow manages delivery operations from customer request through scheduling, driver and vehicle assignment, delivery tracking and reporting.",
     "Shopify Solutions covers Shopify store setup, theme customization, collections, mobile-first storefront design, domain connection and payment/shipping guidance.",
     "Beyond the products, TriangleTech also builds custom business software, ERP and accounting systems, web and mobile applications, and backend/database systems.",
-    "TriangleTech can be reached by email at info.triangletech@gmail.com or on WhatsApp.",
+    "TriangleTech can be reached by email at info.triangletech@gmail.com or through the contact form.",
     "There is no published fixed pricing online; scope varies, so the next step is a free demo or consultation.",
     "The next step for any product is booking a free demo, where the product is walked through live for your kind of business.",
   ],
@@ -162,7 +162,7 @@ export const generalKnowledge: ProductKnowledge = {
     { question: "Which product is right for my business?", answer: "It depends on what's hurting most. Sales, stock and customers scattered across spreadsheets — OrderMate. Preparing and submitting sales tax invoices — FBR Digital. Dispatching deliveries by phone — WaterFlow. Selling online — Shopify Solutions. Counting stock accurately — Dynamic Inventory Count. Tell me what your business does and I'll narrow it down." },
     { question: "Can you build something custom?", answer: "Yes. When an off-the-shelf product is not the right shape, we design and build custom business software, ERP and accounting systems, and web or mobile applications around your actual workflow." },
     { question: "How much does it cost?", answer: "We don't publish fixed pricing, because scope varies a lot between businesses. The next step is a free demo or consultation, where we look at your workflow and scope the right package." },
-    { question: "How do I book a demo?", answer: "Use the Request a Product Demo button, or continue on WhatsApp and we'll arrange a time. A demo walks through the actual product live for your kind of business." },
+    { question: "How do I book a demo?", answer: "Use the Request a Product Demo button, or use the contact form and we'll arrange a time. A demo walks through the actual product live for your kind of business." },
   ],
 };
 

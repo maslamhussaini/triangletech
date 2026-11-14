@@ -15,7 +15,7 @@ export default function Terms() {
     <h2>3. Content and accuracy</h2>
     <p>Product and service descriptions describe what TriangleTech builds and offers. Availability is shown on each product page. TriangleTech may update website content without notice, and does not claim testimonials, client results or certifications that are not shown with verifiable detail.</p>
     <h2>4. Third-party links</h2>
-    <p>Links to third-party sites, such as the Odoo Apps store or WhatsApp, are provided for convenience. TriangleTech is not responsible for third-party content, pricing or terms.</p>
+    <p>Links to third-party sites, such as the Odoo Apps store, are provided for convenience. TriangleTech is not responsible for third-party content, pricing or terms.</p>
     <h2>5. Liability</h2>
     <p>This website is provided as-is for information. TriangleTech is not liable for decisions made solely from website information without a written proposal and agreement.</p>
     <h2>6. Changes and contact</h2>

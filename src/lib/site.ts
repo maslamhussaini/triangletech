@@ -6,10 +6,6 @@ export const business = {
   shortName: "TriangleTech",
   url: "https://triangletech.co",
   email: "info.triangletech@gmail.com",
-  whatsappPrimary: "https://wa.me/923343355695",
-  whatsappPrimaryLabel: "+92 334 3355695",
-  whatsappSecondary: "https://wa.me/923133355695",
-  whatsappSecondaryLabel: "+92 313 3355695",
 } as const;
 
 export const navigation = [

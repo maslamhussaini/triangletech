@@ -8,7 +8,7 @@ import { ScreenWalkthrough } from "@/components/screen-walkthrough";
 import { ProductCTA } from "@/components/product-cta";
 import { ChatTriggerButton } from "@/components/chat-trigger-button";
 import { ContactCTA } from "@/components/page-parts";
-import { business, featureNotes, products, pageMetadata } from "@/lib/site";
+import { featureNotes, products, pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata("OrderMate", "Manage sales, inventory, customers, orders and accounting workflows in one connected system with OrderMate.", "/products/ordermate");
 
@@ -59,7 +59,7 @@ export default function OrderMateProduct() {
     </div></section>
 
     <section className="section faq-preview"><div className="container faq-layout">
-      <aside><span className="eyebrow">FAQ</span><h2>Questions about {product.name}.</h2><p>Have a different question? Speak to our team directly.</p><a className="text-link" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer">WhatsApp us<Icon name="chat" /></a></aside>
+      <aside><span className="eyebrow">FAQ</span><h2>Questions about {product.name}.</h2><p>Have a different question? Speak to our team directly.</p><RouteLink className="text-link" href="/contact">Contact us<Icon name="chat" /></RouteLink></aside>
       <div className="faq-list">{productFaqs.map((faq, index) => <details key={faq.question}><summary><span className="faq-number">0{index + 1}</span>{faq.question}<span className="faq-plus" aria-hidden="true">+</span></summary><p>{faq.answer}</p></details>)}</div>
     </div></section>
 

@@ -39,7 +39,7 @@ export default async function ServiceDetail({ params }: { params: Promise<{ id: 
         <p>{service.description}</p>
         <div className="hero-actions">
           <RouteLink className="button button-accent" href={cta.href}>{cta.label}<Icon name="arrow" /></RouteLink>
-          <a className="button button-email" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Support</a>
+          <RouteLink className="button button-email" href="/contact"><Icon name="mail" />Contact Us</RouteLink>
         </div>
         <p>Pricing is confirmed in writing before work begins. No price is published on this page.</p>
       </div>

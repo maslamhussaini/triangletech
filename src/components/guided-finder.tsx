@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { RouteLink } from "./navigation";
 import { Icon } from "./icons";
-import { business, finderQuestions, products } from "@/lib/site";
+import { finderQuestions, products } from "@/lib/site";
 
 type Weights = Record<string, number>;
 
@@ -48,7 +48,7 @@ export function GuidedProductFinder() {
       </>}
       <div className="hero-actions">
         <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(recommended?.name ?? "Custom Software")}`}>Request a Product Demo<Icon name="arrow" /></RouteLink>
-        <a className="button button-outline-dark" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer"><Icon name="chat" />WhatsApp Us</a>
+        <RouteLink className="button button-outline-dark" href="/contact">Contact Us</RouteLink>
       </div>
       <button className="text-link finder-restart" onClick={restart}>Start over<Icon name="arrow" /></button>
     </div>}

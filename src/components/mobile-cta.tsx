@@ -5,9 +5,9 @@ import { Icon } from "./icons";
 import { RouteLink } from "./navigation";
 
 // One intentional mobile contact pattern: a single sticky consultation
-// button. WhatsApp stays available from the mobile menu, footer, and
-// contact page, and the in-page chat buttons — it is not duplicated here,
-// and no floating control sits above this bar on mobile.
+// button. Email and the contact form are available from the mobile menu,
+// footer, and contact page, and the in-page chat buttons — they are not
+// duplicated here, and no floating control sits above this bar on mobile.
 export function MobileCta() {
   const pathname = usePathname();
   if (pathname === "/contact" || pathname.startsWith("/websites-for-us-small-business")) return null;

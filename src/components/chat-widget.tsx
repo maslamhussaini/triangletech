@@ -3,7 +3,6 @@
 import { createContext, forwardRef, useContext, useEffect, useImperativeHandle, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { Icon } from "./icons";
 import { Brand } from "./brand";
-import { business } from "@/lib/site";
 import { generalKnowledge, productKnowledge, type ProductId } from "@/lib/ai/product-knowledge";
 
 type Lead = { name: string; email: string; phone: string; businessName: string };
@@ -116,12 +115,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setStage("chat");
   }
 
-  function whatsappHrefFor(prefillName: string) {
-    const productLine = product ? `I would like to know more about ${product.name}` : "I would like to know more about TriangleTech";
-    const text = prefillName.trim() ? `Hello TriangleTech, ${productLine}. My name is ${prefillName.trim()}.` : `Hello TriangleTech, ${productLine}.`;
-    return `${business.whatsappPrimary}?text=${encodeURIComponent(text)}`;
-  }
-
   async function requestReply(history: Message[]) {
     setLoading(true);
     setErrored(false);
@@ -197,7 +190,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         <div className="field-premium"><label htmlFor="chat-lead-business">Business name <span className="optional-mark">optional</span></label><input className="input-premium" id="chat-lead-business" value={lead.businessName} onChange={e => setLead({ ...lead, businessName: e.target.value })} placeholder="Your business name" maxLength={160} /></div>
         <p className="chat-privacy-note">Your information is used to continue this product conversation and respond to your request.</p>
         <button className="button-indigo chat-lead-submit" type="submit">Talk to Us<Icon name="arrow" /></button>
-        <a className="chat-whatsapp-secondary" href={whatsappHrefFor(lead.name)} target="_blank" rel="noopener noreferrer"><Icon name="chat" />Continue with WhatsApp</a>
       </form>}
 
       {stage === "chat" && <>
@@ -206,7 +198,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           {messages.length === 1 && <div className="chat-suggestions">
             {knowledge.suggestedQuestions.map(sq => <button key={sq.question} className="chat-suggestion" onClick={() => sendMessage(sq.question)} disabled={loading}>{sq.question}</button>)}
           </div>}
-          {mode === "demo" && <p className="chat-mode-note">Live AI isn&apos;t connected right now, so answers come from TriangleTech&apos;s written product knowledge rather than a live model. For anything it can&apos;t cover, continue on WhatsApp below.</p>}
+          {mode === "demo" && <p className="chat-mode-note">Live AI isn&apos;t connected right now, so answers come from TriangleTech&apos;s written product knowledge rather than a live model. For anything it can&apos;t cover, request a product demo and the team will walk you through it live.</p>}
           {loading && <div className="chat-bubble chat-bot chat-typing" aria-live="polite"><span /><span /><span /></div>}
           {errored && <div className="chat-error"><span>Something went wrong sending that message.</span><button className="text-link" onClick={retryLast}>Retry<Icon name="arrow" /></button></div>}
         </div>
@@ -214,7 +206,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           <AutoResizeTextarea ref={messageInputRef} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={handleInputKeyDown} placeholder="Ask a question… (Enter to send, Shift+Enter for new line)" maxLength={MAX_MESSAGE_LENGTH} aria-label="Type your question" />
           <button className="chat-send" onClick={() => sendMessage(draft)} disabled={loading || !draft.trim()} aria-label="Send message"><Icon name="send" /></button>
         </div>
-        <a className="chat-whatsapp-handoff" href={whatsappHrefFor(lead.name)} target="_blank" rel="noopener noreferrer"><Icon name="chat" />Continue on WhatsApp</a>
         <p className="chat-consent-note">Your details are being used only to continue this conversation. The TriangleTech team can contact you through the information you provided.</p>
       </>}
     </div>}

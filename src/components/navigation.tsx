@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState, useTransition } from "react";
 import { Brand } from "./brand";
 import { Icon } from "./icons";
-import { business, navigation } from "@/lib/site";
+import { navigation } from "@/lib/site";
 
 const NavigationContext = createContext<(href: string) => void>(() => {});
 
@@ -82,7 +82,7 @@ export function Header() {
     }}>
       <nav aria-label="Mobile navigation">{navigation.map((item) => <RouteLink key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined} onNavigate={() => setOpen(false)}>{item.label}<Icon name="arrow" /></RouteLink>)}</nav>
       <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation" onNavigate={() => setOpen(false)}>Request a Free Consultation</RouteLink>
-      <a className="mobile-nav-whatsapp" href={business.whatsappPrimary} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp Support"><Icon name="chat" />WhatsApp Support</a>
+      <RouteLink className="button-indigo-secondary" href="/contact" onNavigate={() => setOpen(false)}>Contact Us</RouteLink>
     </div>
   </header>;
 }
