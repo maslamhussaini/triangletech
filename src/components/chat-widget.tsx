@@ -161,12 +161,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     requestReply(messages);
   }
 
-  const buttonLabel = product ? "Chat About This Product" : "Ask TriangleTech";
-
   return <ChatContext.Provider value={{ openChat }}>
     {children}
 
-    {stage === "closed" && <button className="chat-launcher" onClick={() => openChat(null)} aria-label={buttonLabel}><Icon name="chat" /></button>}
+    {/* No floating global chat launcher: contextual product buttons can still open this panel. */}
 
     {stage !== "closed" && !minimized && <div ref={dialogRef} className="chat-window" role="dialog" aria-modal="true" aria-label={product ? `Chat about ${product.name}` : "Chat with TriangleTech"}>
       <div className="chat-header">
