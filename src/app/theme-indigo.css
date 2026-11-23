@@ -1829,10 +1829,9 @@ button.card-premium:focus-visible {
   pointer-events: none;
 }
 
-/* --- 11.9 Chat launcher + WhatsApp: one clear indigo hierarchy ----------
+/* --- 11.9 Chat launcher: one clear indigo hierarchy ----------
    Behaviour untouched. The launcher is the TriangleTech-brand control and
-   becomes indigo; WhatsApp stays its own blue but drops to a quieter weight,
-   so cyan/blue/indigo no longer compete at the same volume. */
+   becomes indigo, so cyan/indigo no longer compete at the same volume. */
 
 .chat-launcher {
   background: var(--brand);
@@ -2784,9 +2783,7 @@ button.card-premium:focus-visible {
     scroll-margin-bottom: 90px;
   }
 
-  /* The calculator already has a full-width WhatsApp CTA. Suppress the
-     floating chat launcher only on this narrow route so it cannot sit over a
-     helper paragraph, field, warning, or result action. */
+  /* Suppress the floating chat launcher only on this narrow route so it cannot sit over a helper paragraph, field, warning, or result action. */
   body:has(.pakistan-tax-calculator) .chat-launcher,
   body:has(.pakistan-tax-calculator) .chat-minibar {
     display: none;
@@ -3370,9 +3367,7 @@ button.card-premium:focus-visible {
     outline-offset: 2px;
   }
   /* One mobile contact pattern: the single sticky consultation button.
-     The floating chat launcher is hidden on mobile (chat remains reachable
-     from in-page "Chat About This Product" buttons); the floating WhatsApp
-     control was already hidden on mobile in globals.css. */
+     The floating chat launcher is hidden on mobile (chat remains reachable from in-page "Chat About This Product" buttons). */
   .chat-launcher { display: none; }
   .mobile-cta-single { padding: 10px 15px max(10px, env(safe-area-inset-bottom)); }
   .mobile-cta-single a {
