@@ -13,7 +13,7 @@ import type { FaqEntry, LandingPlan, TrustSignalData } from "./landing";
 export const PAGE_META = {
   title: "Websites for US Small Businesses",
   description:
-    "TriangleTech designs professional, mobile-friendly websites for US small businesses, with optional local SEO and AI-search readiness. Clear packages and written quotes.",
+    "Professional, mobile-friendly websites for US small businesses from TriangleTech, with optional local SEO and AI-search readiness. Written quotes.",
 } as const;
 
 export const HERO_CTAS = {
