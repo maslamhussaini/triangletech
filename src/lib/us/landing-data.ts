@@ -13,7 +13,7 @@ import type { FaqEntry, LandingPlan, TrustSignalData } from "./landing";
 export const PAGE_META = {
   title: "Websites for US Small Businesses",
   description:
-    "TriangleTech designs professional, mobile-friendly websites for US small businesses, with optional local SEO and AI-search-readiness services. Clear packages, written quotes, no lock-in.",
+    "TriangleTech designs professional, mobile-friendly websites for US small businesses, with optional local SEO and AI-search readiness. Clear packages and written quotes.",
 } as const;
 
 export const HERO_CTAS = {
@@ -33,7 +33,7 @@ export const ESTIMATOR_SECTION = {
   eyebrow: "PROJECT ESTIMATOR",
   title: "Plan your website project in about a minute",
   description:
-    "Answer a few questions and get a recommended package, a feature checklist and an honest picture of what your project involves. The estimator is a planning guide — your written proposal confirms scope, price and timeline.",
+    "Answer a few questions and get a recommended package, a feature checklist and a clear picture of what your project involves. The estimator is a planning guide — your written proposal confirms scope, price and timeline.",
 } as const;
 
 /** Heading copy for the consultation form section (P1.8). */
@@ -41,7 +41,7 @@ export const CONSULTATION = {
   eyebrow: "FREE CONSULTATION",
   title: "Tell us about your project",
   description:
-    "Complete the form and your inquiry is delivered to our team by email. We reply with honest next steps and — when a new website is the right fit — a written quote. No account, no mailing list, no obligation.",
+    "Complete the form and your inquiry is delivered to our team by email. We reply with clear next steps and — when a new website is the right fit — a written quote. No account, no mailing list, no obligation.",
 } as const;
 
 export const PROBLEMS: TrustSignalData[] = [
@@ -86,12 +86,12 @@ export const SERVICE_LEVELS = [
   {
     title: "Website + SEO Foundation",
     description:
-      "Everything in website design, plus the groundwork that helps search engines understand your business. SEO (search engine optimization) is how your site earns visibility in Google results for the services and areas you serve — a foundation, not a promise of rankings.",
+      "Everything in website design, plus the groundwork that helps search engines understand your business. SEO (search engine optimization) is how your site earns visibility in Google results for the services and areas you serve.",
   },
   {
     title: "Website + SEO + AI Search Readiness",
     description:
-      "Everything above, plus readiness for AI-driven search. AEO and GEO mean structuring your content so AI assistants and AI overviews can understand your business and represent it accurately. No one can guarantee AI placement — we make sure your business is easy to understand and cite.",
+      "Everything above, plus readiness for AI-driven search. AEO and GEO mean structuring your content so AI assistants and AI overviews can understand your business and represent it accurately — we make sure your business is easy to understand and cite.",
   },
 ] as const;
 
@@ -154,7 +154,7 @@ export const PROCESS_STEPS = [
     step: "01",
     title: "Discovery",
     description:
-      "A short consultation about your business, services, service area and goals — and an honest view of whether a new website is the right next step.",
+      "A short consultation about your business, services, service area and goals — and a clear view of whether a new website is the right next step.",
   },
   {
     step: "02",
@@ -203,9 +203,9 @@ export const TRUST_SIGNALS: TrustSignalData[] = [
   },
   {
     icon: "pin",
-    title: "Honest positioning",
+    title: "Pakistan-based, serving US clients",
     description:
-      "We are a Pakistan-based development team serving US clients remotely — and we say so plainly. No fake local office, no invented results.",
+      "We are a Pakistan-based development team serving US clients remotely.",
   },
   {
     icon: "custom",
