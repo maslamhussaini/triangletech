@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { RouteLink } from "@/components/navigation";
 import { Icon } from "@/components/icons";
-import { pageMetadata } from "@/lib/site";
+import { featureNotes, products, pageMetadata } from "@/lib/site";
 
 export const metadata: Metadata = pageMetadata(
   "Dynamic Inventory Count",
@@ -21,18 +21,10 @@ const screenshots = [
   { src: "/products/dynamic-inventory-count/05_counter_reset.png", alt: "Dynamic Counts view after counter reset", title: "Automatic Counter Reset After Counting", sub: "Relevant activity counters reset after successful physical inventory reconciliation." },
 ];
 
-const features = [
-  { title: "Activity-Based Cycle Counting", desc: "Count inventory based on actual stock activity — receipts, deliveries, internal transfers and returns — instead of waiting for fixed calendar schedules." },
-  { title: "Count After X Completed Movements", desc: "Request a physical count after a configurable number of completed stock movements for a product at a location." },
-  { title: "Count After X Cumulative Quantity", desc: "Request a count after cumulative stock activity reaches a quantity threshold, normalized to the product's base unit of measure." },
-  { title: "Product + Location Counters", desc: "Per-product and per-location counters accumulate automatically as matching stock moves complete." },
-  { title: "Receipts, Deliveries, Transfers, Returns", desc: "Incoming receipts, customer deliveries, internal transfers and returns all contribute to activity counters." },
-  { title: "Partial and Backorder Completions", desc: "Partial deliveries, receipts and backorder completions contribute their completed quantities as they occur." },
-  { title: "Native Odoo Physical Inventory", desc: "Works directly with Odoo's existing Physical Inventory workflow — no replacement counting UI." },
-  { title: "Multi-Company Support", desc: "Rules and counters are isolated per company via standard Odoo multi-company record rules." },
-  { title: "Dashboard", desc: "A dedicated dashboard shows active rules, items due for count, trigger types, locations, and top due items with clickable navigation." },
-  { title: "$39 Price", desc: "Available on the Odoo Apps store for $39, ready for Odoo 19." },
-];
+const dicProduct = products.find(p => p.id === "dynamic-inventory-count")!;
+/** Feature list is derived from the site.ts source of truth — the same
+    feature names and notes shown on the generic product detail page. */
+const features = dicProduct.features.map(title => ({ title, desc: featureNotes[title] ?? "" }));
 
 export default function DynamicInventoryCountPage() {
   return (

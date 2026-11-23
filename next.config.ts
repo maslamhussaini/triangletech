@@ -64,6 +64,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  /**
+   * Orphaned tool URLs (2026-11-24): six free-tool slugs were linked from
+   * outside the site before their routes existed, and return 404. They are
+   * not in the sitemap and not linked from any page. Redirect them to the
+   * /tools directory rather than leaving dead links; the tools themselves
+   * live on other branches and are a separate owner decision.
+   */
+  async redirects() {
+    return [
+      { source: "/tools/time-card-calculator", destination: "/tools", permanent: true },
+      { source: "/tools/hours-to-decimal", destination: "/tools", permanent: true },
+      { source: "/tools/work-hours-calculator", destination: "/tools", permanent: true },
+      { source: "/tools/gravel-calculator", destination: "/tools", permanent: true },
+      { source: "/tools/mulch-calculator", destination: "/tools", permanent: true },
+      { source: "/tools/topsoil-calculator", destination: "/tools", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

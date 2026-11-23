@@ -5,7 +5,7 @@ import { RouteLink } from "@/components/navigation";
 import { PageIntro, ContactCTA } from "@/components/page-parts";
 import { ProjectPreviewFrame } from "@/components/portfolio-section";
 import { portfolioCaseStudies, portfolioProjects } from "@/lib/portfolio";
-import { caseStudies, pageMetadata } from "@/lib/site";
+import { caseStudies, productAvailability, products, pageMetadata } from "@/lib/site";
 
 export function generateStaticParams() {
   return [
@@ -57,15 +57,20 @@ export default async function CaseStudyDetail({ params }: { params: Promise<{ sl
   const product = caseStudies.find(item => item.id === slug);
   if (!product) notFound();
 
+  const productEntry = products.find(p => p.id === product.productId);
+  const availability = productAvailability[product.productId];
+
   return <>
-    <PageIntro label={`CASE STUDY · ${product.category.toUpperCase()}`} title={product.name}>{product.solution}</PageIntro>
+    <PageIntro label={`INTERNAL PRODUCT · ${product.category.toUpperCase()}`} title={product.name}>{productEntry ? `${productEntry.description} ${productEntry.audience}` : product.solution}</PageIntro>
     <div className="container case-grid-full">
       <article className="case-card case-article">
         <span className="eyebrow">{product.category}</span>
+        {availability && <p><strong>Status: {availability.status}</strong> — {availability.note}</p>}
         <div className="case-block"><h2>The problem</h2><p>{product.problem}</p></div>
         <div className="case-block"><h2>What we built</h2><p>{product.solution}</p></div>
         <ul className="tech-tags">{product.tags.map(tag => <li key={tag}>{tag}</li>)}</ul>
         <div className="case-links">
+          {productEntry && <RouteLink className="text-link" href={`/products/${product.productId}`}>See the {productEntry.name} product page<Icon name="arrow" /></RouteLink>}
           <RouteLink className="text-link" href="/case-studies">Back to all case studies<Icon name="arrow" /></RouteLink>
         </div>
       </article>
