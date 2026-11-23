@@ -11,7 +11,7 @@ import { Icon } from "./icons";
  */
 export function HeroVisual() {
   return <div className="hero-visual" aria-hidden="true">
-    <BrowserFrame label="app.triangletech.co/ordermate">
+    <BrowserFrame label="Illustrated preview">
       <DashboardMockup layout="stats" accent="cyan" label="OrderMate — Business Overview" productId="ordermate" screenId="dashboard" />
     </BrowserFrame>
 
@@ -31,5 +31,6 @@ export function HeroVisual() {
 
     <div className="hero-float hero-float-sales"><span className="eco-dot" /><strong>Sales today</strong><span>$4,820 across 3 locations</span></div>
     <div className="hero-float hero-float-inventory"><span className="eco-dot" /><strong>Low stock</strong><span>5 items need reordering</span></div>
+    <div className="hero-sample-note">Illustrated preview · Sample data</div>
   </div>;
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DashboardMockup } from "./dashboard-mockup";
 import type { ScreenLayout } from "@/lib/site";
 
-export function BrowserFrame({ children, label = "app.triangletech.co" }: { children: React.ReactNode; label?: string }) {
+export function BrowserFrame({ children, label = "Illustrated preview" }: { children: React.ReactNode; label?: string }) {
   return <div className="browser-frame">
     <div className="browser-chrome"><span className="chrome-dot" /><span className="chrome-dot" /><span className="chrome-dot" /><span className="chrome-url">{label}</span></div>
     <div className="browser-body">{children}</div>

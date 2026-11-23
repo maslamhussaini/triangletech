@@ -9,7 +9,6 @@ export function ProductCTA({ productId, productName }: { productId: ProductId; p
   const { openChat } = useChatWidget();
   return <div className="product-cta hero-actions">
     <RouteLink className="button button-accent" href={`/contact?interest=${encodeURIComponent(productName)}`}>Book {productName} Demo<Icon name="arrow" /></RouteLink>
-    <RouteLink className="button button-outline-dark" href={`/contact?interest=${encodeURIComponent(productName)}`}>Request Product Access</RouteLink>
     <button className="button button-outline-dark" onClick={() => openChat(productId)}><Icon name="chat" />Chat About This Product</button>
   </div>;
 }

@@ -55,7 +55,7 @@ export function ProductShowcase({ items }: { items: readonly Product[] }) {
           <RouteLink className="button button-outline-dark" href={`/products/${product.id}`}>Explore Product<Icon name="arrow" /></RouteLink>
         </div>
       </div>
-      <div className="showcase-visual"><BrowserFrame label={`app.triangletech.co/${product.id}`}><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></BrowserFrame></div>
+      <div className="showcase-visual"><BrowserFrame label="Illustrated preview"><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></BrowserFrame></div>
     </div>
   </div>;
 }

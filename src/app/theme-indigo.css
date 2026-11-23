@@ -3410,3 +3410,31 @@ button.card-premium:focus-visible {
   }
   .site-footer { padding-bottom: max(105px, calc(88px + env(safe-area-inset-bottom))); }
 }
+
+/* Website completion 2026-11-24: grouped technology stack on the homepage.
+   Additive only — the flat .tech-pill-list styles above are untouched. */
+.tech-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; }
+.tech-group h3 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+
+/* Website completion 2026-11-24: service detail lists (coverage + limits). */
+.service-list { margin: 0; padding-left: 20px; display: grid; gap: 10px; max-width: 720px; }
+.service-list-check { list-style: none; padding-left: 0; }
+.service-list-check li { display: flex; gap: 10px; align-items: flex-start; }
+.service-list-check li .icon { flex: none; color: var(--brand-strong); margin-top: 3px; }
+
+/* Website completion 2026-11-24: "Sample data" labelling on illustrated mockups. */
+.mock-sample-note { font-size: 10px; color: #7d8db1; text-align: right; padding: 6px 10px; border-top: 1px solid #1c2b4c; }
+.hero-sample-note { font-size: 10.5px; color: #7d8db1; text-align: right; margin-top: 8px; }
+
+/* Website completion 2026-11-24: footer column titles are styled paragraphs,
+   not headings — the footer sits below the page h1 in raw HTML order. */
+.site-footer-indigo .footer-grid .footer-column-title {
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
+}
