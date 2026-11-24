@@ -60,5 +60,6 @@ export function DashboardMockup({ layout, accent = "cyan", label = "Overview", p
         </>}
       </div>
     </div>
+    <div className="mock-sample-note">Sample data</div>
   </div>;
 }

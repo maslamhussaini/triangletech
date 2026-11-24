@@ -4,8 +4,8 @@ import { useId, useState, type FormEvent } from "react";
 import { business, demoOptions } from "@/lib/site";
 import { Icon } from "./icons";
 
-type Fields = { name: string; company: string; email: string; whatsapp: string; businessType: string; interest: string; contactTime: string; message: string };
-const initial: Fields = { name: "", company: "", email: "", whatsapp: "", businessType: "", interest: "", contactTime: "", message: "" };
+type Fields = { name: string; company: string; email: string; phone: string; businessType: string; interest: string; contactTime: string; message: string };
+const initial: Fields = { name: "", company: "", email: "", phone: "", businessType: "", interest: "", contactTime: "", message: "" };
 
 export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: string }) {
   const id = useId();
@@ -22,7 +22,7 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
     setErrors(nextErrors);
     const first = Object.keys(nextErrors)[0];
     if (first) { document.getElementById(`${id}-${first}`)?.focus(); return; }
-    const message = ["Request a Product Demo", "", `Name: ${values.name.trim()}`, `Business name: ${values.company.trim() || "Not specified"}`, `Email: ${values.email.trim()}`, `WhatsApp: ${values.whatsapp.trim() || "Not specified"}`, `Business type: ${values.businessType.trim() || "Not specified"}`, `Product interested in: ${values.interest}`, `Preferred contact time: ${values.contactTime.trim() || "Not specified"}`, `Message: ${values.message.trim() || "Not specified"}`].join("\n");
+    const message = ["Request a Product Demo", "", `Name: ${values.name.trim()}`, `Business name: ${values.company.trim() || "Not specified"}`, `Email: ${values.email.trim()}`, `Phone: ${values.phone.trim() || "Not specified"}`, `Business type: ${values.businessType.trim() || "Not specified"}`, `Product interested in: ${values.interest}`, `Preferred contact time: ${values.contactTime.trim() || "Not specified"}`, `Message: ${values.message.trim() || "Not specified"}`].join("\n");
     const url = `mailto:${business.email}?subject=${encodeURIComponent("Demo Request — TriangleTech")}&body=${encodeURIComponent(message)}`;
     window.location.href = url;
     setSubmitted(true);
@@ -52,13 +52,13 @@ export function DemoRequestForm({ initialInterest = "" }: { initialInterest?: st
   return <section className="request-panel" aria-labelledby={`${id}-title`}>
     <div className="form-heading"><span className="eyebrow">REQUEST A PRODUCT DEMO</span><span className="form-mark"><Icon name="arrow" /></span></div>
     <h2 id={`${id}-title`}>See it before you decide.</h2>
-    <p className="form-intro">Tell us about your business. We&apos;ll walk you through the right product live.</p>
+    <p className="form-intro">Tell us about your business. We&apos;ll show you the right product in a guided walkthrough.</p>
     <form onSubmit={submit} noValidate aria-label="Request a product demo">
       <div className="form-grid">
         <div className="field-premium"><label htmlFor={`${id}-name`}>Full name <span className="required-mark">*</span></label><input className="input-premium" {...field("name")} autoComplete="name" placeholder="Full name" required maxLength={100} />{error("name")}</div>
         <div className="field-premium"><label htmlFor={`${id}-company`}>Business name <span className="optional-mark">optional</span></label><input className="input-premium" {...field("company")} autoComplete="organization" placeholder="Your business name" maxLength={160} /></div>
         <div className="field-premium"><label htmlFor={`${id}-email`}>Email <span className="required-mark">*</span></label><input className="input-premium" {...field("email")} type="email" autoComplete="email" placeholder="you@company.com" required maxLength={100} />{error("email")}</div>
-        <div className="field-premium"><label htmlFor={`${id}-whatsapp`}>WhatsApp number <span className="optional-mark">optional</span></label><input className="input-premium" {...field("whatsapp")} type="tel" autoComplete="tel" placeholder="+92 3XX XXXXXXX" maxLength={30} /></div>
+        <div className="field-premium"><label htmlFor={`${id}-phone`}>Phone number <span className="optional-mark">optional</span></label><input className="input-premium" {...field("phone")} type="tel" autoComplete="tel" placeholder="Your phone number" maxLength={30} /></div>
         <div className="field-premium"><label htmlFor={`${id}-businessType`}>Business type <span className="optional-mark">optional</span></label><input className="input-premium" {...field("businessType")} placeholder="e.g. Retail, distribution, services" maxLength={100} /></div>
         <div className="field-premium"><label htmlFor={`${id}-interest`}>Product interested in <span className="required-mark">*</span></label><select className="select-premium" {...field("interest")} required><option value="">Select a product</option>{demoOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>{error("interest")}</div>
         <div className="field-premium field-wide"><label htmlFor={`${id}-contactTime`}>Preferred contact time <span className="optional-mark">optional</span></label><input className="input-premium" {...field("contactTime")} placeholder="e.g. Weekday afternoons" maxLength={100} /></div>

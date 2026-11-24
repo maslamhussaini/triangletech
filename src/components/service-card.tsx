@@ -10,7 +10,7 @@ const WEB_SERVICE_IDS = ["web-apps", "technical-seo-audit", "aeo-geo-readiness",
 export function serviceCta(service: Service): { href: string; label: string } {
   return WEB_SERVICE_IDS.includes(service.id)
     ? { href: "/websites-for-us-small-business#consultation", label: "Request a Free Consultation" }
-    : { href: "/websites-for-us-small-business#consultation", label: "Request a Free Consultation" };
+    : { href: "/contact", label: "Discuss Your Project" };
 }
 
 export function ServiceCard({ service, compact = false }: { service: Service; compact?: boolean }) {

@@ -7,7 +7,7 @@ import { tools, toolsByCategory, toolStatusLabels } from "@/lib/tools";
 
 export const metadata = pageMetadata(
   "Free Business Calculators & Online Tools",
-  "Free business calculators from TriangleTech — product cost and profit tools, sales tax and VAT calculators, and creator and e-commerce earnings tools.",
+  "Two free business calculators live now — product cost and profit, and Pakistan sales tax — with more in development.",
   "/tools"
 );
 
@@ -30,8 +30,8 @@ export default function Tools() {
     ],
   };
 
-  // No calculator route exists yet, so every item points at its in-page anchor
-  // rather than a URL that would 404.
+  // Live tools link to their real routes; tools still in development point
+  // at their in-page anchor rather than a URL that would 404.
   const collection = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
@@ -48,7 +48,7 @@ export default function Tools() {
         position: index + 1,
         name: tool.name,
         description: `${tool.shortDescription} (${toolStatusLabels[tool.status]})`,
-        url: `${business.url}/tools#${tool.slug}`,
+        url: tool.status === "live" ? `${business.url}/tools/${tool.slug}` : `${business.url}/tools#${tool.slug}`,
       })),
     },
   };
@@ -62,7 +62,7 @@ export default function Tools() {
       <div className="container tools-hero-inner">
         <div className="tools-hero-copy">
           <span className="eyebrow-indigo">FREE BUSINESS TOOLS</span>
-          <h1>Smarter Tools.<br /><span className="tools-hero-accent">Better Decisions.</span></h1>
+          <h1>Smarter Tools.{" "}<br /><span className="tools-hero-accent">Better Decisions.</span></h1>
           <p>Free calculators and practical business tools built to help entrepreneurs, sellers and creators make better decisions.</p>
           <div className="tools-hero-actions">
             <a className="button-indigo" href="#tool-directory">Explore Tools<Icon name="arrow" /></a>
@@ -84,7 +84,7 @@ export default function Tools() {
     </section>
 
     <div className="container tools-main" id="tool-directory">
-      <p className="tools-section-note">Grouped by what you are trying to work out. Nothing here is live yet — each card shows where it stands.</p>
+      <p className="tools-section-note">Grouped by what you are trying to work out. Two calculators are live now; the rest are in development — each card shows where it stands.</p>
 
       {groups.map(group => (
         <section key={group.category} className="tools-group" aria-labelledby={`group-${slugify(group.category)}`}>

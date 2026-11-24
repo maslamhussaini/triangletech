@@ -1082,8 +1082,6 @@ button.card-premium:focus-visible {
   .mobile-navigation nav a[aria-current="page"] { color: var(--brand); }
   /* Preserves the spacing the old `.mobile-navigation .button` rule gave. */
   .mobile-navigation .button-indigo { margin-top: 20px; }
-  .mobile-nav-whatsapp { border-color: var(--border-brand); color: var(--brand-strong); }
-  .mobile-nav-whatsapp:hover { background: var(--brand-soft); }
 }
 
 /* --- 10.3 Homepage hero: layered illuminated indigo glass ----------------
@@ -1486,12 +1484,10 @@ button.card-premium:focus-visible {
 
 /* --- 10.13 Chat + floating CTA harmonisation ----------------------------- */
 /* Behaviour untouched â€” contrast/stacking only. The launcher keeps its cyan
-   identity but gains a ring so it stays separated from the new indigo footer;
-   .floating-whatsapp keeps --blue. z-index order is unchanged:
-   mobile-cta 35 < site-header 40 < floating-whatsapp 45 < chat 46. */
+   identity but gains a ring so it stays separated from the new indigo footer.
+   z-index order is unchanged: mobile-cta 35 < site-header 40 < chat 46. */
 
 .chat-launcher { box-shadow: 0 10px 26px rgba(8, 6, 32, 0.45), 0 0 0 4px rgba(124, 92, 255, 0.18); }
-.floating-whatsapp { box-shadow: 0 10px 26px rgba(8, 6, 32, 0.45), 0 0 0 4px rgba(124, 92, 255, 0.16); }
 .chat-header { background: var(--brand-strong); }
 .chat-header-brand .brand-mark { color: #A79BFF; }
 .chat-user { background: var(--brand-strong); }
@@ -1612,8 +1608,6 @@ button.card-premium:focus-visible {
   }
   .mobile-navigation nav a { color: #E4E5FA; border-bottom-color: rgba(167, 155, 255, 0.16); }
   .mobile-navigation nav a[aria-current="page"] { color: #FFFFFF; }
-  .mobile-nav-whatsapp { border-color: rgba(167, 155, 255, 0.3); color: #E4E5FA; }
-  .mobile-nav-whatsapp:hover { background: rgba(255, 255, 255, 0.08); }
 }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   @media (max-width: 799px) {
@@ -1835,10 +1829,9 @@ button.card-premium:focus-visible {
   pointer-events: none;
 }
 
-/* --- 11.9 Chat launcher + WhatsApp: one clear indigo hierarchy ----------
+/* --- 11.9 Chat launcher: one clear indigo hierarchy ----------
    Behaviour untouched. The launcher is the TriangleTech-brand control and
-   becomes indigo; WhatsApp stays its own blue but drops to a quieter weight,
-   so cyan/blue/indigo no longer compete at the same volume. */
+   becomes indigo, so cyan/indigo no longer compete at the same volume. */
 
 .chat-launcher {
   background: var(--brand);
@@ -1850,17 +1843,8 @@ button.card-premium:focus-visible {
     0 0 36px rgba(99, 88, 244, 0.35);
 }
 .chat-launcher:hover { background: var(--brand-strong); background-image: var(--gradient-brand); }
-.floating-whatsapp {
-  background: rgba(20, 19, 58, 0.86);
-  color: #C9CCF5;
-  border: 1px solid rgba(167, 155, 255, 0.28);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 10px 26px rgba(6, 5, 24, 0.4);
-}
-.floating-whatsapp:hover { background: rgba(30, 28, 80, 0.94); color: #FFFFFF; }
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .floating-whatsapp {
+  .chat-launcher {
     background: rgba(20, 19, 58, 0.66);
     -webkit-backdrop-filter: blur(14px);
     backdrop-filter: blur(14px);
@@ -1895,8 +1879,7 @@ button.card-premium:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .hero-visual-frame,
   .device-section .device-stage,
-  .chat-launcher,
-  .floating-whatsapp { transition: none !important; animation: none !important; }
+  .chat-launcher { transition: none !important; animation: none !important; }
   .home-hero-indigo .hero-actions .button-indigo:hover,
   .home-hero-indigo .hero-actions .button-indigo-secondary:hover { transform: none !important; }
 }
@@ -2800,9 +2783,7 @@ button.card-premium:focus-visible {
     scroll-margin-bottom: 90px;
   }
 
-  /* The calculator already has a full-width WhatsApp CTA. Suppress the
-     floating chat launcher only on this narrow route so it cannot sit over a
-     helper paragraph, field, warning, or result action. */
+  /* Suppress the floating chat launcher only on this narrow route so it cannot sit over a helper paragraph, field, warning, or result action. */
   body:has(.pakistan-tax-calculator) .chat-launcher,
   body:has(.pakistan-tax-calculator) .chat-minibar {
     display: none;
@@ -2838,18 +2819,8 @@ button.card-premium:focus-visible {
 @media (max-width: 1411px) {
   body:has(.pakistan-tax-calculator) .chat-launcher,
   body:has(.pakistan-tax-calculator) .chat-minibar,
-  body:has(.pakistan-tax-calculator) .chat-window,
-  body:has(.pakistan-tax-calculator) .floating-whatsapp {
+  body:has(.pakistan-tax-calculator) .chat-window {
     display: none;
-  }
-}
-
-/* The desktop floating WhatsApp control is kept, but lifted on this route so
-   it cannot sit over the result action row. Mobile keeps the existing hidden
-   floating control and global CTA behavior. */
-@media (min-width: 800px) {
-  body:has(.pakistan-tax-calculator) .floating-whatsapp {
-    bottom: 132px;
   }
 }
 
@@ -3391,15 +3362,12 @@ button.card-premium:focus-visible {
   }
   .mobile-navigation nav a { color: #e4e5fa; }
   .mobile-navigation nav a:focus-visible,
-  .mobile-navigation .button-indigo:focus-visible,
-  .mobile-nav-whatsapp:focus-visible {
+  .mobile-navigation .button-indigo:focus-visible {
     outline: 2px solid #c9ccf5;
     outline-offset: 2px;
   }
   /* One mobile contact pattern: the single sticky consultation button.
-     The floating chat launcher is hidden on mobile (chat remains reachable
-     from in-page "Chat About This Product" buttons); the floating WhatsApp
-     control was already hidden on mobile in globals.css. */
+     The floating chat launcher is hidden on mobile (chat remains reachable from in-page "Chat About This Product" buttons). */
   .chat-launcher { display: none; }
   .mobile-cta-single { padding: 10px 15px max(10px, env(safe-area-inset-bottom)); }
   .mobile-cta-single a {
@@ -3409,4 +3377,32 @@ button.card-premium:focus-visible {
     background: var(--brand-strong);
   }
   .site-footer { padding-bottom: max(105px, calc(88px + env(safe-area-inset-bottom))); }
+}
+
+/* Website completion 2026-11-24: grouped technology stack on the homepage.
+   Additive only — the flat .tech-pill-list styles above are untouched. */
+.tech-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 28px; }
+.tech-group h3 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+
+/* Website completion 2026-11-24: service detail lists (coverage + limits). */
+.service-list { margin: 0; padding-left: 20px; display: grid; gap: 10px; max-width: 720px; }
+.service-list-check { list-style: none; padding-left: 0; }
+.service-list-check li { display: flex; gap: 10px; align-items: flex-start; }
+.service-list-check li .icon { flex: none; color: var(--brand-strong); margin-top: 3px; }
+
+/* Website completion 2026-11-24: "Sample data" labelling on illustrated mockups. */
+.mock-sample-note { font-size: 10px; color: #7d8db1; text-align: right; padding: 6px 10px; border-top: 1px solid #1c2b4c; }
+.hero-sample-note { font-size: 10.5px; color: #7d8db1; text-align: right; margin-top: 8px; }
+
+/* Website completion 2026-11-24: footer column titles are styled paragraphs,
+   not headings — the footer sits below the page h1 in raw HTML order. */
+.site-footer-indigo .footer-grid .footer-column-title {
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(124, 92, 255, 0.22);
 }

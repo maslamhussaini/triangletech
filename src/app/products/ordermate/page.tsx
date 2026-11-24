@@ -35,7 +35,7 @@ export default function OrderMateProduct() {
         <ProductCTA productId={product.id} productName={product.name} />
       </div>
       <div className="product-detail-visual">
-        <BrowserFrame label={`app.triangletech.co/${product.id}`}>
+        <BrowserFrame label="Real screenshot — OrderMate dashboard">
           <img src="/products/ordermate/dashboard-desktop.png" alt="OrderMate dashboard screenshot" style={{ width: "100%", height: "auto", display: "block" }} />
         </BrowserFrame>
       </div>
@@ -48,13 +48,13 @@ export default function OrderMateProduct() {
     </div></section>
 
     <section className={`section device-section accent-${product.accent}`}><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">WORKS ACROSS YOUR BUSINESS</span><h2>{product.name} on every device.</h2></div></div>
+      <div className="section-heading"><div><span className="eyebrow">WORKS ACROSS YOUR BUSINESS</span><h2>{product.name} on every device.</h2><p className="section-lead">Illustrated walkthroughs of the {product.name} screens on desktop, tablet and phone.</p></div></div>
       <DevicePreview layout={product.heroLayout} accent={product.accent} productId={product.id} screenId="hero" />
       <div className="device-section-cta"><ChatTriggerButton productId={product.id} className="button button-accent" /></div>
     </div></section>
 
     <section className="section"><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">SCREEN-BY-SCREEN GUIDE</span><h2>Inside {product.name}.</h2></div></div>
+      <div className="section-heading"><div><span className="eyebrow">SCREEN-BY-SCREEN GUIDE</span><h2>Inside {product.name}.</h2><p className="section-lead">Illustrated walkthroughs with sample data — a guided walkthrough shows the real product.</p></div></div>
       <ScreenWalkthrough screens={product.screens} accent={product.accent} productId={product.id} />
     </div></section>
 

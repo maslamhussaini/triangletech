@@ -1,5 +1,4 @@
-export function Icon({ name, className = "" }: { name: string; className?: string }) {
-  const paths: Record<string, React.ReactNode> = {
+const iconPaths: Record<string, React.ReactNode> = {
     arrow: <path d="M4 12h15m-6-6 6 6-6 6" />,
     phone: <path d="m5 3 4 1 1 5-3 2a15 15 0 0 0 6 6l2-3 5 1 1 4c-1 5-8 2-12-2S2 5 5 3Z" />,
     chat: <><path d="M21 11a9 9 0 0 1-13 8l-5 2 1-5a9 9 0 1 1 17-5Z" /><path d="M8 9h8M8 13h5" /></>,
@@ -29,8 +28,18 @@ export function Icon({ name, className = "" }: { name: string; className?: strin
     creator: <><rect x="7" y="2.5" width="10" height="19" rx="2" /><path d="M11 18.5h2" /><path d="m10.5 8 4 2.5-4 2.5Z" /></>,
     affiliate: <><path d="M4 5h2l2.2 9.2a2 2 0 0 0 2 1.5h6.2a2 2 0 0 0 2-1.5L20 8H7" /><circle cx="10.5" cy="19.5" r="1.3" /><circle cx="17" cy="19.5" r="1.3" /></>,
     wallet: <><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v2.5" /><rect x="4" y="7.5" width="16" height="12" rx="2" /><path d="M16 13.5h2" /></>,
-  };
-  return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] ?? paths.custom}</svg>;
+    desktop: <><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M9 20h6M12 16v4" /></>,
+    refresh: <><path d="M20 12a8 8 0 1 1-2.34-5.66" /><path d="M20 3v5h-5" /></>,
+    migrate: <><ellipse cx="8" cy="6" rx="5" ry="2.5" /><path d="M3 6v10c0 1.4 2.2 2.5 5 2.5s5-1.1 5-2.5V6" /><path d="M3 11c0 1.4 2.2 2.5 5 2.5" /><path d="M15 12h6m-2-2 2 2-2 2" /></>,
+    workflow: <><rect x="3" y="4" width="6" height="6" rx="1" /><rect x="15" y="14" width="6" height="6" rx="1" /><path d="M9 7h3a3 3 0 0 1 3 3v4" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+};
+
+/** The icon names a service (or anything else) may reference. */
+export const iconNames = new Set(Object.keys(iconPaths));
+
+export function Icon({ name, className = "" }: { name: string; className?: string }) {
+  return <svg className={`icon ${className}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name] ?? iconPaths.custom}</svg>;
 }
 
 export function ServiceVisual({ kind }: { kind: string }) {

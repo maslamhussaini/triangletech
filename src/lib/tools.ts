@@ -5,9 +5,10 @@
  * source of truth for what appears in the /tools directory, the same way
  * `products` / `services` in site.ts drive their own sections.
  *
- * Phase 1A: nothing is live yet, so no tool has a route. `slug` is stored for
- * display, anchors and future linking only — do not build an href from it
- * until the corresponding route actually exists.
+ * Two tools are live with routes (product-cost-profit-calculator,
+ * pakistan-sales-tax-calculator); the rest are in development. `slug` is
+ * stored for display, anchors and future linking — build an href from it
+ * only when the corresponding route actually exists.
  */
 
 export const toolCategories = [

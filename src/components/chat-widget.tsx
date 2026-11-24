@@ -99,7 +99,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const errors: Partial<Record<keyof Lead, string>> = {};
     if (lead.name.trim().length < 2) errors.name = "Enter your full name.";
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email.trim())) errors.email = "Enter a valid email address.";
-    if (lead.phone.replace(/\D/g, "").length < 7) errors.phone = "Enter a valid phone or WhatsApp number.";
+    if (lead.phone.trim() !== "" && lead.phone.replace(/\D/g, "").length < 7) errors.phone = "Enter a valid phone number.";
     setLeadErrors(errors);
     return Object.keys(errors).length === 0;
   }
@@ -184,7 +184,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         <p>Tell us a little about yourself and our product assistant will help answer your questions.</p>
         <div className="field-premium"><label htmlFor="chat-lead-name">Full name <span className="required-mark">*</span></label><input className="input-premium" ref={nameInputRef} id="chat-lead-name" value={lead.name} onChange={e => setLead({ ...lead, name: e.target.value })} placeholder="Full name" aria-invalid={!!leadErrors.name} maxLength={100} />{leadErrors.name && <span className="error-premium">{leadErrors.name}</span>}</div>
         <div className="field-premium"><label htmlFor="chat-lead-email">Email address <span className="required-mark">*</span></label><input className="input-premium" id="chat-lead-email" type="email" value={lead.email} onChange={e => setLead({ ...lead, email: e.target.value })} placeholder="you@company.com" aria-invalid={!!leadErrors.email} maxLength={100} />{leadErrors.email && <span className="error-premium">{leadErrors.email}</span>}</div>
-        <div className="field-premium"><label htmlFor="chat-lead-phone">Phone / WhatsApp number <span className="required-mark">*</span></label><input className="input-premium" id="chat-lead-phone" type="tel" value={lead.phone} onChange={e => setLead({ ...lead, phone: e.target.value })} placeholder="+92 3XX XXXXXXX" aria-invalid={!!leadErrors.phone} maxLength={30} />{leadErrors.phone && <span className="error-premium">{leadErrors.phone}</span>}</div>
+        <div className="field-premium"><label htmlFor="chat-lead-phone">Phone number <span className="optional-mark">optional</span></label><input className="input-premium" id="chat-lead-phone" type="tel" value={lead.phone} onChange={e => setLead({ ...lead, phone: e.target.value })} placeholder="Your phone number" aria-invalid={!!leadErrors.phone} maxLength={30} />{leadErrors.phone && <span className="error-premium">{leadErrors.phone}</span>}</div>
         <div className="field-premium"><label htmlFor="chat-lead-business">Business name <span className="optional-mark">optional</span></label><input className="input-premium" id="chat-lead-business" value={lead.businessName} onChange={e => setLead({ ...lead, businessName: e.target.value })} placeholder="Your business name" maxLength={160} /></div>
         <p className="chat-privacy-note">Your information is used to continue this product conversation and respond to your request.</p>
         <button className="button-indigo chat-lead-submit" type="submit">Talk to Us<Icon name="arrow" /></button>

@@ -1,16 +1,16 @@
 import { RouteLink } from "@/components/navigation";
 import { Icon } from "@/components/icons";
 import { HeroVisual } from "@/components/hero-visual";
-import { ProductSelector, ProductShowcase } from "@/components/product-showcase";
+import { ProductShowcase } from "@/components/product-showcase";
 import { DevicePreview } from "@/components/device-frame";
 import { GuidedProductFinder } from "@/components/guided-finder";
 import { ServiceCard } from "@/components/service-card";
 import { PortfolioSection } from "@/components/portfolio-section";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { ContactCTA } from "@/components/page-parts";
-import { faqs, hero, howItWorks, products, services, capabilities, technologies, trustPoints, pageMetadata } from "@/lib/site";
+import { faqs, hero, howItWorks, products, services, capabilities, technologyGroups, trustPoints, pageMetadata } from "@/lib/site";
 
-export const metadata = pageMetadata("Business Software and Digital Solutions", "TriangleTech builds practical software for sales, inventory, digital invoicing, delivery operations and ecommerce. Explore our products and request a free consultation.", "/");
+export const metadata = pageMetadata("Business Software and Digital Solutions", "Practical software for sales, inventory, digital invoicing, delivery operations and ecommerce — plus professional websites for US small businesses.", "/");
 
 /* Purely visual emphasis: the headline STRING in site.ts is unchanged, it is
    only split so the closing phrase can carry the indigo tint. If the copy ever
@@ -42,12 +42,12 @@ export default function Home() {
     </section>
 
     <section className="section capabilities-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">OUR CAPABILITIES</span><h2>Custom Software Development, SaaS Products &amp; Digital Solutions</h2><p className="section-lead">No fixed product count and no invented numbers — here is what TriangleTech builds and supports, for businesses that are still growing.</p></div></div>
+      <div className="section-heading"><div><span className="eyebrow">OUR CAPABILITIES</span><h2>Custom Software Development, SaaS Products &amp; Digital Solutions</h2><p className="section-lead">Here is what TriangleTech builds and supports, for businesses that are still growing.</p></div></div>
       <div className="why-grid">{capabilities.map(item => <div key={item.title} className="why-card"><Icon name="check" /><h3>{item.title}</h3><p>{item.description}</p></div>)}</div>
     </div></section>
 
     <section className="section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">WEBSITES FOR US SMALL BUSINESSES</span><h2>A professional website that brings in inquiries.</h2><p className="section-lead">If you are a US small business, start here: a clear website, a written quote before work begins, and optional SEO and AI-search readiness. No fake local office, no invented results, no ranking promises.</p></div></div>
+      <div className="section-heading"><div><span className="eyebrow">WEBSITES FOR US SMALL BUSINESSES</span><h2>A professional website that brings in inquiries.</h2><p className="section-lead">If you are a US small business, start here: a clear website, a written quote before work begins, and optional SEO and AI-search readiness.</p></div></div>
       <div className="hero-actions">
         <RouteLink className="button-indigo" href="/websites-for-us-small-business#consultation">Request a Free Consultation<Icon name="arrow" /></RouteLink>
         <RouteLink className="button-indigo-secondary" href="/services">Explore Our Solutions</RouteLink>
@@ -61,17 +61,12 @@ export default function Home() {
     </div></section>
 
     <section className="section trust-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">HOW WE WORK</span><h2>What you can expect from us.</h2><p className="section-lead">No client-logo wall and no invented numbers — here is how the software is actually built and supported.</p></div></div>
+      <div className="section-heading"><div><span className="eyebrow">HOW WE WORK</span><h2>What you can expect from us.</h2><p className="section-lead">Here is how the software is actually built and supported.</p></div></div>
       <div className="why-grid">{trustPoints.map(item => <div key={item.title} className="why-card"><Icon name="check" /><h3>{item.title}</h3><p>{item.description}</p></div>)}</div>
     </div></section>
 
-    <section id="products" className="section products-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">OUR PRODUCTS</span><h2>Software for the work that matters most.</h2><p className="section-lead">Pick the one that matches the part of your business that needs it most. Each one can be shown live on request.</p></div></div>
-      <ProductSelector items={products} />
-    </div></section>
-
-    <section id="demos" className="section showcase-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">PRODUCT SHOWCASE</span><h2>Look inside each product.</h2><p className="section-lead">Switch between products to see the screens your team would actually use day to day.</p></div></div>
+    <section id="products" className="section showcase-section" data-reveal><div className="container">
+      <div className="section-heading"><div><span className="eyebrow">OUR PRODUCTS</span><h2>Software for the work that matters most.</h2><p className="section-lead">Pick the one that matches the part of your business that needs it most. Switch between products to see illustrated walkthroughs of the screens — a real dashboard screenshot is on the OrderMate page, and each product can be shown live on request.</p></div><RouteLink className="text-link" href="/products">See the full product directory<Icon name="arrow" /></RouteLink></div>
       <ProductShowcase items={products} />
     </div></section>
 
@@ -98,12 +93,12 @@ export default function Home() {
     <PortfolioSection />
 
     <section className="section video-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">DEMO WALKTHROUGHS</span><h2>See a product in action, live.</h2><p className="section-lead">No recorded video is published yet. A live walkthrough covers the same ground for OrderMate, FBR Digital, WaterFlow, Shopify Solutions and Dynamic Inventory Count, and you can ask questions.</p></div><RouteLink className="text-link" href="/contact">Request a live walkthrough<Icon name="arrow" /></RouteLink></div>
+      <div className="section-heading"><div><span className="eyebrow">DEMO WALKTHROUGHS</span><h2>Request a guided walkthrough.</h2><p className="section-lead">No recorded video is published yet. A guided walkthrough covers the same ground for OrderMate, FBR Digital, WaterFlow, Shopify Solutions and Dynamic Inventory Count, and you can ask questions as we go.</p></div><RouteLink className="text-link" href="/contact">Request a guided walkthrough<Icon name="arrow" /></RouteLink></div>
     </div></section>
 
     <section className="section technology-section" data-reveal><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">TECHNOLOGY WE WORK WITH</span><h2>A modern, dependable stack.</h2><p className="section-lead">Chosen for maintainability — so the system can be extended years from now without a rewrite.</p></div></div>
-      <ul className="tech-pill-list">{technologies.map(tech => <li key={tech}>{tech}</li>)}</ul>
+      <div className="section-heading"><div><span className="eyebrow">TECHNOLOGY WE WORK WITH</span><h2>A modern, dependable stack.</h2><p className="section-lead">Chosen for maintainability — so the system can be extended years from now.</p></div></div>
+      <div className="tech-groups">{technologyGroups.map(group => <div key={group.label} className="tech-group"><h3>{group.label}</h3><ul className="tech-pill-list">{group.items.map(tech => <li key={tech}>{tech}</li>)}</ul></div>)}</div>
     </div></section>
 
     <section className="section faq-preview" data-reveal><div className="container faq-layout">

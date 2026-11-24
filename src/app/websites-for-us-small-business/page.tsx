@@ -49,7 +49,7 @@ export default function WebsitesForUsSmallBusinessPage() {
           <h1>Professional websites built to help your business grow</h1>
           <p>
             TriangleTech designs and builds modern, mobile-friendly websites for US small
-            businesses — with clear packages, honest scope agreed before work begins, and
+            businesses — with clear packages and scope agreed in writing before work begins, and
             optional SEO and AI-search-readiness services when you are ready to grow.
           </p>
           <div className="hero-actions">
@@ -73,7 +73,7 @@ export default function WebsitesForUsSmallBusinessPage() {
       <LandingSection
         eyebrow="SOUND FAMILIAR?"
         title="Your website should be winning you work — not costing you it"
-        description="These are the problems we hear most often from small-business owners. A professional website fixes each of them."
+        description="These are the problems we hear most often from small-business owners. A professional website addresses each of them."
       >
         <TrustSignalGrid>
           {PROBLEMS.map(problem => (
@@ -160,7 +160,7 @@ export default function WebsitesForUsSmallBusinessPage() {
       </LandingSection>
 
       {/* H — FAQ */}
-      <LandingSection eyebrow="FAQ" title="Questions, answered honestly">
+      <LandingSection eyebrow="FAQ" title="Questions, answered">
         <div className="us-faq">
           <FAQList>
             {FAQS.map((entry, index) => (
@@ -194,7 +194,7 @@ export default function WebsitesForUsSmallBusinessPage() {
               your business.
             </h2>
             <p className="us-cta-note">
-              We will reply with honest next steps and a written quote. No pressure — and if a
+              We will reply with clear next steps and a written quote. No pressure — and if a
               new website is not what you need, we will tell you that instead.
             </p>
           </div>

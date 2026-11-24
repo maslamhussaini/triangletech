@@ -45,15 +45,15 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
         <p>{product.description}</p>
         <p className="product-audience-line">{product.audience}</p>
         <p><strong>Status: {productAvailability[product.id]?.status ?? "Demonstration Only"}</strong> — {productAvailability[product.id]?.note ?? "Demo walkthrough on request."}</p>
-        <p>Known limitation: no demo video is published for this product yet. A live walkthrough can be requested below; do not treat the illustrated screens as a running demo.</p>
+        <p>No demo video is published for this product yet. A guided walkthrough can be requested below; the screens on this page are illustrated walkthroughs, not a running demo.</p>
         <ProductCTA productId={product.id} productName={product.name} />
       </div>
-      <div className="product-detail-visual"><BrowserFrame label={`app.triangletech.co/${product.id}`}><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></BrowserFrame></div>
+      <div className="product-detail-visual"><BrowserFrame label="Illustrated preview"><DashboardMockup layout={product.heroLayout} accent={product.accent} label={product.name} productId={product.id} screenId="hero" /></BrowserFrame></div>
     </div></section>
 
     <section className="section"><div className="container">
       <div className="section-heading"><div><span className="eyebrow">MAIN FEATURES</span><h2>What {product.name} handles for you.</h2></div></div>
-      <div className="feature-grid">{product.features.map(f => <FeatureCard key={f} title={f} description={featureNotes[f] ?? `Part of ${product.name} from the first screen, not a paid add-on.`} />)}</div>
+      <div className="feature-grid">{product.features.map(f => <FeatureCard key={f} title={f} description={featureNotes[f] ?? `Part of ${product.name}.`} />)}</div>
       <div className="feature-grid-cta"><ChatTriggerButton productId={product.id} /></div>
     </div></section>
 
@@ -64,7 +64,7 @@ export default async function ProductDetail({ params }: { params: Promise<{ id: 
     </div></section>
 
     <section className="section"><div className="container">
-      <div className="section-heading"><div><span className="eyebrow">SCREEN-BY-SCREEN GUIDE</span><h2>Inside {product.name}.</h2></div></div>
+      <div className="section-heading"><div><span className="eyebrow">SCREEN-BY-SCREEN GUIDE</span><h2>Inside {product.name}.</h2><p className="section-lead">Illustrated walkthroughs with sample data — a guided walkthrough shows the real product.</p></div></div>
       <ScreenWalkthrough screens={product.screens} accent={product.accent} productId={product.id} />
     </div></section>
 

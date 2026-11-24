@@ -61,9 +61,9 @@ function OmDashboard() {
 
 function OmCustomers() {
   const rows = [
-    { name: "Demo Business", contact: "0300-1234567", locations: 3, status: "Verified" },
-    { name: "Lahore Demo Store", contact: "0301-7654321", locations: 1, status: "Pending" },
-    { name: "Sample Customer", contact: "0302-9988776", locations: 2, status: "Verified" },
+    { name: "Demo Business", contact: "—", locations: 3, status: "Verified" },
+    { name: "Lahore Demo Store", contact: "—", locations: 1, status: "Pending" },
+    { name: "Sample Customer", contact: "—", locations: 2, status: "Verified" },
   ];
   return <div className="mock-table">
     <div className="mock-table-head"><span>Business Name</span><span>Contact</span><span>Locations</span><span>Status</span></div>

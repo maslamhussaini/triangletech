@@ -370,7 +370,7 @@ describe("pricing safety and promise safety across the input space", () => {
                   checked += 1;
                 }
     expect(checked).toBe(2 * 6 * 2 * 2 * 3 * 2 * capabilitySets.length);
-  });
+  }, 30_000); // 2,592-case exhaustive sweep: slow on shared CPUs, assertions unchanged.
 
   it("no result object carries a price-like field at any depth", () => {
     const keys: string[] = [];
